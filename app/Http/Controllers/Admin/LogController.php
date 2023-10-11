@@ -8,6 +8,6 @@ use Illuminate\Http\Request;
 class LogController extends Controller
 {
     public function show_login_view(){
-        return view('layouts.admin');
+        return view('layouts.user');
     }
 }
