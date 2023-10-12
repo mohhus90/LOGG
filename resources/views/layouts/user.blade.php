@@ -31,7 +31,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <div class="wrapper">
 
   <!-- Navbar -->
-  @include('admin.includes.navbar')
+  @include('user.includes.navbar')
   <!-- /.navbar -->
 
   <!-- Main Sidebar Container -->
@@ -44,12 +44,12 @@ scratch. This page gets rid of all links and provides the needed markup only.
     </a>
 
     <!-- Sidebar -->
-    @include('admin.includes.sidebar')
+    @include('user.includes.sidebar')
     <!-- /.sidebar -->
   </aside>
 
   <!-- Content Wrapper. Contains page content -->
-  @include('admin.includes.content')
+  @include('user.includes.content')
   <!-- /.content-wrapper -->
 
   <!-- Control Sidebar -->
@@ -63,7 +63,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <!-- /.control-sidebar -->
 
   <!-- Main Footer -->
-  @include('admin.includes.footer')
+  @include('user.includes.footer')
 </div>
 <!-- ./wrapper -->
 

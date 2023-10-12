@@ -9,7 +9,7 @@
 
                 <li class="nav-item dropdown">
                     <a id="navbarDropdown" class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                        {{ Auth::guard('admin')->user()->name }}
+                        {{ Auth::user()->name }}
                     </a>
     
                 </li>

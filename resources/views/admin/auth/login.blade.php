@@ -5,10 +5,10 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">{{ __('Login') }}</div>
+                <div class="card-header">{{ __('Admin Login') }}</div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('admin.dashboard.check') }}">
+                    <form method="POST" action="{{ route('admin.dashboard.home') }}">
                         @csrf
 
                         <div class="row mb-3">
@@ -24,7 +24,15 @@
                                 @enderror
                             </div>
                         </div>
-
+                        
+                                @if (session('errorrLogin'))
+                                <div class="alert alert-danger">
+                                    <strong>
+                                        {{ session('errorrLogin') }}
+                                    </strong>
+                                </div> 
+                                @endif
+                           
                         <div class="row mb-3">
                             <label for="password" class="col-md-4 col-form-label text-md-end">{{ __('Password') }}</label>
 
