@@ -12,3 +12,12 @@
     width: 100%;
     text-align: center !important;
 }
+
+.custom_thead{
+    background-color: #233490;
+    color: #fff;
+}
+.card_title_center{
+    width: 100%;
+    text-align: center !important;
+}
