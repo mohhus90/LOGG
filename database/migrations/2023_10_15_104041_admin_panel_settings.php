@@ -18,9 +18,9 @@ return new class extends Migration
             $table->string('image',250);
             $table->string('phone',250);
             $table->string('address',250);
-            $table->string('email',250);
+            $table->string('email',250)->nullable();
             $table->integer('addes_by');
-            $table->integer('upated_by')->nullable();
+            $table->integer('updated_by')->nullable();
             $table->integer('com_code');
             $table->decimal('after_minute_calc_delay',10,2)->default(0)->comment('بعد كم دقيقة تحسب تأخير حضور');
             $table->decimal('after_minute_calc_early',10,2)->default(0)->comment('بعد كم دقيقة تحسب انصراف مبكر');

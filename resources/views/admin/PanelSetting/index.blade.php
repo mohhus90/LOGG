@@ -84,16 +84,14 @@
                     <td> {{ $data['sanctions_value_second_abcence'] }}</td>
                   </tr>
                   <tr>
-                    <th scope="row">التليفون</th>
+                    <th scope="row">قيمة خصم الايام بعد اول ثالث غياب</th>
                     <td> {{ $data['sanctions_value_third_abcence'] }}</td>
                   </tr>
                   <tr>
-                    <th scope="row">	قيمة خصم الايام بعد اول ثالث غياب</th>
+                    <th scope="row">	قيمة خصم الايام بعد اول رابع غياب</th>
                     <td> {{ $data['sanctions_value_forth_abcence'] }}</td>
                   </tr>
-                  <tr>
-                    <th scope="row">قيمة خصم الايام بعد اول رابع غياب</th>
-                    <td> {{ $data['created_at'] }}</td>
+                    <td class="text-center" colspan="2" ><a class="btn btn-primary btn-lg col-2" href="{{ route('generalsetting.edit') }}">تعديل</a></td>
                   </tr>
                 </tbody>
               </table>

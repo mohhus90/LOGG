@@ -20,7 +20,23 @@
     <!-- Main content -->
     <div class="content">
       <div class="container-fluid">
-            @yield('content')
+        @if (Session::has('erorr'))
+          <div class= 'alert alert-danger erorr' role="alert">
+            {{Session::get('erorr')}}
+          </div> 
+        @endif
+        @if (Session::has('success'))
+          <div class= 'alert alert-success success' role="alert">
+            {{Session::get('success')}}
+          </div> 
+        @endif
+        @if (Session::has('errorUpdate'))
+          <div class= 'alert alert-danger erorr' role="alert">
+            {{Session::get('errorUpdate')}}
+          </div> 
+        @endif
+        
+        @yield('content')
         <!-- /.row -->
       </div><!-- /.container-fluid -->
     </div>
