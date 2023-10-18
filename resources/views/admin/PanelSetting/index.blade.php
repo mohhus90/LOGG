@@ -3,10 +3,10 @@
     الضبط العام
 @endsection
 @section('start')
-    الضبط
+الضبط العام
 @endsection
 @section('home')
-<a href="{{ route('generalsetting.index') }}">الضبط العام</a>
+<a href="{{ route('generalsetting.index') }}"> الضبط</a>
 
 @endsection
 @section('startpage')

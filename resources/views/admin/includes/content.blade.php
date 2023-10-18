@@ -8,8 +8,8 @@
           </div><!-- /.col -->
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">@yield('home')</a></li>
-              <li class="breadcrumb-item active">@yield('startpage')</li>
+              <li class="breadcrumb-item"><a href="#">@yield('home')&nbsp</a></li>
+              <li class="breadcrumb-item active">@yield('startpage')&nbsp</li>
             </ol>
           </div><!-- /.col -->
         </div><!-- /.row -->
@@ -21,17 +21,17 @@
     <div class="content">
       <div class="container-fluid">
         @if (Session::has('erorr'))
-          <div class= 'alert alert-danger erorr' role="alert">
+          <div class= 'alert alert-danger erorr text-center' role="alert">
             {{Session::get('erorr')}}
           </div> 
         @endif
         @if (Session::has('success'))
-          <div class= 'alert alert-success success' role="alert">
+          <div class= 'alert alert-success success text-center' role="alert">
             {{Session::get('success')}}
           </div> 
         @endif
         @if (Session::has('errorUpdate'))
-          <div class= 'alert alert-danger erorr' role="alert">
+          <div class= 'alert alert-danger erorr text-center' role="alert">
             {{Session::get('errorUpdate')}}
           </div> 
         @endif
