@@ -13,7 +13,9 @@ class Finance_calendersController extends Controller
      */
     public function index()
     {
-        //
+        $data= Finance_calender::select('*')->orderby('finance_yr','DESC')->paginate(paginate_counter);
+
+        return view('admin.finance_calender.index',['data'=>$data]);
     }
 
     /**
