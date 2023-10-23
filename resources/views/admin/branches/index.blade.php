@@ -23,7 +23,6 @@
             @if(@isset($data) and !@empty($data) )
             <table class="table table-bordered">
                 <thead>
-                 
                   <th scope="col">كود الفرع</th>
                   <th scope="col">الاسم</th>
                   <th scope="col">العنوان</th>
@@ -38,6 +37,8 @@
                 </thead>
                 <tbody>
                   @foreach ($data as $info)
+                  
+                    
                     <tr>
                       <td> {{ $info->id }}</td>
                       <td> {{ $info->branch_name }}</td>
@@ -50,6 +51,8 @@
                       <td> {{ $info->updated_by }}</td>
                       <td> {{ $info->updated_at }}</td>                   
                     </tr>
+                    
+                    
                   @endforeach
                 </tbody>
               </table>

@@ -37,6 +37,11 @@
                   <i class="far fa-circle nav-icon"></i>
                   <p>الضبط العام</p>
                 </a>
+              </li><li class="nav-item">
+                <a href="{{ route('finance_calender.index') }}" class="nav-link active">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>السنوات المالية</p>
+                </a>
               </li>
               <li class="nav-item">
                 <a href="{{ route('branches.index') }}" class="nav-link active">
