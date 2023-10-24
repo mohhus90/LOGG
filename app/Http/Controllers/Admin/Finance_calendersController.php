@@ -23,7 +23,7 @@ class Finance_calendersController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.finance_calender.create');
     }
 
     /**

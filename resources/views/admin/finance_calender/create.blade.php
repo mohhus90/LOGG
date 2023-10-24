@@ -6,18 +6,18 @@
     الضبط العام
 @endsection
 @section('home')
-<a href="{{ route('generalsetting.index') }}">الضبط</a>
+<a href="{{ route('generalsetting.index') }}">السنوات المالية</a>
 
 @endsection
 @section('startpage')
-تعديل
+اضافة
 @endsection
 
 @section('content')
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">تعديل بيانات الضبط العام للنظام</h3>
+            <h3 class="card-title card_title_center">تكويد سنة مالية جديدة</h3>
         </div>
         <div class="card-body">
             @if(@isset($data) and !@empty($data) )

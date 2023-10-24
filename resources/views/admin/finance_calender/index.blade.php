@@ -17,7 +17,9 @@
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">بيانات السنوات المالية</h3>
+            <h3 class="card-title card_title_center">بيانات السنوات المالية
+              <a class="btn btn-success" href="finance_calender.create">اضافة جديد</a>
+            </h3>
         </div>
         <div class="card-body">
           @if(@isset($data) and !@empty($data) )
@@ -53,7 +55,7 @@
               </tbody>
             </table>
           @else
-          <h1>لا توجد بيانات للعرض</h1>
+          <h2>لا توجد بيانات للعرض</h2>
           @endif
         </div>
     </div>

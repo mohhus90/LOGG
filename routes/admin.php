@@ -38,6 +38,7 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::get('branches/update',[branchesController::class,'update'])->name('branches.update');
     // بداية السنة المالية
     Route::resource('finance_calender',Finance_calendersController::class);
+    
 
 
 });
