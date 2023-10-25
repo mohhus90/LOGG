@@ -46,7 +46,7 @@
                       <td> {{ $info->phone }}</td>
                       <td> {{ $info->email }}</td>
                       <td> {{ $info->active }}</td>
-                      <td> {{ $info->addes_by }}</td>
+                      <td> {{ $info->added_by }}</td>
                       <td> {{ $info->created_at }}</td>
                       <td> {{ $info->updated_by }}</td>
                       <td> {{ $info->updated_at }}</td>                   

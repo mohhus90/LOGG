@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('address',250);
             $table->string('phone',250);
             $table->string('email',50)->nullable();
-            $table->integer('addes_by');
+            $table->integer('added_by');
             $table->integer('updated_by')->nullable();
             $table->integer('com_code');
             $table->timestamps();
