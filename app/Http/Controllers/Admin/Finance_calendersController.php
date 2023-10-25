@@ -29,17 +29,21 @@ class Finance_calendersController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request, Finance_calender $Finance_calender)
     {
         $request->validate([
-            "finance_yr" => ["required","unique:Finance_calenders"],
+            "finance_yr" => ["required", "unique:finance_calenders"],
             "start_date" => "required",
             "end_date" => "required",
+            // "is_open" => "required", 
+            // Add validation rule for is_open field
             // Add validation rules for other fields here if necessary
         ],[
-            "finance_yr.required" =>"يجب ادخال السنة المالية",
-            "start_date.required" =>"يجب ادخال تاريخ بداية السنة المالية",
-            "end_date.required" =>"يجب ادخال تاريخ نهاية السنة المالية"
+            "finance_yr.required" => "يجب ادخال السنة المالية",
+            "start_date.required" => "يجب ادخال تاريخ بداية السنة المالية",
+            "end_date.required" => "يجب ادخال تاريخ نهاية السنة المالية",
+            // "is_open.required" => "يجب ادخال حقل الإغلاق",
         ]);
     
         try {
