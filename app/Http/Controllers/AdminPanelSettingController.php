@@ -57,13 +57,13 @@ class AdminPanelSettingController extends Controller
      */
     public function update(Request $request, Admin_panel_setting $admin_panel_setting)
 {
-    $request->validate([
-        "com_name" => ["string"],
-        "email"=>['required',"string"]
-        // Add validation rules for other fields here if necessary
-    ],[
-        "email.required" =>"يجب ادخال الايميل"
-    ]);
+    // $request->validate([
+    //     "com_name" => ["string"],
+    //     "email"=>['required',"string"]
+    //     // Add validation rules for other fields here if necessary
+    // ],[
+    //     "email.required" =>"يجب ادخال الايميل"
+    // ]);
 
     try {
         $updatedData = [

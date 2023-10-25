@@ -24,6 +24,12 @@
               <form method="GET" action="{{ route('generalsetting.update') }}">
                 @csrf
                 <div class="form-group row">
+                  <label for="id" class="col-sm-2 col-form-label">اسم الحساب</label>
+                  <div class="col-sm-5">
+                    <input type="text" class="form-control" name="id" id="id" value="{{ old('id',$data['id']) }}" placeholder="ادخل اسم الحساب">
+                  </div>
+                </div>
+                <div class="form-group row">
                   <label for="com_name" class="col-sm-2 col-form-label">اسم الحساب</label>
                   <div class="col-sm-5">
                     <input type="text" class="form-control" name="com_name" id="com_name" value="{{ old('com_name',$data['com_name']) }}" placeholder="ادخل اسم الحساب">
