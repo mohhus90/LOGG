@@ -3,10 +3,10 @@
     الضبط العام
 @endsection
 @section('start')
-    الضبط
+الضبط العام
 @endsection
 @section('home')
-<a href="{{ route('generalsetting.index') }}">الضبط العام</a>
+<a href="{{ route('generalsetting.index') }}"> الضبط</a>
 
 @endsection
 @section('startpage')
@@ -96,7 +96,7 @@
                 </tbody>
               </table>
             @else
-            <h1>لا توجد بيانات للعرض</h1>
+            <h2>لا توجد بيانات للعرض</h2>
             @endif
         </div>
     </div>
