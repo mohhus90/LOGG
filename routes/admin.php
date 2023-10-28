@@ -37,7 +37,9 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::get('branches/edit',[branchesController::class,'edit'])->name('branches.edit');
     Route::get('branches/update',[branchesController::class,'update'])->name('branches.update');
     // بداية السنة المالية
-    Route::resource('finance_calender',Finance_calendersController::class);
+    Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
+
+    Route::resource('finance_calender',Finance_calendersController::class)->middleware('auth:admin');
     
 
 
