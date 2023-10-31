@@ -142,4 +142,13 @@ class Finance_calendersController extends Controller
         }
         
     }
+    
+    function show_year_monthes(Request $request)
+    {
+        if($request->ajax()){
+            $finance_cln_periods=Finance_cln_period::select("*")->where(['finance_calenders_id'=>$request->id])->get();
+            return view("admin.finance_calender.show_year_monthes",['finance_cln_periods'=>$finance_cln_periods]);
+            // echo "dd";
+        }
+    }
 }
