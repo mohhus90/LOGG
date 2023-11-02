@@ -20,6 +20,11 @@
     <!-- Main content -->
     <div class="content">
       <div class="container-fluid">
+        @if (Session::has('error'))
+          <div class= 'alert alert-danger error text-center' role="alert">
+            {{Session::get('error')}}
+          </div> 
+        @endif
         @if (Session::has('erorr'))
           <div class= 'alert alert-danger erorr text-center' role="alert">
             {{Session::get('erorr')}}

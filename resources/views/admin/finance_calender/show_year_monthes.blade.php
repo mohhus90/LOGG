@@ -6,6 +6,7 @@
       <th scope="col">Month</th>
       <th scope="col">تاريخ البداية</th>
       <th scope="col">تاريخ النهاية</th>
+      <th scope="col">عدد الايام</th>
       <th scope="col">الاضافة بواسطة</th>
       <th scope="col">التحديث بواسطة</th>
       <th scope="col">الاضافة بتاريخ</th>
@@ -22,6 +23,7 @@
           <td> {{ $info->Month->monthe_name_en }}</td>
           <td> {{ $info->start_date }}</td>
           <td> {{ $info->end_date }}</td>
+          <td> {{ $info->number_of_days }}</td>
           <td> {{ $info->added->name }}</td>
           <td>
             @if ($info->updated_by>0)
@@ -47,9 +49,7 @@
               سنة مالية مغلقة
             @endif
           </td>                   
-        </tr>
-        
-        
+        </tr> 
       @endforeach
     </tbody>
   </table>
