@@ -6,7 +6,7 @@
     الضبط العام
 @endsection
 @section('home')
-<a href="{{ route('generalsetting.index') }}">السنوات المالية</a>
+<a href="{{ route('finance_calender.index') }}">السنوات المالية</a>
 
 @endsection
 @section('startpage')

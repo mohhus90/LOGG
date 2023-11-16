@@ -1,6 +1,6 @@
 @extends('admin.layouts.admin')
 @section('title')
-    الضبط العام
+الفروع
 @endsection
 @section('start')
     الضبط العام
