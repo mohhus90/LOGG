@@ -34,10 +34,10 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::get('generalsetting/update',[AdminPanelSettingController::class,'update'])->name('generalsetting.update');
     // الفروع
     Route::get('branches',[branchesController::class,'index'])->name('branches.index')->middleware('auth:admin');
-    Route::get('branches/edit',[branchesController::class,'edit'])->name('branches.edit');
+    Route::get('branches/{id}/edit',[branchesController::class,'edit'])->name('branches.edit');
     Route::get('branches/create',[branchesController::class,'create'])->name('branches.create');
     Route::post('branches/store',[branchesController::class,'store'])->name('branches.store');
-    Route::get('branches/update',[branchesController::class,'update'])->name('branches.update');
+    Route::post('branches/update/{id}',[branchesController::class,'update'])->name('branches.update');
     Route::get('branches/delete/{id}',[branchesController::class,'delete'])->name('branches.delete');
     // بداية السنة المالية
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
