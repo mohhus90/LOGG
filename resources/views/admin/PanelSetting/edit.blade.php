@@ -39,6 +39,15 @@
                   </div>
                 </div>
                 <div class="form-group row">
+                  <label for="com_code" class="col-sm-2 col-form-label">كود الشركة</label>
+                  <div class="col-sm-5">
+                    <input type="text" class="form-control" name="com_code" id="com_code" value="{{ old('com_code',$data['com_code']) }}" >
+                    @error('com_code')
+                      <span class="text-danger">{{ $message }}</span>
+                    @enderror
+                  </div>
+                </div>
+                <div class="form-group row">
                   <label for="saysem_status" class="col-sm-2 col-form-label">حالة الشركة</label>
                   <div class="col-sm-5">
                     <input type="text" class="form-control" name="saysem_status" id="saysem_status" value="{{ old('saysem_status',$data['saysem_status']) }}" >

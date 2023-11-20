@@ -69,6 +69,7 @@ class AdminPanelSettingController extends Controller
         $updatedData = [
             'updated_by' => auth()->guard('admin')->user()->id,
             'com_name' => $request->com_name,
+            'com_code' => $request->com_code,
             'saysem_status' => $request->saysem_status,
             'phone' => $request->phone,
             'email' => $request->email,

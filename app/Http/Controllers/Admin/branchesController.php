@@ -24,7 +24,7 @@ class branchesController extends Controller
     public function store(Request $request, Branche $Branche)
     {
         $request->validate([
-            "branch_name" => ["required", "unique:branches"],
+            "branch_name" => "required",
             
         ],[
             "branch_name.required" => "يجب ادخال اسم الفرع",
@@ -32,8 +32,14 @@ class branchesController extends Controller
        
         DB::beginTransaction(); 
         try {
+            $com_code=auth()->guard('admin')->user()->com_code;
+            $checkexist= Branche::select('id')->where(["com_code"=>$com_code,"branch_name"=>$request->branch_name])->first();
+            if(!empty($checkexist)){
+                return redirect()->back()->with(['error'=>'عفوا اسم الفرع مسجل من قبل'])->withInput();
+            }
             $createdData = [
                 'added_by' => auth()->guard('admin')->user()->id,
+                'com_code' => auth()->guard('admin')->user()->com_code,
                 'branch_name' => $request->branch_name,
                 'address' => $request->address,
                 'phone' => $request->phone,
