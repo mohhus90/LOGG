@@ -88,7 +88,7 @@ class branchesController extends Controller
         try {
             $updatedData = [
                 'updated_by' => auth()->guard('admin')->user()->id,
-                // 'com_code' => auth()->guard('admin')->user()->com_code,
+                'com_code' => auth()->guard('admin')->user()->com_code,
                 'branch_name' => $request->branch_name,
                 'address' => $request->address,
                 'phone' => $request->phone,
