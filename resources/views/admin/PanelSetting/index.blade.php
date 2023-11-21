@@ -22,21 +22,22 @@
         <div class="card-body">
             @if(@isset($data) and !@empty($data) )
             <table class="table table-bordered">
-                <thead>
+              <tbody>
                   <tr>
-                    <th scope="col">اسم الحساب</th>
+                    <th scope="col">اسم الشركة</th>
                     <th scope="col">{{ $data['com_name'] }}</th>
                   </tr>
-                </thead>
-                <tbody>
-                  
                   <tr>
-                    <th scope="row">حالة الحساب</th>
+                    <th scope="row">كود الشركة</th>
+                    <td> {{ $data['com_code'] }}</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">حالة الشركة</th>
                     <td> @if ($data['saysem_status']=0) معطل @else مفعل @endif</td>
                   </tr>
                   
                   <tr>
-                    <th scope="row">تليفون الحساب</th>
+                    <th scope="row">تليفون الشركة</th>
                     <td> {{ $data['phone'] }}</td>
                   </tr>
                   <tr>

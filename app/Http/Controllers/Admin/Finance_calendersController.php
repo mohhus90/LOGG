@@ -60,6 +60,7 @@ class Finance_calendersController extends Controller
         try {
             $createdData = [
                 'added_by' => auth()->guard('admin')->user()->id,
+                'com_code' => auth()->guard('admin')->user()->com_code,
                 'finance_yr' => $request->finance_yr,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
@@ -161,6 +162,7 @@ class Finance_calendersController extends Controller
             
             $updatedData = [
                 'updated_by' => auth()->guard('admin')->user()->id,
+                'com_code' => auth()->guard('admin')->user()->com_code,
                 'finance_yr' => $request->finance_yr,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
