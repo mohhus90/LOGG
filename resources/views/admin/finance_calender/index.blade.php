@@ -69,7 +69,8 @@
                       <a href="{{ route('finance_calender.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
                       <button class="btn btn-sm btn-info show_year_monthes" data-id="{{ $info->id }}" type="submit">عرض الشهور</button>
                       @else
-                        سنة مالية مغلقة
+                      سنة مالية مغلقة
+                      <a href="{{ route('finance_calender.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
                       @endif
                     </td>                   
                   </tr>
