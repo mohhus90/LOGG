@@ -61,6 +61,7 @@ class branchesController extends Controller
     public function delete(string $id)
     {
         try{
+            
             $data=Branche::select('*')->where(['id'=>$id])->first();
             if(empty($data)){
                 return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
