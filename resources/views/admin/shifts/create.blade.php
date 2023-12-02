@@ -28,8 +28,8 @@
                   <label for="type" class="col-sm-2 col-form-label text-center"> نوع الشيفت</label>
                   <select type="text" class="col-sm-5 form-select" aria-label="Disabled select example" name="type" id="type" >
                     <option selected value="" > اختر النوع</option>
-                    <option value="1" > صباحى</option>
-                    <option value="2" > مسائى</option>
+                    <option @if (old('type')==1)selected @endif value="1" > صباحى</option>
+                    <option @if (old('type')==2)selected @endif  value="2" > مسائى</option>
                   </select>
                 </div>
                 @error('type')
@@ -62,7 +62,7 @@
                 <div class="form-group row">
                   <label for="total_hour" class="col-sm-2 col-form-label text-center">عدد ساعات الشيفت</label>
                   <div class="col-sm-5">
-                      <input type="text" class="form-control" name="total_hour" id="total_hour" readonly>
+                      <input type="text" class="form-control" name="total_hour" id="total_hour" readonly ">
                   </div>
                 </div>
 
@@ -102,7 +102,8 @@
                   var minutes = Math.round((timeDifference % 3600000) / 60000);
           
                   // Update the total_hour input
-                  document.getElementById('total_hour').value = hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+                  var total_hour = document.getElementById('total_hour').value =(hours + (minutes/60)) ;
+                  var total_hour_fixed = total_hour.toFixed(2);
               }
           </script>
           
