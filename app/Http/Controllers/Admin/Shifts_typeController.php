@@ -23,7 +23,7 @@ class Shifts_typeController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.shifts.create');
     }
 
     /**
@@ -31,7 +31,18 @@ class Shifts_typeController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'type'=>'required',
+            'from_time'=>'required',
+            'to_time'=>'required',
+          
+
+        ],[
+            'type.required'=>'يجب ادخال نوع الشيفت',
+            'from_time.required'=>'يجب ادخال بداية الشيفت',
+            'to_time.required'=>'يجب ادخال نهاية الشيفت'
+            
+        ]);
     }
 
     /**
