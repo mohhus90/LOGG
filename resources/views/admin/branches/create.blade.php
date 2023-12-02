@@ -1,6 +1,6 @@
 @extends('admin.layouts.admin')
 @section('title')
-السنوات المالية
+الفروع
 @endsection
 @section('start')
     الضبط العام
