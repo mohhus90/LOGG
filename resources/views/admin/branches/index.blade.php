@@ -77,6 +77,8 @@
                   @endforeach
                 </tbody>
               </table>
+              <br>
+              {{ $data->links('pagination::bootstrap-5') }}
             @else
             <h1>لا توجد بيانات للعرض</h1>
             @endif

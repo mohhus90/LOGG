@@ -62,7 +62,7 @@
                 <div class="form-group row">
                   <label for="total_hour" class="col-sm-2 col-form-label text-center">عدد ساعات الشيفت</label>
                   <div class="col-sm-5">
-                      <input type="text" class="form-control" name="total_hour" id="total_hour" readonly ">
+                      <input type="text" class="form-control" name="total_hour" id="total_hour" readonly >
                   </div>
                 </div>
 
@@ -79,6 +79,7 @@
 @endsection
 
             <!-- Add the calculateTotalHour JavaScript function -->
+            @section('script')
             <script>
               function calculateTotalHour() {
                   var fromTime = document.getElementById('from_time').value;
@@ -105,5 +106,6 @@
                   var total_hour = document.getElementById('total_hour').value =(hours + (minutes/60)) ;
                   var total_hour_fixed = total_hour.toFixed(2);
               }
-          </script>
+            </script>
+          @endsection
           

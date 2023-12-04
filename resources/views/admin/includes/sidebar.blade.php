@@ -33,34 +33,29 @@
             </a>
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="{{ route('generalsetting.index') }}" class="nav-link active">
+                <a href="{{ route('generalsetting.index') }}" class="nav-link {{ request()->is('admin/dashboard/generalsetting*')?'active':'' }}">
                   <i class="far fa-circle nav-icon"></i>
                   <p>الضبط العام</p>
                 </a>
               </li><li class="nav-item">
-                <a href="{{ route('finance_calender.index') }}" class="nav-link active">
+                <a href="{{ route('finance_calender.index') }}" class="nav-link {{ request()->is('admin/dashboard/finance_calender*')?'active':'' }}">
                   <i class="far fa-circle nav-icon"></i>
                   <p>السنوات المالية</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="{{ route('branches.index') }}" class="nav-link active">
+                <a href="{{ route('branches.index') }}" class="nav-link {{ request()->is('admin/dashboard/branches*')?'active':'' }}">
                   <i class="far fa-circle nav-icon"></i>
                   <p>الفروع</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="{{ route('shifts.index') }}" class="nav-link active">
+                <a href="{{ route('shifts.index') }}" class="nav-link {{ request()->is('admin/dashboard/shifts*')?'active':'' }}">
                   <i class="far fa-circle nav-icon"></i>
                   <p>الشيفتات</p>
                 </a>
               </li>
-              <li class="nav-item">
-                <a href="#" class="nav-link">
-                  <i class="far fa-circle nav-icon"></i>
-                  <p>Inactive Page</p>
-                </a>
-              </li>
+              
             </ul>
           </li>
           <li class="nav-item">

@@ -21,20 +21,42 @@
               <a class="btn btn-success" href="{{ route('shifts.create') }}">اضافة جديد</a>
             </h3>
         </div>
-        <div class="card-body">
+       
+
+        <div class="form-group form-inline" >
+          <div class="form-group" style="padding: 5px">       
+          <label for="type" class="col-sm-3 col-form-label text-center"> نوع الشيفت</label>
+          <select type="text" class="col-sm-8 form-select" aria-label="Disabled select example" name="type_search" id="type_search" >
+            <option selected value="all" > بحث بالكل</option>
+            <option value="1" > صباحى</option>
+            <option value="2" > مسائى</option>
+          </select>
+        </div> 
+        <div class="form-group ">
+          <label for="from_time" class="col-sm-1 col-form-label text-center">بداية الشيفت</label>
+          <div class="col-sm-2">
+              <input type="time" class="form-control" name="hour_from_range" id="hour_from_range" value="" oninput="calculateTotalHour()">
+          </div>
+          <div class="form-group " >
+            <label for="to_time" style="margin-right: 30%" class="col-sm-1 col-form-label text-center">نهاية الشيفت</label>
+            <div class="col-sm-2">
+                <input type="time" class="form-control" name="hour_to_range" id="hour_to_range" value="" oninput="calculateTotalHour()">
+            </div>
+          </div>
+        </div>
+        <div class="card-body" id="ajax_res_search_div">
             @if(@isset($data) and !@empty($data) )
             <table class="table table-bordered">
                 <thead>
-                  <th scope="col">كود الفرع</th>
-                  <th scope="col">الاسم</th>
-                  <th scope="col">العنوان</th>
-                  <th scope="col">الهاتف</th>
-                  <th scope="col">الايميل</th>
+                  <th scope="col">كود الشيفت</th>
+                  <th scope="col">نوع الشيفت</th>
+                  <th scope="col">بداية الشيفت</th>
+                  <th scope="col">نهاية الشيفت</th>
+                  <th scope="col">عدد ساعات الشيفت</th>
                   <th scope="col">الاضافة بواسطة</th>
                   <th scope="col">تاريخ الاضافة </th>
                   <th scope="col">التحديث بواسطة</th>
                   <th scope="col">تاريخ التحديث</th>
-                  <th scope="col">حالة التفعيل</th>
                   <th scope="col">اجراء</th>
                   
                 </thead>
@@ -42,10 +64,16 @@
                   @foreach ($data as $info)
                     <tr>
                       <td> {{ $info->id }}</td>
-                      <td> {{ $info->branch_name }}</td>
-                      <td> {{ $info->address }}</td>
-                      <td> {{ $info->phone }}</td>
-                      <td> {{ $info->email }}</td>
+                      <td> @if ( ($info->type) ==1)
+                          صباحى
+                          @endif
+                          @if ( ($info->type) ==2)
+                          مسائى
+                        @endif
+                      </td>
+                      <td> {{ $info->from_time }}</td>
+                      <td> {{ $info->to_time }}</td>
+                      <td> {{ $info->total_hour }}</td>
                       <td> {{ $info->added->name }}</td>
                       <td> {{ $info->created_at }}</td>
                       <td>
@@ -63,13 +91,6 @@
                         @endif
                       </td>
                       <td>
-                        @if ($info->active==1)
-                           مفعل
-                        @else
-                           غير مفعل
-                        @endif
-                      </td>
-                      <td>
                         <a href="{{ route('shifts.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
                         <a href="{{ route('shifts.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
                       </td>
@@ -77,6 +98,10 @@
                   @endforeach
                 </tbody>
               </table>
+              <br>
+              <div class="" id="">
+                {{ $data->links('pagination::bootstrap-5') }}
+              </div>
             @else
             <h1>لا توجد بيانات للعرض</h1>
             @endif
@@ -84,4 +109,62 @@
     </div>
 </div>
    
+@endsection
+@section('script')
+  <script>
+    $(document).ready(function(){
+        $(document).on('change','#type_search',function (e) {
+          ajax_search()
+        });
+        $(document).on('input','#hour_from_range',function (e) {
+          ajax_search()
+        });
+        $(document).on('input','#hour_to_range',function (e) {
+          ajax_search()
+        });
+
+      function ajax_search(){
+        var type_search=$("#type_search").val();
+        var hour_from_range=$("#hour_from_range").val();
+        var hour_to_range=$("#hour_to_range").val();
+        jQuery.ajax({
+          url:'{{ route('shifts.ajaxsearch') }}',
+          type:'post',
+          'datatype':'html',
+          cache:false,
+          data:{"_token":'{{ csrf_token() }}',type_search:type_search,hour_from_range:hour_from_range,hour_to_range:hour_to_range},
+          success: function(data){
+            $("#ajax_res_search_div").html(data);
+          },
+          error: function () {
+            alert("عفوا لقد حدث خطأ")
+          }
+
+        });
+        $(document).on('click','#ajax_pagination_in_search a',function (e) {
+          e.preventdefault();
+          var type_search=$("#type_search").val();
+        var hour_from_range=$("#hour_from_range").val();
+        var hour_to_range=$("#hour_to_range").val();
+        var linkurl = $(this).attr("href");
+        jQuery.ajax({
+          url:linkurl,
+          type:'post',
+          'datatype':'html',
+          cache:false,
+          data:{"_token":'{{ csrf_token() }}',type_search:type_search,hour_from_range:hour_from_range,hour_to_range:hour_to_range},
+          success: function(data){
+            $("#ajax_res_search_div").html(data);
+          },
+          error: function () {
+            alert("عفوا لقد حدث خطأ")
+          }
+
+        });
+
+        });
+        
+      }
+    })
+  </script>
 @endsection

@@ -21,7 +21,7 @@ use App\Models\Admin;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-define('paginate_counter',10);
+define('paginate_counter',1);
 Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::get('/home',[AdminHomeController::class,'index'])->name('admin.dashboard.home')->middleware('auth:admin');
     Route::get('login',[AdminLoginController::class,'login'])->name('admin.dashboard.login')->middleware('guest:admin');
@@ -47,6 +47,8 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::post('shifts/store',[Shifts_typeController::class,'store'])->name('shifts.store');
     Route::post('shifts/update/{id}',[Shifts_typeController::class,'update'])->name('shifts.update');
     Route::get('shifts/delete/{id}',[Shifts_typeController::class,'delete'])->name('shifts.delete');
+    Route::post('shifts/ajaxsearch',[Shifts_typeController::class,'ajaxsearch'])->name('shifts.ajaxsearch');
+
     // بداية السنة المالية
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
     Route::post('finance_calender/show_year_monthes',[Finance_calendersController::class,'show_year_monthes'])->name('finance_calender.show_year_monthes');
