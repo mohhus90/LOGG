@@ -55,6 +55,12 @@
                   <p>الشيفتات</p>
                 </a>
               </li>
+              <li class="nav-item">
+                <a href="{{ route('departs.index') }}" class="nav-link {{ request()->is('admin/dashboard/departs*')?'active':'' }}">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>الادارات</p>
+                </a>
+              </li>
               
             </ul>
           </li>
