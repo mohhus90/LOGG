@@ -142,7 +142,7 @@
 
         });
         $(document).on('click','#ajax_pagination_in_search a',function (e) {
-          e.preventdefault();
+          e.preventDefault();
           var type_search=$("#type_search").val();
         var hour_from_range=$("#hour_from_range").val();
         var hour_to_range=$("#hour_to_range").val();
