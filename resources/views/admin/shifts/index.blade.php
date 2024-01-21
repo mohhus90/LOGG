@@ -1,12 +1,12 @@
 @extends('admin.layouts.admin')
 @section('title')
-الفروع
+الشيفتات
 @endsection
 @section('start')
 الضبط العام
 @endsection
 @section('home')
-<a href="{{ route('shifts.index') }}"> الفروع</a>
+<a href="{{ route('shifts.index') }}"> الشيفتات</a>
 
 @endsection
 @section('startpage')
@@ -17,7 +17,7 @@
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">بيانات الفروع
+            <h3 class="card-title card_title_center">بيانات الشيفتات
               <a class="btn btn-success" href="{{ route('shifts.create') }}">اضافة جديد</a>
             </h3>
         </div>
@@ -99,7 +99,7 @@
                 </tbody>
               </table>
               <br>
-              <div class="" id="">
+              <div class="" id="#ajax_pagination_in_search">
                 {{ $data->links('pagination::bootstrap-5') }}
               </div>
             @else
@@ -110,7 +110,7 @@
 </div>
    
 @endsection
-@section('script')
+{{-- @section('script')
   <script>
     $(document).ready(function(){
         $(document).on('change','#type_search',function (e) {
@@ -122,7 +122,6 @@
         $(document).on('input','#hour_to_range',function (e) {
           ajax_search()
         });
-
       function ajax_search(){
         var type_search=$("#type_search").val();
         var hour_from_range=$("#hour_from_range").val();
@@ -147,24 +146,115 @@
         var hour_from_range=$("#hour_from_range").val();
         var hour_to_range=$("#hour_to_range").val();
         var linkurl = $(this).attr("href");
+
+        // Extract the page number from the link
+        var pageNumber = linkurl.split('page=')[1];
+
         jQuery.ajax({
-          url:linkurl,
-          type:'post',
-          'datatype':'html',
-          cache:false,
-          data:{"_token":'{{ csrf_token() }}',type_search:type_search,hour_from_range:hour_from_range,hour_to_range:hour_to_range},
-          success: function(data){
-            $("#ajax_res_search_div").html(data);
-          },
-          error: function () {
-            alert("عفوا لقد حدث خطأ")
-          }
+            url: linkurl,
+            type: 'get',
+            'datatype': 'html',
+            cache: false,
+            data: {"_token": '{{ csrf_token() }}', type_search: type_search, hour_from_range: hour_from_range, hour_to_range: hour_to_range},
+            success: function (data) {
+                $("#ajax_res_search_div").html(data);
 
+                // Update the URL to reflect the current page
+                window.history.pushState({}, '', linkurl);
+            },
+            error: function () {
+                alert("عفوا لقد حدث خطأ")
+            }
+        });
+      });     
+            }
+          })
+  </script>
+@endsection --}}
+@section('script')
+  <script>
+    $(document).ready(function () {
+        // Initial AJAX request on page load
+        ajax_search();
+
+        $(document).on('change', '#type_search', function (e) {
+            ajax_search();
         });
 
+        $(document).on('input', '#hour_from_range', function (e) {
+            ajax_search();
         });
-        
-      }
-    })
+
+        $(document).on('input', '#hour_to_range', function (e) {
+            ajax_search();
+        });
+
+        $(document).on('click', '#ajax_pagination_in_search a', function (e) {
+            e.preventDefault();
+            var type_search = $("#type_search").val();
+            var hour_from_range = $("#hour_from_range").val();
+            var hour_to_range = $("#hour_to_range").val();
+            var linkurl = $(this).attr("href");
+
+            // Extract the page number from the link
+            var pageNumber = linkurl.split('page=')[1];
+
+            jQuery.ajax({
+                url: linkurl,
+                type: 'get',
+                'datatype': 'html',
+                cache: false,
+                data: {"_token": '{{ csrf_token() }}', type_search: type_search, hour_from_range: hour_from_range, hour_to_range: hour_to_range},
+                success: function (data) {
+                    $("#ajax_res_search_div").html(data);
+
+                    // Update the URL to reflect the current page
+                    window.history.pushState({}, '', linkurl);
+                },
+                error: function (xhr, status, error) {
+                var errorMessage = "عفوا لقد حدث خطأ";
+
+                // Check if the response contains a JSON error message
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+
+                alert(errorMessage);
+            }
+            });
+        });
+
+        window.onpopstate = function (event) {
+            // Handle popstate event, e.g., make an AJAX request to update content
+            ajax_search();
+        };
+
+        function ajax_search() {
+            var type_search = $("#type_search").val();
+            var hour_from_range = $("#hour_from_range").val();
+            var hour_to_range = $("#hour_to_range").val();
+            jQuery.ajax({
+                url: '{{ route('shifts.ajaxsearch') }}',
+                type: 'post',
+                'datatype': 'html',
+                cache: false,
+                data: {"_token": '{{ csrf_token() }}', type_search: type_search, hour_from_range: hour_from_range, hour_to_range: hour_to_range},
+                success: function (data) {
+                    $("#ajax_res_search_div").html(data);
+                },
+                error: function (xhr, status, error) {
+                var errorMessage = "عفوا لقد حدث خطأ";
+
+                // Check if the response contains a JSON error message
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+
+                alert(errorMessage);
+            }
+            });
+        }
+    });
   </script>
 @endsection
+

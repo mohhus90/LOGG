@@ -151,40 +151,111 @@ class Shifts_typeController extends Controller
         }
         
     }
+    // public function ajaxsearch(Request $request){
+       
+    //     if($request->ajax()){
+    //         $type_search=$request->type_search;
+    //         $hour_from_range=$request->hour_from_range;
+    //         $hour_to_range=$request->hour_to_range;
+    //         if($type_search=='all'){
+    //             $field1="id";
+    //             $op1=">";
+    //             $val1=0;
+    //         }else{
+    //             $field1="type";
+    //             $op1="=";
+    //             $val1=$type_search;
+    //         }
+    //         if($hour_from_range==''){
+    //             $field2="id";
+    //             $op2=">";
+    //             $val2=0;
+    //         }else{
+    //             $field2="tota_hour";
+    //             $op2=">=";
+    //             $val2=$hour_from_range;
+    //         }
+    //         if($hour_to_range==''){
+    //             $field3="id";
+    //             $op3=">";
+    //             $val3=0;
+    //         }else{
+    //             $field3="tota_hour";
+    //             $op3="<=";
+    //             $val3=$hour_to_range;
+    //         }
+    //         $data = Shifts_type::select("*")->where($field1, $op1, $val1)
+    //         ->where($field2, $op2, $val2)
+    //         ->where($field3, $op3, $val3)
+    //         ->orderBy("id", "DESC")
+    //         ->paginate(paginate_counter);
+    
+    //             if ($request->ajax()) {
+    //                 // Return partial view for AJAX request
+    //                 return view('admin.shifts.ajax_search', ['data' => $data]);
+    //             } else {
+    //                 // Return full view for initial load or page refresh
+    //                 return view('admin.shifts.index', ['data' => $data]);
+    //             }
+    //     }
+        
+    // }
     public function ajaxsearch(Request $request){
-        if($request->ajax()){
-            $type_search=$request->type_search;
-            $hour_from_range=$request->hour_from_range;
-            $hour_to_range=$request->hour_to_range;
-            if($type_search=='all'){
-                $field1="id";
-                $op1=">";
-                $val1=0;
-            }else{
-                $field1="type";
-                $op1="=";
-                $val1=$type_search;
+        try {
+            if ($request->ajax()) {
+                $type_search = $request->type_search;
+                $hour_from_range = $request->hour_from_range;
+                $hour_to_range = $request->hour_to_range;
+    
+                if ($type_search == 'all') {
+                    $field1 = "id";
+                    $op1 = ">";
+                    $val1 = 0;
+                } else {
+                    $field1 = "type";
+                    $op1 = "=";
+                    $val1 = $type_search;
+                }
+    
+                if ($hour_from_range == '') {
+                    $field2 = "id";
+                    $op2 = ">";
+                    $val2 = 0;
+                } else {
+                    $field2 = "from_time"; // Corrected column name
+                    $op2 = ">=";
+                    $val2 = $hour_from_range;
+                }
+    
+                if ($hour_to_range == '') {
+                    $field3 = "id";
+                    $op3 = ">";
+                    $val3 = 0;
+                } else {
+                    $field3 = "to_time"; // Corrected column name
+                    $op3 = "<=";
+                    $val3 = $hour_to_range;
+                }
+    
+                // Perform the database query
+                $data = Shifts_type::select("*")
+                    ->where($field1, $op1, $val1)
+                    ->where($field2, $op2, $val2)
+                    ->where($field3, $op3, $val3)
+                    ->orderby("id", "DESC")
+                    ->paginate(paginate_counter);
+    
+                // Return the view
+                return view('admin.shifts.ajax_search', ['data' => $data]);
             }
-            if($hour_from_range==''){
-                $field2="id";
-                $op2=">";
-                $val2=0;
-            }else{
-                $field2="tota_hour";
-                $op2=">=";
-                $val2=$hour_from_range;
-            }
-            if($hour_to_range==''){
-                $field3="id";
-                $op3=">";
-                $val3=0;
-            }else{
-                $field3="tota_hour";
-                $op3="<=";
-                $val3=$hour_to_range;
-            }
-        $data=Shifts_type::select("*")->where($field1,$op1,$val1)->where($field2,$op2,$val2)->where($field3,$op3,$val3)->orderby("id","DESC")->paginate(paginate_counter);
-            return view('admin.shifts.ajax_search',['data'=>$data]);
+        } catch (\Illuminate\Database\QueryException $ex) {
+            // Catch SQL Server error
+            $errorMessage = $ex->getMessage(); // Get the SQL Server error message
+    
+            // Return a JSON response with the error message
+            return response()->json(['error' => $errorMessage], 500);
         }
     }
+    
+    
 }
