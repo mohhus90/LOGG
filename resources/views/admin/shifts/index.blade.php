@@ -201,7 +201,7 @@
 
             jQuery.ajax({
                 url: linkurl,
-                type: 'get',
+                type: 'post',
                 'datatype': 'html',
                 cache: false,
                 data: {"_token": '{{ csrf_token() }}', type_search: type_search, hour_from_range: hour_from_range, hour_to_range: hour_to_range},
@@ -230,6 +230,7 @@
         };
 
         function ajax_search() {
+          // e.preventDefault();
             var type_search = $("#type_search").val();
             var hour_from_range = $("#hour_from_range").val();
             var hour_to_range = $("#hour_to_range").val();

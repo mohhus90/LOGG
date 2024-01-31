@@ -48,8 +48,8 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::post('shifts/store',[Shifts_typeController::class,'store'])->name('shifts.store');
     Route::post('shifts/update/{id}',[Shifts_typeController::class,'update'])->name('shifts.update');
     Route::get('shifts/delete/{id}',[Shifts_typeController::class,'delete'])->name('shifts.delete');
-    // Route::post('shifts/ajaxsearch',[Shifts_typeController::class,'ajaxsearch'])->name('shifts.ajaxsearch');
-    Route::match(['get', 'post'], 'shifts/ajaxsearch', [Shifts_typeController::class, 'ajaxsearch'])->name('shifts.ajaxsearch');
+    Route::post('shifts/ajaxsearch',[Shifts_typeController::class,'ajaxsearch'])->name('shifts.ajaxsearch');
+    // Route::match(['get', 'post'], 'shifts/ajaxsearch', [Shifts_typeController::class, 'ajaxsearch'])->name('shifts.ajaxsearch');
     // الادارات
     Route::get('departs',[DepartmentsController::class,'index'])->name('departs.index')->middleware('auth:admin');
     Route::get('departs/{id}/edit',[DepartmentsController::class,'edit'])->name('departs.edit');
