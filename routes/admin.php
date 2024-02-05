@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\Finance_calendersController;
 use App\Http\Controllers\Admin\Shifts_typeController;
 use App\Http\Controllers\Admin\DepartmentsController;
 use App\Http\Controllers\Admin\Jobs_categoriesController;
+
 use App\Models\Admin;
 
 /*
@@ -49,8 +50,17 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::post('shifts/store',[Shifts_typeController::class,'store'])->name('shifts.store');
     Route::post('shifts/update/{id}',[Shifts_typeController::class,'update'])->name('shifts.update');
     Route::get('shifts/delete/{id}',[Shifts_typeController::class,'delete'])->name('shifts.delete');
-    // Route::post('shifts/ajaxsearch',[Shifts_typeController::class,'ajaxsearch'])->name('shifts.ajaxsearch');
-    Route::match(['get', 'post'], 'shifts/ajaxsearch', [Shifts_typeController::class, 'ajaxsearch'])->name('shifts.ajaxsearch');
+    Route::post('shifts/ajaxsearch',[Shifts_typeController::class,'ajaxsearch'])->name('shifts.ajaxsearch');
+    // Route::match(['get', 'post'], 'shifts/ajaxsearch', [Shifts_typeController::class, 'ajaxsearch'])->name('shifts.ajaxsearch');
+    // الوظائف
+    Route::get('jobs_categories',[Jobs_categoriesController::class,'index'])->name('jobs_categories.index')->middleware('auth:admin');
+    Route::get('jobs_categories/{id}/edit',[Jobs_categoriesController::class,'edit'])->name('jobs_categories.edit');
+    Route::get('jobs_categories/create',[Jobs_categoriesController::class,'create'])->name('jobs_categories.create');
+    Route::post('jobs_categories/store',[Jobs_categoriesController::class,'store'])->name('jobs_categories.store');
+    Route::post('jobs_categories/update/{id}',[Jobs_categoriesController::class,'update'])->name('jobs_categories.update');
+    Route::get('jobs_categories/delete/{id}',[Jobs_categoriesController::class,'delete'])->name('jobs_categories.delete');
+    Route::post('jobs_categories/ajaxsearch',[Jobs_categoriesController::class,'ajaxsearch'])->name('jobs_categories.ajaxsearch');
+    // Route::match(['get', 'post'], 'jobs_categories/ajaxsearch', [Jobs_categoriesController::class, 'ajaxsearch'])->name('jobs_categories.ajaxsearch');
     // الادارات
     Route::get('departs',[DepartmentsController::class,'index'])->name('departs.index')->middleware('auth:admin');
     Route::get('departs/{id}/edit',[DepartmentsController::class,'edit'])->name('departs.edit');

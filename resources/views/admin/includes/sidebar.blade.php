@@ -62,9 +62,9 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a href="{{ route('jobs_categores.index') }}" class="nav-link {{ request()->is('admin/dashboard/jobs_categores*')?'active':'' }}">
+                <a href="{{ route('jobs_categories.index') }}" class="nav-link {{ request()->is('admin/dashboard/jobs_categories*')?'active':'' }}">
                   <i class="far fa-circle nav-icon"></i>
-                  <p>انواع الوظائف</p>
+                  <p>الوظائف</p>
                 </a>
               </li>
               

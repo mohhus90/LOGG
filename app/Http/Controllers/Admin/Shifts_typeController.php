@@ -171,7 +171,7 @@ class Shifts_typeController extends Controller
                 $op2=">";
                 $val2=0;
             }else{
-                $field2="tota_hour";
+                $field2="from_time";
                 $op2=">=";
                 $val2=$hour_from_range;
             }
@@ -180,7 +180,7 @@ class Shifts_typeController extends Controller
                 $op3=">";
                 $val3=0;
             }else{
-                $field3="tota_hour";
+                $field3="to_time";
                 $op3="<=";
                 $val3=$hour_to_range;
             }
@@ -246,7 +246,13 @@ class Shifts_typeController extends Controller
     //                 ->paginate(paginate_counter);
     
     //             // Return the view
-    //             return view('admin.shifts.ajax_search', ['data' => $data]);
+    //             if ($request->ajax()) {
+    //                                 // Return partial view for AJAX request
+    //                                 return view('admin.shifts.ajax_search', ['data' => $data]);
+    //                             } else {
+    //                                 // Return full view for initial load or page refresh
+    //                                 return view('admin.shifts.index', ['data' => $data]);
+    //                             }
     //         }
     //     } catch (\Illuminate\Database\QueryException $ex) {
     //         // Catch SQL Server error
