@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\branchesController;
 use App\Http\Controllers\Admin\Finance_calendersController;
 use App\Http\Controllers\Admin\Shifts_typeController;
 use App\Http\Controllers\Admin\DepartmentsController;
+use App\Http\Controllers\Admin\Jobs_categoriesController;
 use App\Models\Admin;
 
 /*
@@ -57,6 +58,14 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::post('departs/store',[DepartmentsController::class,'store'])->name('departs.store');
     Route::post('departs/update/{id}',[DepartmentsController::class,'update'])->name('departs.update');
     Route::get('departs/delete/{id}',[DepartmentsController::class,'delete'])->name('departs.delete');
+     // انواع الوظائف
+     Route::get('jobs_categores',[Jobs_categoriesController::class,'index'])->name('jobs_categores.index')->middleware('auth:admin');
+     Route::get('jobs_categores/{id}/edit',[Jobs_categoriesController::class,'edit'])->name('jobs_categores.edit');
+     Route::get('jobs_categores/create',[Jobs_categoriesController::class,'create'])->name('jobs_categores.create');
+     Route::post('jobs_categores/store',[Jobs_categoriesController::class,'store'])->name('jobs_categores.store');
+     Route::post('jobs_categores/update/{id}',[Jobs_categoriesController::class,'update'])->name('jobs_categores.update');
+     Route::get('jobs_categores/delete/{id}',[Jobs_categoriesController::class,'delete'])->name('jobs_categores.delete');
+     Route::match(['get', 'post'], 'jobs_categores/ajaxsearch', [Jobs_categoriesController::class, 'ajaxsearch'])->name('jobs_categores.ajaxsearch');
     // بداية السنة المالية
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
     Route::post('finance_calender/show_year_monthes',[Finance_calendersController::class,'show_year_monthes'])->name('finance_calender.show_year_monthes');

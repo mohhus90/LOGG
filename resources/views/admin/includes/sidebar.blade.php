@@ -61,6 +61,12 @@
                   <p>الادارات</p>
                 </a>
               </li>
+              <li class="nav-item">
+                <a href="{{ route('jobs_categores.index') }}" class="nav-link {{ request()->is('admin/dashboard/jobs_categores*')?'active':'' }}">
+                  <i class="far fa-circle nav-icon"></i>
+                  <p>انواع الوظائف</p>
+                </a>
+              </li>
               
             </ul>
           </li>

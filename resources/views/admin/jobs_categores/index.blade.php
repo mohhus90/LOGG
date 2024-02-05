@@ -6,7 +6,7 @@
 الضبط العام
 @endsection
 @section('home')
-<a href="{{ route('shifts.index') }}"> الشيفتات</a>
+<a href="{{ route('jobs_categores.index') }}"> الشيفتات</a>
 
 @endsection
 @section('startpage')
@@ -18,7 +18,7 @@
     <div class="card">
         <div class="card-header">
             <h3 class="card-title card_title_center">بيانات الشيفتات
-              <a class="btn btn-success" href="{{ route('shifts.create') }}">اضافة جديد</a>
+              <a class="btn btn-success" href="{{ route('jobs_categores.create') }}">اضافة جديد</a>
             </h3>
         </div>
        
@@ -91,8 +91,8 @@
                         @endif
                       </td>
                       <td>
-                        <a href="{{ route('shifts.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
-                        <a href="{{ route('shifts.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
+                        <a href="{{ route('jobs_categores.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
+                        <a href="{{ route('jobs_categores.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
                       </td>
                     </tr>  
                   @endforeach
@@ -127,7 +127,7 @@
         var hour_from_range=$("#hour_from_range").val();
         var hour_to_range=$("#hour_to_range").val();
         jQuery.ajax({
-          url:'{{ route('shifts.ajaxsearch') }}',
+          url:'{{ route('jobs_categores.ajaxsearch') }}',
           type:'post',
           'datatype':'html',
           cache:false,
@@ -234,7 +234,7 @@
             var hour_from_range = $("#hour_from_range").val();
             var hour_to_range = $("#hour_to_range").val();
             jQuery.ajax({
-                url: '{{ route('shifts.ajaxsearch') }}',
+                url: '{{ route('jobs_categores.ajaxsearch') }}',
                 type: 'post',
                 'datatype': 'html',
                 cache: false,
