@@ -171,7 +171,7 @@ class Shifts_typeController extends Controller
                 $op2=">";
                 $val2=0;
             }else{
-                $field2="tota_hour";
+                $field2="from_time";
                 $op2=">=";
                 $val2=$hour_from_range;
             }
@@ -180,7 +180,7 @@ class Shifts_typeController extends Controller
                 $op3=">";
                 $val3=0;
             }else{
-                $field3="tota_hour";
+                $field3="to_time";
                 $op3="<=";
                 $val3=$hour_to_range;
             }

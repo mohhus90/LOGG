@@ -17,7 +17,7 @@
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">اضافة شيفت جديد</h3>
+            <h3 class="card-title card_title_center">تحديث الشيفت</h3>
         </div>
         <div class="card-body">
               <form method="POST" action="{{ route('shifts.update',$data['id']) }}">
@@ -67,7 +67,7 @@
                 </div>
 
                 <div class="text-center">
-                  <button type="submit" class="text-center btn btn-primary btn-lg col-2">اضافة</button>
+                  <button type="submit" class="text-center btn btn-primary btn-lg col-2">تعديل</button>
                   <a class="btn btn-warning btn-lg col-2" href="{{ route('shifts.index') }}">الغاء</a>
                 </div>
               
