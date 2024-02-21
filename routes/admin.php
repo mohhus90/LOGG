@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\Finance_calendersController;
 use App\Http\Controllers\Admin\Shifts_typeController;
 use App\Http\Controllers\Admin\DepartmentsController;
 use App\Http\Controllers\Admin\Jobs_categoriesController;
+use App\Http\Controllers\Admin\EmployeesConroller;
+
 
 use App\Models\Admin;
 
@@ -76,7 +78,15 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
      Route::post('jobs_categores/update/{id}',[Jobs_categoriesController::class,'update'])->name('jobs_categores.update');
      Route::get('jobs_categores/delete/{id}',[Jobs_categoriesController::class,'delete'])->name('jobs_categores.delete');
      Route::match(['get', 'post'], 'jobs_categores/ajaxsearch', [Jobs_categoriesController::class, 'ajaxsearch'])->name('jobs_categores.ajaxsearch');
-    // بداية السنة المالية
+    // الموظفين
+    Route::get('employees',[EmployeesConroller::class,'index'])->name('employees.index')->middleware('auth:admin');
+    Route::get('employees/{id}/edit',[EmployeesConroller::class,'edit'])->name('employees.edit');
+    Route::get('employees/create',[EmployeesConroller::class,'create'])->name('employees.create');
+    Route::post('employees/store',[EmployeesConroller::class,'store'])->name('employees.store');
+    Route::post('employees/update/{id}',[EmployeesConroller::class,'update'])->name('employees.update');
+    Route::get('employees/delete/{id}',[EmployeesConroller::class,'delete'])->name('employees.delete');
+    Route::match(['get', 'post'], 'employees/ajaxsearch', [EmployeesConroller::class, 'ajaxsearch'])->name('employees.ajaxsearch');
+     // بداية السنة المالية
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
     Route::post('finance_calender/show_year_monthes',[Finance_calendersController::class,'show_year_monthes'])->name('finance_calender.show_year_monthes');
     Route::get('finance_calender/updatee/{id}',[Finance_calendersController::class,'updatee'])->name('finance_calender.updatee');
