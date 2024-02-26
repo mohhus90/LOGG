@@ -29,11 +29,65 @@
             <div class=" ">
               <input type="text" class="col-sm-10 form-control" name="job_name_search" value="" id="job_name_search">
             </div>
-        </div> 
+        </div id="ajax_res_search_div"> 
+            <!-- /.card-header -->
+            <div class="card-body" >
+              <table id="example2" class="table table-bordered table-hover">
+                <thead>
+                  <tr>
+                  <th scope="col">كود الوظيفة</th>
+                  <th scope="col">اسم الوظيفة</th>
+                  <th scope="col">الاضافة بواسطة</th>
+                  <th scope="col">تاريخ الاضافة </th>
+                  <th scope="col">التحديث بواسطة</th>
+                  <th scope="col">تاريخ التحديث</th>
+                  <th scope="col">اجراء</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach ($data as $info)
+                  <tr>
+                    <td> {{ $info->id }}</td>
+                    <td> {{ $info->job_name }}</td>
+                    <td> {{ $info->added_by }}</td>
+                    <td> {{ $info->created_at }}</td>
+                    <td>
+                      @if ($info->updated_by>0)
+                      {{ $info->updated_by }}
+                      @else
+                        لا يوجد
+                      @endif
+                    </td>
+                    <td> 
+                      @if(@isset($info->updated_at) and !@empty($info->updated_at) )
+                      {{ $info->updated_at }}
+                      @else
+                        لا يوجد
+                      @endif
+                    </td>
+                    <td>
+                      <a href="{{ route('employees.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
+                      <a href="{{ route('employees.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
+                    </td>
+                  </tr>  
+                @endforeach
+                </tbody>
+                
+              </table>
+              <br>
+              <div class="" id="#ajax_pagination_in_search">
+                {{ $data->links('pagination::bootstrap-5') }}
+              </div>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+
         <div class="card-body" id="ajax_res_search_div">
             @if(@isset($data) and !@empty($data) )
-            <table class="table table-bordered">
+            <table id="example2" class="table table-bordered table-hover">
               <thead>
+                <tr>
                 <th scope="col">كود الوظيفة</th>
                 <th scope="col">اسم الوظيفة</th>
                 <th scope="col">الاضافة بواسطة</th>
@@ -41,7 +95,7 @@
                 <th scope="col">التحديث بواسطة</th>
                 <th scope="col">تاريخ التحديث</th>
                 <th scope="col">اجراء</th>
-                
+                </tr>
               </thead>
               <tbody>
                 @foreach ($data as $info)
@@ -159,5 +213,18 @@
         }
     });
   </script>
+<script>
+  $(document).ready(function () {
+    $("#example1").DataTable();
+    $('#example2').DataTable({
+      "paging": false,
+      "lengthChange": false,
+      "searching": false,
+      "ordering": true,
+      "info": false,
+      "autoWidth": false,
+    });
+  });
+</script>
 @endsection
 

@@ -26,7 +26,7 @@ use App\Models\Admin;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-define('paginate_counter',1);
+define('paginate_counter',11);
 Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::get('/home',[AdminHomeController::class,'index'])->name('admin.dashboard.home')->middleware('auth:admin');
     Route::get('login',[AdminLoginController::class,'login'])->name('admin.dashboard.login')->middleware('guest:admin');
