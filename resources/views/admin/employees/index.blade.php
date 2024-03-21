@@ -23,15 +23,15 @@
         </div>
        
 
-        <div class="form-group text-center " >
-          <div class="form-group form-inline" style="padding: 5px">       
-            <label for="job_name" class="col-sm-2 "> اسم الوظيفة</label>
-            <div class=" ">
-              <input type="text" class="col-sm-10 form-control" name="job_name_search" value="" id="job_name_search">
-            </div>
-        </div id="ajax_res_search_div"> 
+        <div class="form-group form-inline" style="padding: 5px">
+          <label for="employee_name" class="col-sm-2">اسم الموظف</label>
+          <div class="">
+              <input type="text" class="col-sm-10 form-control" name="employee_name_search" value="" id="employee_name_search">
+          </div>
+      </div>
+      <!-- Add more search inputs as needed -->
             <!-- /.card-header -->
-            <div class="card-body" >
+            {{-- <div class="card-body" >
               <table id="example2" class="table table-bordered table-hover">
                 <thead>
                   <tr>
@@ -48,7 +48,7 @@
                   @foreach ($data as $info)
                   <tr>
                     <td> {{ $info->id }}</td>
-                    <td> {{ $info->job_name }}</td>
+                    <td> {{ $info->employee_name }}</td>
                     <td> {{ $info->added_by }}</td>
                     <td> {{ $info->created_at }}</td>
                     <td>
@@ -81,7 +81,7 @@
             </div>
             <!-- /.card-body -->
           </div>
-          <!-- /.card -->
+          <!-- /.card --> --}}
 
         <div class="card-body" id="ajax_res_search_div">
             @if(@isset($data) and !@empty($data) )
@@ -89,7 +89,7 @@
               <thead>
                 <tr>
                 <th scope="col">كود الوظيفة</th>
-                <th scope="col">اسم الوظيفة</th>
+                <th scope="col">اسم الموظف</th>
                 <th scope="col">الاضافة بواسطة</th>
                 <th scope="col">تاريخ الاضافة </th>
                 <th scope="col">التحديث بواسطة</th>
@@ -101,7 +101,7 @@
                 @foreach ($data as $info)
                   <tr>
                     <td> {{ $info->id }}</td>
-                    <td> {{ $info->job_name }}</td>
+                    <td> {{ $info->employee_name }}</td>
                     <td> {{ $info->added_by }}</td>
                     <td> {{ $info->created_at }}</td>
                     <td>
@@ -138,19 +138,20 @@
 </div>
    
 @endsection
-@section('script')
+ @section('script')
+ {{--
   <script>
     $(document).ready(function () {
         // Initial AJAX request on page load
         ajax_search();
 
-        $(document).on('change', '#job_name_search', function (e) {
+        $(document).on('change', '#employee_name_search', function (e) {
           e.preventDefault();
             ajax_search();
         });
         $(document).on('click', '#ajax_pagination_in_search a', function (e) {
             e.preventDefault();
-            var job_name_search = $("#job_name_search").val();
+            var employee_name_search = $("#employee_name_search").val();
             var linkurl = $(this).attr("href");
 
             // Extract the page number from the link
@@ -160,7 +161,7 @@
                 type: 'post',
                 'datatype': 'html',
                 cache: false,
-                data: {"_token": '{{ csrf_token() }}', job_name_search: job_name_search },
+                data: {"_token": '{{ csrf_token() }}', employee_name_search: employee_name_search },
                 success: function (data) {
                     $("#ajax_res_search_div").html(data);
 
@@ -189,13 +190,13 @@
 
         function ajax_search() {
           
-            var job_name_search = $("#job_name_search").val();
+            var employee_name_search = $("#employee_name_search").val();
             jQuery.ajax({
                 url: '{{ route('employees.ajaxsearch') }}',
                 type: 'post',
                 'datatype': 'html',
                 cache: false,
-                data: {"_token": '{{ csrf_token() }}', job_name_search: job_name_search },
+                data: {"_token": '{{ csrf_token() }}', employee_name_search: employee_name_search },
                 success: function (data) {
                     $("#ajax_res_search_div").html(data);
                 },
@@ -225,6 +226,79 @@
       "autoWidth": false,
     });
   });
+</script> --}}
+<script>
+$(document).ready(function () {
+    // Initial AJAX request on page load
+    ajax_search();
+
+    $(document).on('change keyup', '.search-input', function (e) {
+        e.preventDefault();
+        ajax_search();
+    });
+
+    $(document).on('click', '#ajax_pagination_in_search a', function (e) {
+        e.preventDefault();
+        var linkurl = $(this).attr("href");
+
+        // Extract the page number from the link
+        var pageNumber = linkurl.split('page=')[1];
+        ajax_search(linkurl);
+    });
+
+    window.onpopstate = function (event) {
+        // Handle popstate event, e.g., make an AJAX request to update content
+        event.preventDefault();
+        ajax_search();
+    };
+
+    function ajax_search(linkurl = null) {
+        var employee_name_search = $("#employee_name_search").val();
+        // Add more variables for additional search inputs if needed
+
+        var data = {"_token": '{{ csrf_token() }}', employee_name_search: employee_name_search };
+        // Add more data for additional search inputs if needed
+
+        // Check if a link URL is provided (pagination)
+        if (linkurl !== null) {
+            // Extract the query parameters from the link URL
+            var urlParams = new URLSearchParams(linkurl.split('?')[1]);
+            // Add additional query parameters for additional search inputs if needed
+            // Example: data['param_name'] = urlParams.get('param_name');
+        }
+
+        jQuery.ajax({
+            url: '{{ route('employees.ajaxsearch') }}',
+            type: 'post',
+            'datatype': 'html',
+            cache: false,
+            data: data,
+            success: function (data) {
+                $("#ajax_res_search_div").html(data);
+
+                // Initialize DataTable after search results are updated
+                $('#ajax_res_search_div table').DataTable({
+                    "paging": false,
+                    "lengthChange": false,
+                    "searching": false, // Disable searching here to avoid conflicts with custom search inputs
+                    "ordering": true,
+                    "info": false,
+                    "autoWidth": false
+                });
+            },
+            error: function (xhr, status, error) {
+                var errorMessage = "عفوا لقد حدث خطأ";
+
+                // Check if the response contains a JSON error message
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+
+                alert(errorMessage);
+            }
+        });
+    }
+});
 </script>
 @endsection
 

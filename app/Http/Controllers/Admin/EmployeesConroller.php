@@ -35,17 +35,17 @@ class EmployeesConroller extends Controller
     {
         DB::beginTransaction();
         $request->validate([
-            'job_name'=>'required',
+            'employee_name'=>'required',
             
           
 
         ],[
-            'job_name.required'=>'يجب ادخال اسم الوظيفة',
+            'employee_name.required'=>'يجب ادخال اسم الوظيفة',
         ]);
 
         try{
             $datainsert['com_code']=auth()->guard('admin')->user()->com_code;
-            $datainsert['job_name']=$request->job_name;
+            $datainsert['employee_name']=$request->employee_name;
             $checkIfExist=get_cols_where_row(new Employee(),array("id"),$datainsert);
             if(!empty($checkIfExist)){
                 return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
@@ -90,9 +90,9 @@ class EmployeesConroller extends Controller
         
         DB::beginTransaction();
         $request->validate([
-            'job_name'=>'required',
+            'employee_name'=>'required',
         ],[
-            'job_name.required'=>'يجب ادخال اسم الوظيفة',    
+            'employee_name.required'=>'يجب ادخال اسم الوظيفة',    
         ]);
 
         try{
@@ -101,7 +101,7 @@ class EmployeesConroller extends Controller
                 return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
             }
             $dataupdate['com_code']=auth()->guard('admin')->user()->com_code;
-            $dataupdate['job_name']=$request->job_name;
+            $dataupdate['employee_name']=$request->employee_name;
             $checkIfExist=get_cols_where_row(new Employee(),array("id"),$dataupdate);
             if(!empty($checkIfExist)){
                 return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
@@ -138,17 +138,17 @@ class EmployeesConroller extends Controller
     public function ajaxsearch(Request $request){
        
         if($request->ajax()){
-            $job_name_search=$request->job_name_search;
-            if ($job_name_search != "") {
-                $field1 = "job_name";
+            $employee_name_search=$request->employee_name_search;
+            if ($employee_name_search != "") {
+                $field1 = "employee_name";
                 $op1 = "LIKE"; // Change the operator to LIKE
-                $val1 = '%' . $job_name_search . '%'; // Use % for a partial match
+                $val1 = '%' . $employee_name_search . '%'; // Use % for a partial match
                 
                 $data = Employee::select("*")->where($field1, $op1, $val1)
                     ->orderBy("id", "DESC")
                     ->paginate(paginate_counter);
             } else {
-                // If $job_name_search is empty, get all data without the filter
+                // If $employee_name_search is empty, get all data without the filter
                 $data = Employee::select("*")
                     ->orderBy("id", "DESC")
                     ->paginate(paginate_counter);

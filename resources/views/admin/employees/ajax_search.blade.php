@@ -3,7 +3,7 @@
             <table class="table table-bordered">
               <thead>
                 <th scope="col">كود الوظيفة</th>
-                <th scope="col">اسم الوظيفة</th>
+                <th scope="col">اسم الموظف</th>
                 <th scope="col">الاضافة بواسطة</th>
                 <th scope="col">تاريخ الاضافة </th>
                 <th scope="col">التحديث بواسطة</th>
@@ -15,7 +15,7 @@
                 @foreach ($data as $info)
                   <tr>
                     <td> {{ $info->id }}</td>
-                    <td> {{ $info->job_name }}</td>
+                    <td> {{ $info->employee_name }}</td>
                     <td> {{ $info->added_by }}</td>
                     <td> {{ $info->created_at }}</td>
                     <td>
