@@ -17,13 +17,16 @@ class AdminRegisterController extends Controller
         if($request->adminkey==$adminkey){
             
             $request->validate([
+                
                 "name"=>["required","string"],
                 "email"=>["required","string"],
                 "password"=>["required","string","confirmed"],
-                "password_confirmation"=>["required","string"]
+                "password_confirmation"=>["required","string"],
+                "com_code"=>[]
             ]);
             $data=$request->except('password_confirmation','_token');
             $data['password']=Hash::make($request->password);
+
             Admin::create($data);
             return redirect()->route('admin.dashboard.home');
         }else{

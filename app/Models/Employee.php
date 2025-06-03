@@ -10,5 +10,10 @@ class Employee extends Model
     use HasFactory;
     protected $table ="employees";
     protected $guarded = [];
-
+    public function added(){
+        return $this->belongsTo('App\Models\Admin','added_by');
+    }
+    public function updatedby(){
+        return $this->belongsTo('App\Models\Admin','updated_by');
+    }
 }
