@@ -157,21 +157,6 @@
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror
 
-                      <div class="form-group form-inline">
-                        <label for="qualification_grade" class="col-sm-2 col-form-label text-center"> تقدير المؤهل</label>
-                        <select type="text" class="col-sm-3 form-select" aria-label="Disabled select example" name="type" id="type" >
-                          <option selected value="" > اختر التقدير</option>
-                          <option @if (old('qualification_grade')==1)selected @endif value="1" > امتياز</option>
-                          <option @if (old('qualification_grade')==2)selected @endif  value="2" > جيد جدا</option>
-                          <option @if (old('qualification_grade')==2)selected @endif  value="3" > جيد مرتفع</option>
-                          <option @if (old('qualification_grade')==2)selected @endif  value="4" > جيد</option>
-                          <option @if (old('qualification_grade')==2)selected @endif  value="5" > مقبول</option>                     
-                        </select>
-                      </div>
-                      @error('qualification_grade')
-                      <div class="text-danger text-center">{{ $message }}</div>
-                      @enderror
-
                     </div>
 
 
