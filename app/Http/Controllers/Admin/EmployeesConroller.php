@@ -44,13 +44,34 @@ class EmployeesConroller extends Controller
         ]);
 
         try{
-            $datainsert['com_code']=auth()->guard('admin')->user()->com_code;
-            $datainsert['employee_name']=$request->employee_name;
+            $datainsert = [
+                'added_by' => auth()->guard('admin')->user()->id,
+                'com_code' => auth()->guard('admin')->user()->com_code,
+                'employee_id' => $request->employee_id,
+                'fiinger_id' => $request->fiinger_id,
+                'employee_name' => $request->employee_name,
+                'employee_adress' => $request->employee_adress,
+                'emp_gender' => $request->emp_gender,
+                'emp_social_status' => $request->emp_social_status,
+                'emp_start_date' => $request->emp_start_date,
+                'functional_status' => $request->functional_status,
+                'resignation_status' => $request->resignation_status,
+                'qualification_grade' => $request->qualification_grade,
+                'emp_military_status' => $request->emp_military_status,
+                'mtivation_type' => $request->mtivation_type,
+                'mtivation' => $request->mtivation,
+                'sal_cash_visa' => $request->sal_cash_visa,
+                'bank_name' => $request->bank_name,
+                'bank_account' => $request->bank_account,
+                'bank_ID' => $request->bank_ID,
+                'bank_branch' => $request->bank_branch,
+                
+
+            ];
             $checkIfExist=get_cols_where_row(new Employee(),array("id"),$datainsert);
             if(!empty($checkIfExist)){
                 return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
             }
-            $datainsert['added_by'] = auth()->guard('admin')->user()->id;
             $datainsert['updated_at']=date('Y-m-d H:i:s');
             Employee::insert($datainsert);
             DB::commit();

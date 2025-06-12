@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Jobs_categorie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Department;
 class Jobs_categoriesController extends Controller
 {
     /**
@@ -30,35 +30,79 @@ class Jobs_categoriesController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
-        DB::beginTransaction();
-        $request->validate([
-            'job_name'=>'required',
+    // public function store(Request $request)
+    // {
+    //     DB::beginTransaction();
+    //     $request->validate([
+    //         'job_name'=>'required',
             
           
 
-        ],[
-            'job_name.required'=>'يجب ادخال اسم الوظيفة',
-        ]);
+    //     ],[
+    //         'job_name.required'=>'يجب ادخال اسم الوظيفة',
+    //     ]);
 
-        try{
-            $datainsert['com_code']=auth()->guard('admin')->user()->com_code;
-            $datainsert['job_name']=$request->job_name;
-            $checkIfExist=get_cols_where_row(new Jobs_categorie(),array("id"),$datainsert);
-            if(!empty($checkIfExist)){
-                return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
-            }
-            $datainsert['added_by'] = auth()->guard('admin')->user()->id;
-            $datainsert['updated_at']=date('Y-m-d H:i:s');
-            Jobs_categorie::insert($datainsert);
-            DB::commit();
-            return redirect()->route('jobs_categories.index')->with(['success'=>'تم الحفظ بنجاح']);
-        }catch(\Exception $ex){
+    //     try{
+    //         $datainsert['com_code']=auth()->guard('admin')->user()->com_code;
+    //         $datainsert['job_name']=$request->job_name;
+    //         $checkIfExist=get_cols_where_row(new Jobs_categorie(),array("id"),$datainsert);
+    //         if(!empty($checkIfExist)){
+    //             return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
+    //         }
+    //         $datainsert['added_by'] = auth()->guard('admin')->user()->id;
+    //         $datainsert['updated_at']=date('Y-m-d H:i:s');
+    //         Jobs_categorie::insert($datainsert);
+    //         DB::commit();
+    //         return redirect()->route('jobs_categories.index')->with(['success'=>'تم الحفظ بنجاح']);
+    //     }catch(\Exception $ex){
+    //         DB::rollBack();
+    //         return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();
+    //     }
+    // }
+
+public function store(Request $request, Department $Department)
+{
+    $request->validate([
+        "dep_name" => "required",
+    ],[
+        "dep_name.required" => "يجب ادخال اسم الادارة",
+    ]);
+   
+    DB::beginTransaction(); 
+    try {
+        $admin = auth()->guard('admin')->user();
+        
+        // تحقق من وجود com_code للمستخدم
+        if(empty($admin->com_code)) {
+            throw new \Exception("كود الشركة غير موجود في بيانات المستخدم");
+        }
+        
+        $checkexist = Department::select('id')
+                      ->where(["com_code" => $admin->com_code, "dep_name" => $request->dep_name])
+                      ->first();
+                      
+        if(!empty($checkexist)){
+            return redirect()->back()->with(['error'=>'عفوا اسم الادارة مسجل من قبل'])->withInput();
+        }
+        
+        $createdData = [
+            'added_by' => $admin->id,
+            'com_code' => $admin->com_code,
+            'dep_name' => $request->dep_name,
+            'phone' => $request->phone,
+            'email' => $request->email,
+            'notes' => $request->notes,
+        ];
+        
+        $Department->create($createdData);
+        DB::commit();
+        return redirect()->route('departs.index')->with(['success' => 'تم اضافة الادارة بنجاح'])->withInput();
+    } catch(\Exception $ex){
             DB::rollBack();
             return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();
-        }
     }
+}
+
 
     /**
      * Display the specified resource.

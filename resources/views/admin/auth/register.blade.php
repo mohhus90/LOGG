@@ -42,6 +42,19 @@
                                 @enderror
                             </div>
                         </div>
+                        <div class="row mb-3">
+                            <label for="com_code" class="col-md-4 col-form-label text-md-end">{{ __('com_code') }}</label>
+
+                            <div class="col-md-6">
+                                <input id="com_code" type="text" class="form-control @error('com_code') is-invalid @enderror" name="com_code" value="{{ old('com_code') }}" required autocomplete="name" autofocus>
+
+                                @error('com_code')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                @enderror
+                            </div>
+                        </div>
 
                         <div class="row mb-3">
                             <label for="email" class="col-md-4 col-form-label text-md-end">{{ __('Email Address') }}</label>

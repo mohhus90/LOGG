@@ -55,7 +55,7 @@ class DepartmentsController extends Controller
             DB::rollBack();
             Log::error('Error during update: ' . $ex->getMessage());
             
-            return redirect()->back()->with(['errorUpdate' => 'حدث خطأ أثناء اضافة الادارة: ' . $ex->getMessage()])->withInput();
+            return redirect()->back()->with(['errorUpdate' => 'There are Problem: ' . $ex->getMessage()])->withInput();
         }
     }
 
