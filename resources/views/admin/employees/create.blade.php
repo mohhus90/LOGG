@@ -187,12 +187,12 @@
                       @enderror
                       
                       <div class="form-group form-inline">
-                        <label for="qualification_yaear" class="col-sm-2 col-form-label text-center"> سنة المؤهل </label>
+                        <label for="qualification_year" class="col-sm-2 col-form-label text-center"> سنة المؤهل </label>
                           <div class="col-sm-5">
-                          <input type="text" class="form-control" name="qualification_yaear" id="qualification_yaear" value="{{ old('qualification_yaear') }}" >
+                          <input type="text" class="form-control" name="qualification_year" id="qualification_year" value="{{ old('qualification_year') }}" >
                           </div>
                       </div>
-                      @error('qualification_yaear')
+                      @error('qualification_year')
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror
 

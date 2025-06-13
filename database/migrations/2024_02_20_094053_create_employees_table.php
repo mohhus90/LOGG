@@ -21,7 +21,7 @@ return new class extends Migration
             $table->tinyInteger('emp_social_status')->comment('(1=اعزب),(2= متزوج),(3= متزوج ويعول)')->nullable();
             $table->tinyInteger('emp_military_status')->comment('(1=ادى الخدمة),(2= اعفاء),(3= مؤجل)')->nullable();
             $table->string('emp_qualification')->nullable();
-            $table->string('qualification_yaear')->nullable();
+            $table->string('qualification_year')->nullable();
             $table->tinyInteger('qualification_grade')->comment('(1=امتياز),(2= جيد جدا),(3= جيد مرتفع),(4= جيد),(4= مقبول)')->nullable();
             $table->date('emp_start_date')->nullable();
             $table->tinyInteger('functional_status')->default(1)->comment('(1=يعمل),(2= لايعمل)')->nullable();
