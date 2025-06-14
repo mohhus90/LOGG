@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Jobs_categorie;
+use App\Models\Jobs_categories;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Department;
@@ -14,9 +14,9 @@ class Jobs_categoriesController extends Controller
      */
     public function index()
     {
-        $data= Jobs_categorie::select('*')->orderby('id','DESC')->paginate(paginate_counter);
+        $data= Jobs_categories::select('*')->orderby('id','DESC')->paginate(paginate_counter);
 
-        return view('admin.jobs_categories.index',['data'=>$data]);
+        return view('admin.Jobs_categories.index',['data'=>$data]);
     }
 
     /**
@@ -24,7 +24,7 @@ class Jobs_categoriesController extends Controller
      */
     public function create()
     {
-        return view('admin.jobs_categories.create');
+        return view('admin.Jobs_categories.create');
     }
 
     /**
@@ -45,15 +45,15 @@ class Jobs_categoriesController extends Controller
     //     try{
     //         $datainsert['com_code']=auth()->guard('admin')->user()->com_code;
     //         $datainsert['job_name']=$request->job_name;
-    //         $checkIfExist=get_cols_where_row(new Jobs_categorie(),array("id"),$datainsert);
+    //         $checkIfExist=get_cols_where_row(new Jobs_categories(),array("id"),$datainsert);
     //         if(!empty($checkIfExist)){
     //             return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
     //         }
     //         $datainsert['added_by'] = auth()->guard('admin')->user()->id;
     //         $datainsert['updated_at']=date('Y-m-d H:i:s');
-    //         Jobs_categorie::insert($datainsert);
+    //         Jobs_categories::insert($datainsert);
     //         DB::commit();
-    //         return redirect()->route('jobs_categories.index')->with(['success'=>'تم الحفظ بنجاح']);
+    //         return redirect()->route('Jobs_categories.index')->with(['success'=>'تم الحفظ بنجاح']);
     //     }catch(\Exception $ex){
     //         DB::rollBack();
     //         return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();
@@ -107,7 +107,7 @@ public function store(Request $request, Department $Department)
     /**
      * Display the specified resource.
      */
-    public function show(Jobs_categorie $Jobs_categorie)
+    public function show(Jobs_categories $Jobs_categories)
     {
         //
     }
@@ -117,11 +117,11 @@ public function store(Request $request, Department $Department)
      */
     public function edit($id)
     {
-        $data=Jobs_categorie::select('*')->where(['id'=>$id])->first();
+        $data=Jobs_categories::select('*')->where(['id'=>$id])->first();
         if(empty($data)){
             return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
         }else{
-            return view('admin.jobs_categories.update',['data'=>$data]);
+            return view('admin.Jobs_categories.update',['data'=>$data]);
         }
     }
 
@@ -139,21 +139,21 @@ public function store(Request $request, Department $Department)
         ]);
 
         try{
-            $data=Jobs_categorie::select('*')->where(['id'=>$id])->first();
+            $data=Jobs_categories::select('*')->where(['id'=>$id])->first();
             if(empty($data)){
                 return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
             }
             $dataupdate['com_code']=auth()->guard('admin')->user()->com_code;
             $dataupdate['job_name']=$request->job_name;
-            $checkIfExist=get_cols_where_row(new Jobs_categorie(),array("id"),$dataupdate);
+            $checkIfExist=get_cols_where_row(new Jobs_categories(),array("id"),$dataupdate);
             if(!empty($checkIfExist)){
                 return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
             }
             $dataupdate['updated_by'] = auth()->guard('admin')->user()->id;
             $dataupdate['updated_at']=date('Y-m-d H:i:s');
-            Jobs_categorie::where(['id'=>$id])->update($dataupdate);
+            Jobs_categories::where(['id'=>$id])->update($dataupdate);
             DB::commit();
-            return redirect()->route('jobs_categories.index')->with(['success'=>'تم التحديث بنجاح']);
+            return redirect()->route('Jobs_categories.index')->with(['success'=>'تم التحديث بنجاح']);
         }catch(\Exception $ex){
             DB::rollBack();
             return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();
@@ -166,12 +166,12 @@ public function store(Request $request, Department $Department)
     public function delete(string $id)
     {
         try{
-            $data=Jobs_categorie::select('*')->where(['id'=>$id])->first();
+            $data=Jobs_categories::select('*')->where(['id'=>$id])->first();
             if(empty($data)){
                 return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
             }
-            Jobs_categorie::where(['id'=>$id])->delete();
-            return redirect()->route('jobs_categories.index')->with(['success' => 'تم حذف الوظيفة بنجاح'])->withInput();
+            Jobs_categories::where(['id'=>$id])->delete();
+            return redirect()->route('Jobs_categories.index')->with(['success' => 'تم حذف الوظيفة بنجاح'])->withInput();
 
         }catch(\Exception $ex){
             return redirect()->back()->with(['error'=>' عفوا حدث خطأ ما '.$ex->getMessage()])->withInput();
@@ -187,22 +187,22 @@ public function store(Request $request, Department $Department)
                 $op1 = "LIKE"; // Change the operator to LIKE
                 $val1 = '%' . $job_name_search . '%'; // Use % for a partial match
                 
-                $data = Jobs_categorie::select("*")->where($field1, $op1, $val1)
+                $data = Jobs_categories::select("*")->where($field1, $op1, $val1)
                     ->orderBy("id", "DESC")
                     ->paginate(paginate_counter);
             } else {
                 // If $job_name_search is empty, get all data without the filter
-                $data = Jobs_categorie::select("*")
+                $data = Jobs_categories::select("*")
                     ->orderBy("id", "DESC")
                     ->paginate(paginate_counter);
             }
               
                 if ($request->ajax()) {
                     // Return partial view for AJAX request
-                    return view('admin.jobs_categories.ajax_search', ['data' => $data]);
+                    return view('admin.Jobs_categories.ajax_search', ['data' => $data]);
                 } else {
                     // Return full view for initial load or page refresh
-                    return view('admin.jobs_categories.index', ['data' => $data]);
+                    return view('admin.Jobs_categories.index', ['data' => $data]);
                 }
         }
         

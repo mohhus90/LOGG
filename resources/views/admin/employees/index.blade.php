@@ -52,8 +52,8 @@
                     <td> {{ $info->added_by }}</td>
                     <td> {{ $info->created_at }}</td>
                     <td>
-                      @if ($info->updated_by>0)
-                      {{ $info->updated_by }}
+                      @if ($info->updatedby>0)
+                      {{ $info->updatedby }}
                       @else
                         لا يوجد
                       @endif
@@ -102,14 +102,15 @@
                   <tr>
                     <td> {{ $info->id }}</td>
                     <td> {{ $info->employee_name }}</td>
-                    <td> {{ $info->added_by }}</td>
+                    <td>{{ $info->addedBy->name }}</td>
                     <td> {{ $info->created_at }}</td>
+                    
                     <td>
-                      @if ($info->updated_by>0)
-                      {{ $info->updated_by }}
-                      @else
-                        لا يوجد
-                      @endif
+                        @if($info->updated_by > 0)
+                            {{ $info->updatedBy->name }}
+                        @else
+                            لا يوجد تحديث
+                        @endif
                     </td>
                     <td> 
                       @if(@isset($info->updated_at) and !@empty($info->updated_at) )

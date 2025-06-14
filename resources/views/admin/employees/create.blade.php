@@ -33,6 +33,9 @@
                     <li class="nav-item">
                       <a class="nav-link" id="custom-content-below-other_data-tab" data-toggle="pill" href="#custom-content-below-other_data" role="tab" aria-controls="custom-content-below-other_data" aria-selected="false">بيانات اخرى</a>
                     </li>
+                    <li class="nav-item">
+                      <a class="nav-link" id="custom-content-below-Salary_data-tab" data-toggle="pill" href="#custom-content-below-Salary_data" role="tab" aria-controls="custom-content-below-Salary_data" aria-selected="false">بيانات الراتب</a>
+                    </li>
                     
                   </ul>
                   <div class="tab-content" id="custom-content-below-tabContent">
@@ -48,12 +51,12 @@
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror           
                       <div class="form-group form-inline">
-                        <label for="fiinger_id" class="col-sm-2 col-form-label text-center"> كود البصمة</label>
+                        <label for="finger_id" class="col-sm-2 col-form-label text-center"> كود البصمة</label>
                           <div class="col-sm-5">
-                          <input type="text" class="form-control" name="fiinger_id" id="fiinger_id" value="{{ old('fiinger_id') }}" >
+                          <input type="text" class="form-control" name="finger_id" id="finger_id" value="{{ old('finger_id') }}" >
                           </div>
                       </div>
-                      @error('fiinger_id')
+                      @error('finger_id')
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror           
                       <div class="form-group form-inline">
@@ -75,8 +78,54 @@
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror 
                       <div class="form-group form-inline">
+                        <label for="national_id" class="col-sm-2 col-form-label text-center"> الرقم القومى</label>
+                          <div class="col-sm-5">
+                          <input type="text" class="form-control" name="national_id" id="national_id" value="{{ old('national_id') }}" >
+                          </div>
+                      </div>
+                      @error('national_id')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror 
+                      <div class="form-group form-inline">
+                        <label for="emp_mobile" class="col-sm-2 col-form-label text-center"> موبيل</label>
+                          <div class="col-sm-5">
+                          <input type="text" class="form-control" name="emp_mobile" id="emp_mobile" value="{{ old('emp_mobile') }}" >
+                          </div>
+                      </div>
+                      @error('emp_mobile')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror 
+                      <div class="form-group form-inline">
+                        <label for="emp_home_tel" class="col-sm-2 col-form-label text-center"> تليفون المنزل</label>
+                          <div class="col-sm-5">
+                          <input type="text" class="form-control" name="emp_home_tel" id="emp_home_tel" value="{{ old('emp_home_tel') }}" >
+                          </div>
+                      </div>
+                      @error('emp_home_tel')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror 
+                    
+                      <div class="form-group form-inline">
+                        <label for="emp_email" class="col-sm-2 col-form-label text-center"> Email </label>
+                          <div class="col-sm-5">
+                          <input type="email" class="form-control" name="emp_email" id="emp_email" value="{{ old('emp_email') }}" >
+                          </div>
+                      </div>
+                      @error('emp_email')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror 
+                      <div class="form-group form-inline">
+                        <label for="birth_date" class="col-sm-2 col-form-label text-center"> تاريخ الميلاد </label>
+                          <div class="col-sm-5">
+                          <input type="date" class="form-control" name="birth_date" id="birth_date" value="{{ old('birth_date') }}" >
+                          </div>
+                      </div>
+                      @error('birth_date')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror 
+                      <div class="form-group form-inline">
                         <label for="emp_gender" class="col-sm-2 col-form-label text-center"> نوع الجنس</label>
-                        <select type="text" class="col-sm-3 form-select" aria-label="Disabled select example" name="type" id="type" >
+                        <select type="text" class="col-sm-2 form-select" aria-label="Disabled select example" name="type" id="type" >
                           <option selected value="" > اختر النوع</option>
                           <option @if (old('emp_gender')==1)selected @endif value="1" > ذكر</option>
                           <option @if (old('emp_gender')==2)selected @endif  value="2" > انثى</option>
@@ -87,7 +136,7 @@
                       @enderror
                       <div class="form-group form-inline">
                         <label for="emp_social_status" class="col-sm-2 col-form-label text-center"> الحالة الاجتماعية</label>
-                        <select type="text" class="col-sm-3 form-select" aria-label="Disabled select example" name="type" id="type" >
+                        <select type="text" class="col-sm-2 form-select" aria-label="Disabled select example" name="type" id="type" >
                           <option selected value="" > اختر الحالة</option>
                           <option @if (old('emp_social_status')==1)selected @endif value="1" > اعزب</option>
                           <option @if (old('emp_social_status')==2)selected @endif  value="2" > متزوج</option>
@@ -114,7 +163,7 @@
                       
                       <div class="form-group form-inline">
                         <label for="functional_status" class="col-sm-2 col-form-label text-center"> حالة الموظف</label>
-                        <select type="text" class="col-sm-3 form-select" aria-label="Disabled select example" name="type" id="type" >
+                        <select type="text" class="col-sm-2 form-select" aria-label="Disabled select example" name="type" id="type" >
                           <option selected value="1" > يعمل</option>
                       
                           <option @if (old('functional_status')==2)selected @endif  value="2" > لا يعمل </option>
@@ -123,9 +172,79 @@
                       @error('functional_status')
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror
+
+                       <div class="form-group form-inline">
+                          <label for="emp_jobs_id" class="col-sm-2 col-form-label text-center">الوظيفة</label>
+                          <select name="emp_jobs_id" id="emp_jobs_id" class="col-sm-2 select2 form-select">
+                              <option value="">اختر الوظيفة</option>
+                              @foreach($jobs_categories as $job)
+                                  <option value="{{ $job->id }}" {{ old('emp_jobs_id') == $job->id ? 'selected' : '' }}>
+                                      {{ $job->job_name }}
+                                  </option>
+                              @endforeach
+                          </select>
+                        </div>
+                      @error('emp_jobs_id')
+                          <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+
+                       <div class="form-group form-inline">
+                          <label for="emp_departments_id" class="col-sm-2 col-form-label text-center">الادارة</label>
+                          <select name="emp_departments_id" id="emp_departments_id" class="col-sm-2 select2 form-select">
+                              <option value="">اختر الادارة</option>
+                              @foreach($departments as $department)
+                                  <option value="{{ $department->id }}" {{ old('emp_departments_id') == $department->id ? 'selected' : '' }}>
+                                      {{ $department->dep_name }}
+                                  </option>
+                              @endforeach
+                          </select>
+                      </div>
+                      @error('emp_departments_id')
+                          <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                          <label for="shifts_types_id" class="col-sm-2 col-form-label text-center">الشيفت</label>
+                          <select name="shifts_types_id" id="shifts_types_id" class="col-sm-2 select2 form-select">
+                              <option value="">اختر الشيفت</option>
+                              @foreach($shifts_types as $shifts_type)
+                                  <option value="{{ $shifts_type->id }}" {{ old('shifts_types_id') == $shifts_type->id ? 'selected' : '' }}>
+                                      {{ $shifts_type->from_time}}
+                                  </option>
+                              @endforeach
+                          </select>
+                      </div>
+                      @error('shifts_types_id')
+                          <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                          <label for="branches_id" class="col-sm-2 col-form-label text-center">الفرع</label>
+                          <select name="branches_id" id="branches_id" class="col-sm-2 select2 form-select">
+                              <option value="">اختر الفرع</option>
+                              @foreach($branches as $branche)
+                                  <option value="{{ $branche->id }}" {{ old('branches_id') == $branche->id ? 'selected' : '' }}>
+                                      {{ $branche->branch_name}}
+                                  </option>
+                              @endforeach
+                          </select>
+                      </div>
+                      @error('branches_id')
+                          <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+
+
+                      <div class="form-group form-inline">
+                        <label for="daily_work_hours" class="col-sm-2 col-form-label text-center"> عدد ساعات العمل</label>
+                          <div class="col-sm-5">
+                          <input type="number" class="form-control" name="daily_work_hours" id="daily_work_hours" value="{{ old('daily_work_hours') }}" >
+                          </div>
+                      </div>
+                      @error('daily_work_hours')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+
                       <div class="form-group form-inline">
                         <label for="resignation_status" class="col-sm-2 col-form-label text-center"> حالة ترك العمل</label>
-                        <select type="text" class="col-sm-3 form-select" aria-label="Disabled select example" name="type" id="type" >
+                        <select type="text" class="col-sm-2 form-select" aria-label="Disabled select example" name="type" id="type" >
                           <option selected value="" > اختر الحالة</option>
                           <option @if (old('resignation_status')==1)selected @endif value="1" > استقالة</option>
                           <option @if (old('resignation_status')==2)selected @endif  value="2" > فصل</option>
@@ -165,7 +284,7 @@
                       <br>
                       <div class="form-group form-inline">
                         <label for="emp_military_status" class="col-sm-2 col-form-label text-center"> الخدمة العسكرية</label>
-                        <select type="text" class="col-sm-3 form-select" aria-label="Disabled select example" name="type" id="type" >
+                        <select type="text" class="col-sm-2 form-select" aria-label="Disabled select example" name="type" id="type" >
                           <option selected value="" > اختر الحالة</option>
                           <option @if (old('emp_military_status')==1)selected @endif value="1" > ادى الخدمة</option>
                           <option @if (old('emp_military_status')==2)selected @endif  value="2" > اعفاء</option>
@@ -198,7 +317,7 @@
 
                       <div class="form-group form-inline">
                         <label for="qualification_grade" class="col-sm-2 col-form-label text-center"> تقدير المؤهل</label>
-                        <select type="text" class="col-sm-3 form-select" aria-label="Disabled select example" name="type" id="type" >
+                        <select type="text" class="col-sm-2 form-select" aria-label="Disabled select example" name="type" id="type" >
                           <option selected value="" > اختر التقدير</option>
                           <option @if (old('qualification_grade')==1)selected @endif value="1" > امتياز</option>
                           <option @if (old('qualification_grade')==2)selected @endif  value="2" > جيد جدا</option>
@@ -212,7 +331,110 @@
                       @enderror
 
                     </div>
-                  </div>
+                  
+                      {{-- Salary_data --}}
+                    <div class="tab-pane fade" id="custom-content-below-Salary_data" role="tabpanel" aria-labelledby="custom-content-below-Salary_data-tab">
+                      <br>
+                      <div class="form-group form-inline">
+                        <label for="emp_sal" class="col-sm-2 col-form-label text-center"> الراتب الاساسى</label>
+                          <div class="col-sm-5">
+                          <input type="number" class="form-control" name="emp_sal" id="emp_sal" value="{{ old('emp_sal') }}" >
+                          </div>
+                      </div>
+                      @error('emp_sal')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                        <label for="emp_sal_insurance" class="col-sm-2 col-form-label text-center"> الراتب التأمينى</label>
+                          <div class="col-sm-5">
+                          <input type="number" class="form-control" name="emp_sal_insurance" id="emp_sal_insurance" value="{{ old('emp_sal_insurance') }}" >
+                          </div>
+                      </div>
+                      @error('emp_sal_insurance')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div classئ
+                      <div class="form-group form-inline">
+                        <label for="emp_fixed_allowances" class="col-sm-2 col-form-label text-center"> علاوة ثابتة</label>
+                          <div class="col-sm-5">
+                          <input type="number" class="form-control" name="emp_fixed_allowances" id="emp_fixed_allowances" value="{{ old('emp_fixed_allowances') }}" >
+                          </div>
+                      </div>
+                      @error('emp_fixed_allowances')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                        <label for="mtivation" class="col-sm-2 col-form-label text-center"> الحافز</label>
+                          <div class="col-sm-5">
+                          <input type="number" class="form-control" name="mtivation" id="mtivation" value="{{ old('mtivation') }}" >
+                          </div>
+                      </div>
+                      @error('mtivation')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                        <label for="medical_insurance" class="col-sm-2 col-form-label text-center"> التأمين الصحى الخاص</label>
+                          <div class="col-sm-5">
+                          <input type="number" class="form-control" name="medical_insurance" id="medical_insurance" value="{{ old('medical_insurance') }}" >
+                          </div>
+                      </div>
+                      @error('medical_insurance')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+
+                      <div class="form-group form-inline">
+                        <label for="sal_cash_visa" class="col-sm-2 col-form-label text-center"> طريقة الدفع</label>
+                        <select type="text" class="col-sm-2 form-select" aria-label="Disabled select example" name="type" id="type" >
+                          <option selected value="" > اختر طريقة الدفع</option>
+                          <option @if (old('sal_cash_visa')==1)selected @endif value="1" > كاش</option>
+                          <option @if (old('sal_cash_visa')==2)selected @endif  value="2" > فيزا</option>
+                        </select>
+                      </div>
+                      @error('sal_cash_visa')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                        <label for="bank_name" class="col-sm-2 col-form-label text-center"> Bank account </label>
+                          <div class="col-sm-5">
+                          <input type="text" class="form-control" name="bank_name" id="bank_name" value="{{ old('bank_name') }}" >
+                          </div>
+                      </div>
+                      @error('bank_name')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                        <label for="bank_account" class="col-sm-2 col-form-label text-center"> Bank account </label>
+                          <div class="col-sm-5">
+                          <input type="text" class="form-control" name="bank_account" id="bank_account" value="{{ old('bank_account') }}" >
+                          </div>
+                      </div>
+                      @error('bank_account')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+                      <div class="form-group form-inline">
+                        <label for="bank_ID" class="col-sm-2 col-form-label text-center"> Bank ID </label>
+                          <div class="col-sm-5">
+                          <input type="text" class="form-control" name="bank_ID" id="bank_ID" value="{{ old('bank_ID') }}" >
+                          </div>
+                      </div>
+                      @error('bank_ID')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+
+                      <div class="form-group form-inline">
+                        <label for="bank_branch" class="col-sm-2 col-form-label text-center"> Bank branch </label>
+                          <div class="col-sm-5">
+                          <input type="text" class="form-control" name="bank_branch" id="bank_branch" value="{{ old('bank_branch') }}" >
+                          </div>
+                      </div>
+                      @error('bank_branch')
+                      <div class="text-danger text-center">{{ $message }}</div>
+                      @enderror
+
+
+                    </div>
+                  
+
                   <div class="text-center">
                     <button type="submit" class="text-center btn btn-primary btn-lg col-2">اضافة</button>
                     <a class="btn btn-warning btn-lg col-2" href="{{ route('employees.index') }}">الغاء</a>
