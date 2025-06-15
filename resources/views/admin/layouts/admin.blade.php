@@ -30,7 +30,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <link rel="stylesheet" href="{{ asset('assets/admin/css/mycustomstyle.css')}}">
   <link rel="dns-prefetch" href="//fonts.bunny.net">
   <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-  
+  @yield('CSS')
 
   <!-- Scripts -->
   @vite(['resources/sass/app.scss', 'resources/js/app.js'])

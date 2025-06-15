@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
             $table->integer('employee_id');
-            $table->integer('fiinger_id');
+            $table->integer('finger_id');
             $table->string('employee_name');
             $table->string('employee_adress')->nullable();
             $table->tinyInteger('emp_gender')->comment('(1=ذكر),(2= انثى)')->nullable();

@@ -5,6 +5,13 @@
 @section('start')
     شئون الموظفين
 @endsection
+
+@section('css')
+<!-- في الـ head -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css">
+@endsection
+
 @section('home')
 <a href="{{ route('employees.index') }}">الموظفين</a>
 
@@ -173,28 +180,30 @@
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror
 
-                       <div class="form-group form-inline">
+                      <div class="form-group form-inline">
                           <label for="emp_jobs_id" class="col-sm-2 col-form-label text-center">الوظيفة</label>
-                          <select name="emp_jobs_id" id="emp_jobs_id" class="col-sm-2 select2 form-select">
-                              <option value="">اختر الوظيفة</option>
-                              @foreach($jobs_categories as $job)
-                                  <option value="{{ $job->id }}" {{ old('emp_jobs_id') == $job->id ? 'selected' : '' }}>
-                                      {{ $job->job_name }}
-                                  </option>
-                              @endforeach
-                          </select>
-                        </div>
-                      @error('emp_jobs_id')
-                          <div class="text-danger text-center">{{ $message }}</div>
-                      @enderror
+                          
+                              <select name="emp_jobs_id" id="emp_jobs_id" class="col-sm-2 select2 form-select">
+                                  <option value="">اختر الوظيفة</option>
+                                  @foreach($jobs_categories as $job)
+                                      <option value="{{ $job->id }}" {{ old('emp_jobs_id') == $job->id ? 'selected' : '' }}>
+                                          {{ $job->job_name }}
+                                      </option>
+                                  @endforeach
+                              </select>
+                              @error('emp_jobs_id')
+                                  <div class="text-danger text-center">{{ $message }}</div>
+                              @enderror
+                          
+                      </div>
 
-                       <div class="form-group form-inline">
+                     <div class="form-group form-inline">
                           <label for="emp_departments_id" class="col-sm-2 col-form-label text-center">الادارة</label>
                           <select name="emp_departments_id" id="emp_departments_id" class="col-sm-2 select2 form-select">
                               <option value="">اختر الادارة</option>
                               @foreach($departments as $department)
                                   <option value="{{ $department->id }}" {{ old('emp_departments_id') == $department->id ? 'selected' : '' }}>
-                                      {{ $department->dep_name }}
+                                      {{ $department->dep_name}}
                                   </option>
                               @endforeach
                           </select>
@@ -353,7 +362,7 @@
                       @error('emp_sal_insurance')
                       <div class="text-danger text-center">{{ $message }}</div>
                       @enderror
-                      <div classئ
+                      
                       <div class="form-group form-inline">
                         <label for="emp_fixed_allowances" class="col-sm-2 col-form-label text-center"> علاوة ثابتة</label>
                           <div class="col-sm-5">
@@ -445,4 +454,19 @@
     </div>
 </div>
    
+@endsection
+
+@section("script")
+
+
+<!-- قبل نهاية الـ body -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            
+        });
+    });
+</script>
 @endsection

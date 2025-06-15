@@ -16,7 +16,7 @@ class Jobs_categoriesController extends Controller
     {
         $data= Jobs_categories::select('*')->orderby('id','DESC')->paginate(paginate_counter);
 
-        return view('admin.Jobs_categories.index',['data'=>$data]);
+        return view('admin.jobs_categories.index',['data'=>$data]);
     }
 
     /**
@@ -24,7 +24,7 @@ class Jobs_categoriesController extends Controller
      */
     public function create()
     {
-        return view('admin.Jobs_categories.create');
+        return view('admin.jobs_categories.create');
     }
 
     /**
@@ -121,7 +121,7 @@ public function store(Request $request, Department $Department)
         if(empty($data)){
             return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
         }else{
-            return view('admin.Jobs_categories.update',['data'=>$data]);
+            return view('admin.jobs_categories.update',['data'=>$data]);
         }
     }
 
@@ -153,7 +153,7 @@ public function store(Request $request, Department $Department)
             $dataupdate['updated_at']=date('Y-m-d H:i:s');
             Jobs_categories::where(['id'=>$id])->update($dataupdate);
             DB::commit();
-            return redirect()->route('Jobs_categories.index')->with(['success'=>'تم التحديث بنجاح']);
+            return redirect()->route('jobs_categories.index')->with(['success'=>'تم التحديث بنجاح']);
         }catch(\Exception $ex){
             DB::rollBack();
             return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();
@@ -171,7 +171,7 @@ public function store(Request $request, Department $Department)
                 return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
             }
             Jobs_categories::where(['id'=>$id])->delete();
-            return redirect()->route('Jobs_categories.index')->with(['success' => 'تم حذف الوظيفة بنجاح'])->withInput();
+            return redirect()->route('jobs_categories.index')->with(['success' => 'تم حذف الوظيفة بنجاح'])->withInput();
 
         }catch(\Exception $ex){
             return redirect()->back()->with(['error'=>' عفوا حدث خطأ ما '.$ex->getMessage()])->withInput();
@@ -199,10 +199,10 @@ public function store(Request $request, Department $Department)
               
                 if ($request->ajax()) {
                     // Return partial view for AJAX request
-                    return view('admin.Jobs_categories.ajax_search', ['data' => $data]);
+                    return view('admin.jobs_categories.ajax_search', ['data' => $data]);
                 } else {
                     // Return full view for initial load or page refresh
-                    return view('admin.Jobs_categories.index', ['data' => $data]);
+                    return view('admin.jobs_categories.index', ['data' => $data]);
                 }
         }
         
