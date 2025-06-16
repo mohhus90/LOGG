@@ -10,8 +10,9 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <meta http-equiv="x-ua-compatible" content="ie=edge">
 
   <title>@yield('title')</title>
+   @yield('css')
   <!-- Font Awesome Icons -->
-  {{-- <link rel="stylesheet" href="{{ asset('assets/admin/dist/css/adminlte.min.css') }}"> --}}
+          {{-- <link rel="stylesheet" href="{{ asset('assets/admin/dist/css/adminlte.min.css') }}"> --}}
   <link rel="stylesheet" href="{{ asset('assets/admin/plugins/fontawesome-free/css/all.min.css')}}">
   <!-- Theme style -->
   <link rel="stylesheet" href="{{ asset('assets/admin/dist/css/adminlte.min.css')}}">
@@ -21,8 +22,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <link rel="stylesheet" href="{{ asset('assets/admin/plugins/datatables-bs4/css/dataTables.bootstrap4.css')}}">
   <!-- Theme style -->
   <link rel="stylesheet" href="{{ asset('assets/admin/dist/css/adminlte.min.css')}}">
-  <!-- Google Font: Source Sans Pro -->
-  <!-- Google Font: Source Sans Pro -->
+                    <!-- Google Font: Source Sans Pro -->
+                    <!-- Google Font: Source Sans Pro -->
   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
   <link rel="stylesheet" href="{{ asset('assets/admin/fonts/SansPro/SansPro.min.css')}}">
   <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap_rtl-v4.2.1/bootstrap.min.css')}}">
@@ -30,7 +31,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <link rel="stylesheet" href="{{ asset('assets/admin/css/mycustomstyle.css')}}">
   <link rel="dns-prefetch" href="//fonts.bunny.net">
   <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-  @yield('CSS')
+ 
 
   <!-- Scripts -->
   @vite(['resources/sass/app.scss', 'resources/js/app.js'])
