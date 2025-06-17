@@ -10,7 +10,9 @@ use App\Models\Department;
 use App\Models\Jobs_categories;
 use App\Models\Shifts_type;
 use App\Models\Branche;
+use App\Imports\EmployeeImport;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EmployeesConroller extends Controller
 
@@ -20,11 +22,7 @@ class EmployeesConroller extends Controller
      */
     public function index()
     {
-        // $data= Employee::select('*')->orderby('id','DESC')->paginate(paginate_counter);
-
-        // return view('admin.employees.index',['data'=>$data]);
-
-        $data = Employee::with([
+       $data = Employee::with([
         'addedBy' => fn($q) => $q->select('id', 'name'),
         'updatedBy' => fn($q) => $q->select('id', 'name')
     ])->paginate(paginate_counter);
@@ -32,11 +30,29 @@ class EmployeesConroller extends Controller
     return view('admin.employees.index', compact('data'));
        
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
+     public function uploadexcel()
+    {
+       
+        $data = Employee::with([
+        'addedBy' => fn($q) => $q->select('id', 'name'),
+        'updatedBy' => fn($q) => $q->select('id', 'name')
+    ])->paginate(paginate_counter);
     
+    return view('admin.employees.uploadexcel', compact('data'));
+       
+    }
+    public function douploadexcel(Request $request)
+    {
+        $request->validate([
+                    'excel_file' => 'required|mimes:xlsx,xls',
+                ], [
+                    'excel_file.required' => 'اختر ملف اكسيل',
+                    'excel_file.mimes' => 'مطلوب اكسيل بامتداد (xlsx , xls) فقط',
+                ]);
+
+        Excel::import(new EmployeeImport, $request->excel_file);
+    }
+
     public function create()
    
     {
@@ -46,7 +62,7 @@ class EmployeesConroller extends Controller
     $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
                         ->get(['id', 'job_name']);
     $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'from_time']);
+                        ->get(['id', 'type']);
     $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
                         ->get(['id', 'branch_name']);
     return view('admin.employees.create', compact('shifts_types','departments','jobs_categories','branches'));

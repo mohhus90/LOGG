@@ -18,13 +18,26 @@
 
 {{-- يمكنك إضافة أي CSS مخصص هنا بعد كل مكتبات الـ CSS --}}
 <style>
+   <style>
     /* لتنسيق Select2 وجعله يبدو مثل حقول الإدخال الأخرى */
     .select2-container--bootstrap4 .select2-selection--single {
         height: calc(2.25rem + 2px); /* لتطابق ارتفاع input.form-control */
         padding: 0.375rem 0.75rem; /* لتطابق padding input.form-control */
         display: flex; /* لجعل المحتوى يتوسط عمودياً */
         align-items: center; /* لجعل المحتوى يتوسط عمودياً */
+
+        /* إضافة أو التأكد من تنسيقات الحدود والخلفية هنا */
+        border: 1px solid #ced4da; /* هذا هو لون الحدود الافتراضي في Bootstrap forms */
+        border-radius: .25rem; /* هذا هو نصف قطر الحدود الافتراضي في Bootstrap forms */
+        background-color: #fff; /* لون الخلفية الافتراضي */
     }
+
+    .select2-container--bootstrap4.select2-container--focus .select2-selection--single,
+    .select2-container--bootstrap4.select2-container--open .select2-selection--single {
+        border-color: #80bdff; /* لون الحدود عند التركيز (Focus) */
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25); /* الظل عند التركيز */
+    }
+
     .select2-container--bootstrap4 .select2-selection__arrow {
         height: calc(2.25rem + 2px); /* لتطابق ارتفاع input.form-control */
         display: flex;
@@ -44,6 +57,55 @@
     .tab-pane .form-group {
         margin-bottom: 1rem; /* مسافة افتراضية أفضل بين الحقول */
     }
+    /* تحسين تنسيق Select2 */
+.select2-container {
+    width: 100% !important; /* لجعل Select2 يأخذ العرض الكامل */
+    margin-bottom: 15px; /* مسافة مناسبة أسفل الحقل */
+}
+
+/* تحسين محاذاة العناصر في النموذج */
+.form-group {
+    margin-bottom: 1.5rem; /* زيادة المسافة بين الحقول */
+}
+
+/* تحسين محاذاة الـ labels */
+.col-form-label {
+    padding-top: calc(0.375rem + 1px);
+    padding-bottom: calc(0.375rem + 1px);
+    margin-bottom: 0;
+    font-size: inherit;
+    line-height: 1.5;
+    text-align: right; /* لمحاذاة النص لليمين في RTL */
+}
+
+/* تحسين عرض حقول الإدخال */
+.form-control, .select2-selection {
+    height: calc(2.25rem + 2px);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+}
+
+/* تحسين التباعد في الـ tabs */
+.tab-content {
+    padding: 15px;
+    border-left: 1px solid #dee2e649!important;
+    border-right: 1px solid #dee2e649!important;
+    border-bottom: 1px solid #dee2e649!important;
+    border-radius: 0 0 0.25rem 0.25rem!important;
+}
+
+/* تحسين عرض العناصر في الصفوف */
+.row {
+    margin-right: -7.5px;
+    margin-left: -7.5px;
+}
+
+.row > div {
+    padding-right: 7.5px;
+    padding-left: 7.5px;
+}
+</style>
+</style>
 </style>
 @endsection
 
@@ -272,7 +334,7 @@
                                             <option value="">اختر الشيفت</option>
                                             @foreach($shifts_types as $shifts_type)
                                                 <option value="{{ $shifts_type->id }}" {{ old('shifts_types_id') == $shifts_type->id ? 'selected' : '' }}>
-                                                    {{ $shifts_type->from_time}}
+                                                    {{ $shifts_type->type}}
                                                 </option>
                                             @endforeach
                                         </select>
