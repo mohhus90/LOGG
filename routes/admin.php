@@ -85,6 +85,8 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::post('employees/store',[EmployeesConroller::class,'store'])->name('employees.store');
     Route::post('employees/update/{id}',[EmployeesConroller::class,'update'])->name('employees.update');
     Route::get('employees/delete/{id}',[EmployeesConroller::class,'delete'])->name('employees.delete');
+    Route::get('employees/uploadexcel',[EmployeesConroller::class,'uploadexcel'])->name('employees.uploadexcel');
+    Route::post('employees/douploadexcel',[EmployeesConroller::class,'douploadexcel'])->name('employees.douploadexcel');
     Route::match(['get', 'post'], 'employees/ajaxsearch', [EmployeesConroller::class, 'ajaxsearch'])->name('employees.ajaxsearch');
      // بداية السنة المالية
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');

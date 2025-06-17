@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('shifts_types', function (Blueprint $table) {
             $table->id();
-            $table->tinyInteger('type')->comment('نوع الشيفت مسائى = 1 وصباحى = 2 ');
+            $table->string('type',50);
             $table->time('from_time');
             $table->time('to_time');
             $table->decimal('total_hour',10,2);

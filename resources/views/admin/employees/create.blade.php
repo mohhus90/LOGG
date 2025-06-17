@@ -16,6 +16,7 @@
 {{-- وأخيرًا Select2 Bootstrap Theme CSS لضمان التنسيق مع Bootstrap --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css">
 <style>
+   <style>
     /* لتنسيق Select2 وجعله يبدو مثل حقول الإدخال الأخرى */
     .select2-container--bootstrap4 .select2-selection--single {
         height: calc(2.25rem + 2px); /* لتطابق ارتفاع input.form-control */
@@ -329,7 +330,7 @@
                                             <option value="">اختر الشيفت</option>
                                             @foreach($shifts_types as $shifts_type)
                                                 <option value="{{ $shifts_type->id }}" {{ old('shifts_types_id') == $shifts_type->id ? 'selected' : '' }}>
-                                                    {{ $shifts_type->from_time}}
+                                                    {{ $shifts_type->type}}
                                                 </option>
                                             @endforeach
                                         </select>
