@@ -51,6 +51,8 @@ class EmployeesConroller extends Controller
                 ]);
 
         Excel::import(new EmployeeImport, $request->excel_file);
+        return redirect()->route('employees.index')
+                    ->with('success', 'تم الإضافة بنجاح')->withInput();
     }
 
     public function create()
