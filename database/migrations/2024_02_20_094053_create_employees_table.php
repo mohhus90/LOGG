@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('employee_id');
             $table->integer('finger_id');
             $table->string('employee_name');
-            $table->string('employee_adress')->nullable();
+            $table->string('employee_address')->nullable();
             $table->tinyInteger('emp_gender')->comment('(1=ذكر),(2= انثى)')->nullable();
             $table->tinyInteger('emp_social_status')->comment('(1=اعزب),(2= متزوج),(3= متزوج ويعول)')->nullable();
             $table->tinyInteger('emp_military_status')->comment('(1=ادى الخدمة),(2= اعفاء),(3= مؤجل)')->nullable();

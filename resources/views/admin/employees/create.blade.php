@@ -14,20 +14,19 @@
 {{-- ثم Select2 CSS --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
 {{-- وأخيرًا Select2 Bootstrap Theme CSS لضمان التنسيق مع Bootstrap --}}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap4-theme/1.0.0/select2-bootstrap4.min.css"> {{-- Changed to select2-bootstrap4-theme for better Bootstrap 4 integration --}}
 <style>
-   <style>
     /* لتنسيق Select2 وجعله يبدو مثل حقول الإدخال الأخرى */
     .select2-container--bootstrap4 .select2-selection--single {
         height: calc(2.25rem + 2px); /* لتطابق ارتفاع input.form-control */
         padding: 0.375rem 0.75rem; /* لتطابق padding input.form-control */
         display: flex; /* لجعل المحتوى يتوسط عمودياً */
         align-items: center; /* لجعل المحتوى يتوسط عمودياً */
-
-        /* إضافة أو التأكد من تنسيقات الحدود والخلفية هنا */
-        border: 1px solid #ced4da; /* هذا هو لون الحدود الافتراضي في Bootstrap forms */
-        border-radius: .25rem; /* هذا هو نصف قطر الحدود الافتراضي في Bootstrap forms */
+        border: 1px solid #ced4da; /* لون الحدود الافتراضي في Bootstrap forms */
+        border-radius: .25rem; /* نصف قطر الحدود الافتراضي في Bootstrap forms */
         background-color: #F9FAFA; /* لون الخلفية الافتراضي */
+        /* Important: Ensure the text content is vertically aligned */
+        line-height: 1.5; /* Match Bootstrap's default line-height for form controls */
     }
 
     .select2-container--bootstrap4.select2-container--focus .select2-selection--single,
@@ -43,7 +42,9 @@
         top: 0; /* إعادة ضبط الموضع ليتناسب مع الارتفاع الجديد */
     }
     .select2-container--bootstrap4 .select2-selection__rendered {
-        line-height: inherit; /* لإزالة أي تباعد سطر غير مرغوب فيه */
+        color: #495057; /* Bootstrap's default text color for form controls */
+        padding-right: 0; /* Remove default padding that might misalign text in RTL */
+        padding-left: 0; /* Remove default padding that might misalign text in RTL */
     }
 
     /* لتحسين المحاذاة في النموذج، خاصة مع RTL */
@@ -56,52 +57,52 @@
         margin-bottom: 1rem; /* مسافة افتراضية أفضل بين الحقول */
     }
     /* تحسين تنسيق Select2 */
-.select2-container {
-    width: 100% !important; /* لجعل Select2 يأخذ العرض الكامل */
-    margin-bottom: 15px; /* مسافة مناسبة أسفل الحقل */
-}
+    .select2-container {
+        width: 100% !important; /* لجعل Select2 يأخذ العرض الكامل */
+        margin-bottom: 15px; /* مسافة مناسبة أسفل الحقل */
+    }
 
-/* تحسين محاذاة العناصر في النموذج */
-.form-group {
-    margin-bottom: 1.5rem; /* زيادة المسافة بين الحقول */
-}
+    /* تحسين محاذاة العناصر في النموذج */
+    .form-group {
+        margin-bottom: 1.5rem; /* زيادة المسافة بين الحقول */
+    }
 
-/* تحسين محاذاة الـ labels */
-.col-form-label {
-    padding-top: calc(0.375rem + 1px);
-    padding-bottom: calc(0.375rem + 1px);
-    margin-bottom: 0;
-    font-size: inherit;
-    line-height: 1.5;
-    text-align: right; /* لمحاذاة النص لليمين في RTL */
-}
+    /* تحسين محاذاة الـ labels */
+    .col-form-label {
+        padding-top: calc(0.375rem + 1px);
+        padding-bottom: calc(0.375rem + 1px);
+        margin-bottom: 0;
+        font-size: inherit;
+        line-height: 1.5;
+        text-align: right; /* لمحاذاة النص لليمين في RTL */
+    }
 
-/* تحسين عرض حقول الإدخال */
-.form-control, .select2-selection {
-    height: calc(2.25rem + 2px);
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.25rem;
-}
+    /* تحسين عرض حقول الإدخال */
+    .form-control, .select2-selection {
+        height: calc(2.25rem + 2px);
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.25rem;
+    }
 
-/* تحسين التباعد في الـ tabs */
-.tab-content {
-    padding: 15px;
-    border-left: 1px solid #dee2e6;
-    border-right: 1px solid #dee2e6;
-    border-bottom: 1px solid #dee2e6;
-    border-radius: 0 0 0.25rem 0.25rem;
-}
+    /* تحسين التباعد في الـ tabs */
+    .tab-content {
+        padding: 15px;
+        border-left: 1px solid #dee2e6;
+        border-right: 1px solid #dee2e6;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 0 0 0.25rem 0.25rem;
+    }
 
-/* تحسين عرض العناصر في الصفوف */
-.row {
-    margin-right: -7.5px;
-    margin-left: -7.5px;
-}
+    /* تحسين عرض العناصر في الصفوف */
+    .row {
+        margin-right: -7.5px;
+        margin-left: -7.5px;
+    }
 
-.row > div {
-    padding-right: 7.5px;
-    padding-left: 7.5px;
-}
+    .row > div {
+        padding-right: 7.5px;
+        padding-left: 7.5px;
+    }
 </style>
 @endsection
 
@@ -120,7 +121,7 @@
             <h3 class="card-title card_title_center">اضافة موظف جديد</h3>
         </div>
         <div class="card-body">
-            <form method="POST" action="{{ route('employees.store') }}">
+            <form method="POST" action="{{ route('employees.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
                     <ul class="nav nav-tabs" id="custom-content-below-tab" role="tablist">
@@ -260,6 +261,16 @@
                                         @enderror
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="emp_photo">اختر صورة الموظف</label>
+                                        <input type="file" class="form-control" name="emp_photo" id="emp_photo" value="{{ old('emp_photo') }}">
+                                        @error('emp_photo')
+                                        <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+
                             </div> {{-- End of row --}}
                         </div>
 
@@ -501,9 +512,9 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="motivation">الحافز</label>
-                                        <input type="number" class="form-control" name="motivation" id="motivation" value="{{ old('motivation') }}">
-                                        @error('motivation')
+                                        <label for="mtivation">الحافز</label>
+                                        <input type="number" class="form-control" name="mtivation" id="mtivation" value="{{ old('mtivation') }}">
+                                        @error('mtivation')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>
