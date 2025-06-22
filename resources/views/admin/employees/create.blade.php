@@ -564,7 +564,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="bank_ID">كود البنك (SWIFT/IBAN)</label>
+                                        <label for="bank_ID">bank ID</label>
                                         <input type="text" class="form-control" name="bank_ID" id="bank_ID" value="{{ old('bank_ID') }}">
                                         @error('bank_ID')
                                         <div class="text-danger">{{ $message }}</div>
@@ -576,7 +576,7 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="bank_branch">فرع البنك</label>
+                                        <label for="bank_branch">bank branch</label>
                                         <input type="text" class="form-control" name="bank_branch" id="bank_branch" value="{{ old('bank_branch') }}">
                                         @error('bank_branch')
                                         <div class="text-danger">{{ $message }}</div>

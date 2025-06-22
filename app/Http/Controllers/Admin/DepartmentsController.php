@@ -74,7 +74,7 @@ class DepartmentsController extends Controller
             'dep_name'=>['required',Rule::unique('departments')->ignore($id)],
         ]);
         if($validator->fails()){
-            return redirect()->back()->with(['error'=>'قد تم ادخال هذة الادارة من قبل'])->withInput();
+            return redirect()->back()->with(['error'=>'قد تم ادخال هذه الادارة من قبل'])->withInput();
         }
         $request->validate([
             "dep_name" => ["required"],
