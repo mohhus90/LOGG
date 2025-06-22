@@ -1,12 +1,12 @@
 @extends('admin.layouts.admin')
 @section('title')
-الوظائف
+الموظفين
 @endsection
 @section('start')
 الضبط العام
 @endsection
 @section('home')
-<a href="{{ route('employees.index') }}"> الوظائف</a>
+<a href="{{ route('employees.index') }}"> الموظفين</a>
 
 @endsection
 @section('startpage')
@@ -17,7 +17,7 @@
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">بيانات الوظائف
+            <h3 class="card-title card_title_center">بيانات الموظفين
               <a class="btn btn-success" href="{{ route('employees.create') }}">اضافة جديد</a>
               <a class="btn btn-success" href="{{ route('employees.uploadexcel') }}">اضافة من اكسيل</a>
             </h3>
