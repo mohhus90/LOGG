@@ -80,14 +80,14 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
      Route::match(['get', 'post'], 'jobs_categores/ajaxsearch', [Jobs_categoriesController::class, 'ajaxsearch'])->name('jobs_categores.ajaxsearch');
     // الموظفين
     Route::get('employees',[EmployeesConroller::class,'index'])->name('employees.index')->middleware('auth:admin');
-    Route::get('employees/{id}/edit',[EmployeesConroller::class,'edit'])->name('employees.edit');
-    Route::get('employees/create',[EmployeesConroller::class,'create'])->name('employees.create');
-    Route::post('employees/store',[EmployeesConroller::class,'store'])->name('employees.store');
-    Route::post('employees/update/{id}',[EmployeesConroller::class,'update'])->name('employees.update');
-    Route::get('employees/delete/{id}',[EmployeesConroller::class,'delete'])->name('employees.delete');
-    Route::get('employees/uploadexcel',[EmployeesConroller::class,'uploadexcel'])->name('employees.uploadexcel');
-    Route::post('employees/douploadexcel',[EmployeesConroller::class,'douploadexcel'])->name('employees.douploadexcel');
-    Route::match(['get', 'post'], 'employees/ajaxsearch', [EmployeesConroller::class, 'ajaxsearch'])->name('employees.ajaxsearch');
+    Route::get('employees/{id}/edit',[EmployeesConroller::class,'edit'])->name('employees.edit')->middleware('auth:admin');
+    Route::get('employees/create',[EmployeesConroller::class,'create'])->name('employees.create')->middleware('auth:admin');
+    Route::post('employees/store',[EmployeesConroller::class,'store'])->name('employees.store')->middleware('auth:admin');
+    Route::post('employees/update/{id}',[EmployeesConroller::class,'update'])->name('employees.update')->middleware('auth:admin');
+    Route::get('employees/delete/{id}',[EmployeesConroller::class,'delete'])->name('employees.delete')->middleware('auth:admin');
+    Route::get('employees/uploadexcel',[EmployeesConroller::class,'uploadexcel'])->name('employees.uploadexcel')->middleware('auth:admin');
+    Route::post('employees/douploadexcel',[EmployeesConroller::class,'douploadexcel'])->name('employees.douploadexcel')->middleware('auth:admin');
+    Route::match(['get', 'post'], 'employees/ajaxsearch', [EmployeesConroller::class, 'ajaxsearch'])->name('employees.ajaxsearch')->middleware('auth:admin');
      // بداية السنة المالية
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
     Route::post('finance_calender/show_year_monthes',[Finance_calendersController::class,'show_year_monthes'])->name('finance_calender.show_year_monthes');

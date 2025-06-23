@@ -146,7 +146,7 @@
                             <div class="row"> {{-- Start a Bootstrap row for grouping inputs --}}
                                 <div class="col-md-4"> {{-- Each input will take 4 columns (12/3 = 4) --}}
                                     <div class="form-group"> {{-- Removed form-inline, it's not ideal with col grid --}}
-                                        <label for="employee_id">كود الموظف</label>
+                                        <label for="employee_id">كود الموظف <span style="color: red">*</span></label>
                                         <input type="text" class="form-control" name="employee_id" id="employee_id" value="{{ old('employee_id') }}">
                                         @error('employee_id')
                                         <div class="text-danger">{{ $message }}</div>
@@ -164,7 +164,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="employee_name">اسم الموظف</label>
+                                        <label for="employee_name">اسم الموظف رباعى<span style="color: red">*</span></label>
                                         <input type="text" class="form-control" name="employee_name" id="employee_name" value="{{ old('employee_name') }}">
                                         @error('employee_name')
                                         <div class="text-danger">{{ $message }}</div>
@@ -185,7 +185,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="national_id">الرقم القومي</label>
+                                        <label for="national_id">الرقم القومي<span style="color: red">*</span></label>
                                         <input type="text" class="form-control" name="national_id" id="national_id" value="{{ old('national_id') }}">
                                         @error('national_id')
                                         <div class="text-danger">{{ $message }}</div>
@@ -301,7 +301,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="emp_jobs_id">الوظيفة</label>
+                                        <label for="emp_jobs_id">الوظيفة<span style="color: red">*</span></label>
                                         <select name="emp_jobs_id" id="emp_jobs_id" class="form-control select2">
                                             <option value="">اختر الوظيفة</option>
                                             @foreach($jobs_categories as $job)
@@ -320,7 +320,7 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="emp_departments_id">الادارة</label>
+                                        <label for="emp_departments_id">الادارة<span style="color: red">*</span></label>
                                         <select name="emp_departments_id" id="emp_departments_id" class="form-control select2">
                                             <option value="">اختر الادارة</option>
                                             @foreach($departments as $department)
@@ -352,7 +352,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="branches_id">الفرع</label>
+                                        <label for="branches_id">الفرع<span style="color: red">*</span></label>
                                         <select name="branches_id" id="branches_id" class="form-control select2">
                                             <option value="">اختر الفرع</option>
                                             @foreach($branches as $branche)
