@@ -13,15 +13,10 @@ class Employee extends Model
     protected $table = "employees";
     protected $guarded = [];
  
-    public function addedBy() {
-        return $this->belongsTo(Admin::class, 'added_by')->withDefault([
-            'name' => 'غير معروف' // قيمة افتراضية إذا لم توجد العلاقة
-        ]);
+    public function addedBy(){
+        return $this->belongsTo('App\Models\Admin','added_by');
     }
-
-    public function updatedBy() {
-        return $this->belongsTo(Admin::class, 'updated_by')->withDefault([
-            'name' => 'غير معروف'
-        ]);
+    public function updatedBy(){
+        return $this->belongsTo('App\Models\Admin','updated_by');
     }
 }

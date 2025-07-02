@@ -25,14 +25,14 @@ class EmployeesConroller extends Controller
      */
     public function index()
     {
-       $data = Employee::with([
-        'addedBy' => fn($q) => $q->select('id', 'name'),
-        'updatedBy' => fn($q) => $q->select('id', 'name')
-    ])->paginate(paginate_counter);
-    
-    return view('admin.employees.index', compact('data'));
-       
+        $data=get_data_where(new Employee,array("*"));
+        // $data= Department::select('*')->orderby('id','ASC')->paginate(paginate_counter);
+
+        return view('admin.employees.index',['data'=>$data]);
     }
+
+
+
      public function uploadexcel()
     {
        
