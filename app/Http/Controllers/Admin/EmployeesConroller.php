@@ -11,6 +11,7 @@ use App\Models\Jobs_categories;
 use App\Models\Shifts_type;
 use App\Models\Branche;
 use App\Imports\EmployeeImport;
+use App\Exports\EmployeeExport;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +21,14 @@ use Illuminate\Validation\Rule;
 class EmployeesConroller extends Controller
 
 {
+      public function export() 
+    {
+        return Excel::download(new EmployeeExport, 'Employee.xlsx');
+        
+    }
+    
+
+    
     /**
      * Display a listing of the resource.
      */
