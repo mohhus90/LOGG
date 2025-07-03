@@ -20,6 +20,7 @@
             <h3 class="card-title card_title_center">بيانات الموظفين
               <a class="btn btn-success" href="{{ route('employees.create') }}">اضافة جديد</a>
               <a class="btn btn-success" href="{{ route('employees.uploadexcel') }}">اضافة من اكسيل</a>
+              <a class="btn btn-success" href="{{ route('employees.export') }}">تصدير الى اكسيل</a>
             </h3>
         </div>
        
