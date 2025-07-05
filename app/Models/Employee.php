@@ -31,4 +31,12 @@ class Employee extends Model
     {
         return $this->belongsTo(Shifts_type::class, 'shifts_types_id');
     }
+    public function company()
+    {
+        return $this->belongsTo(Admin_panel_setting::class, 'com_code');
+    }
+    public function branches()
+    {
+        return $this->belongsTo(Branche::class, 'branches_id');
+    }
 }

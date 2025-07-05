@@ -30,7 +30,7 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             'Email', 'Photo', 'Birth Date', 'Salary', 'Fixed Allowances', 
             'Salary Insurance', 'Medical Insurance', 'Has Fixed Shift', 
             'Shift Type', 'Has Finger', 'Vacation Formula', 'Sensitive Data', 
-            'Branch ID', 'Company Code', 'Added By', 'Updated By', 
+            'Branch', 'Company', 'Added By', 'Updated By', 
             'Created At', 'Updated At'
         ];
     }
@@ -79,10 +79,10 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $this->getis_has_fingerText($employee->is_has_finger),
             $this->getvacation_formulaText($employee->vacation_formula),
             $this->getsensitive_dataText($employee->sensitive_data),
-            $employee->branches_id,
-            $employee->com_code,
-            $employee->added_by,
-            $employee->updated_by,
+            $employee->branches->branch_name ?? 'غير محدد',
+            $employee->company->com_name ?? 'غير محدد'	,
+            $employee->addedBy->name ?? 'غير محدد',
+            $employee->updatedBy->name ?? 'غير محدد',
             $employee->created_at,
             $employee->updated_at
         ];
