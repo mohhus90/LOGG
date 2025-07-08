@@ -50,7 +50,7 @@
                   <tr>
                     <td> {{ $info->id }}</td>
                     <td> {{ $info->employee_name }}</td>
-                    <td>{{ $info->addedBy->name }}</td>
+                    <td> {{ $info->added->name }}</td>
                     <td> {{ $info->created_at }}</td>
                     
                     <td>

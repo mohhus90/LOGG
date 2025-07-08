@@ -16,11 +16,11 @@
                   <tr>
                     <td> {{ $info->id }}</td>
                     <td> {{ $info->job_name }}</td>
-                    <td> {{ $info->added_by }}</td>
+                    <td> {{ $info->addedby->name }}</td>
                     <td> {{ $info->created_at }}</td>
                     <td>
                       @if ($info->updated_by>0)
-                      {{ $info->updated_by }}
+                      {{ $info->updatedby->name }}
                       @else
                         لا يوجد
                       @endif

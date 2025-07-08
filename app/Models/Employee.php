@@ -13,8 +13,8 @@ class Employee extends Model
     protected $table = "employees";
     protected $guarded = [];
  
-    public function addedBy(){
-        return $this->belongsTo('App\Models\Admin','added_by');
+    public function added(){
+        return $this->belongsTo(Admin::class,'added_by');
     }
     public function updatedBy(){
         return $this->belongsTo('App\Models\Admin','updated_by');

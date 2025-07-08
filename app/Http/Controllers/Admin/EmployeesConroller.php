@@ -34,8 +34,8 @@ class EmployeesConroller extends Controller
      */
     public function index()
     {
-        $data=get_data_where(new Employee,array("*"));
-        // $data= Department::select('*')->orderby('id','ASC')->paginate(paginate_counter);
+        // $data=get_data_where(new Employee,array("*"));
+        $data= Department::select('*')->orderby('id','ASC')->paginate(paginate_counter);
 
         return view('admin.employees.index',['data'=>$data]);
     }
