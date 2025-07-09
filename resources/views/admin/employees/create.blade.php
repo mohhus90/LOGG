@@ -512,9 +512,9 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="mtivation">الحافز</label>
-                                        <input type="number" class="form-control" name="mtivation" id="mtivation" value="{{ old('mtivation') }}">
-                                        @error('mtivation')
+                                        <label for="motivation">الحافز</label>
+                                        <input type="number" class="form-control" name="motivation" id="motivation" value="{{ old('motivation') }}">
+                                        @error('motivation')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>

@@ -53,10 +53,16 @@
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="active" class="col-sm-2 col-form-label ">حالة الفرع</label>
-                  <div class="col-sm-5">
-                    <input type="text" class="form-control" name="active" id="active" value="{{ old('active') }}" >
-                  </div>
+                      <label for="active" class="col-sm-2 col-form-label ">حالة الفرع</label>
+                      <div class="col-sm-5">
+                      <select class="form-control" name="active" id="active">
+                          <option value="1" @if (old('active')==1)selected @endif>مفعل</option>
+                          <option value="2" @if (old('active')==2)selected @endif>غير مفعل</option>
+                      </select>
+                      </div> 
+                      @error('active')
+                      <div class="text-danger">{{ $message }}</div>
+                      @enderror
                 </div>  
                 <div class="text-center">
                   <button type="submit" class="text-center btn btn-primary btn-lg col-2">اضافة</button>

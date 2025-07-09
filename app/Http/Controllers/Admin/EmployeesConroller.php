@@ -112,7 +112,7 @@ public function store(Request $request)
                 'resignation_status' => 'nullable|string', // مثال
                 'qualification_grade' => 'nullable|string', // مثال
                 'emp_military_status' => 'nullable|string', // مثال
-                'mtivation' => 'nullable|numeric', // مثال
+                'motivation' => 'nullable|numeric', // مثال
                 'sal_cash_visa' => 'nullable|string', // مثال
                 'bank_name' => 'nullable|string', // مثال
                 'bank_ID' => 'nullable|string', // مثال
@@ -165,7 +165,7 @@ public function store(Request $request)
                 'emp_sal' => $request->emp_sal,
                 'emp_fixed_allowances' => $request->emp_fixed_allowances,
                 'emp_military_status' => $request->emp_military_status,
-                'mtivation' => $request->mtivation,
+                'motivation' => $request->motivation,
                 'national_id' => $request->national_id,
                 'sal_cash_visa' => $request->sal_cash_visa,
                 'bank_name' => $request->bank_name,
@@ -276,7 +276,7 @@ public function store(Request $request)
                 'resignation_status' => 'nullable|string', // مثال
                 'qualification_grade' => 'nullable|string', // مثال
                 'emp_military_status' => 'nullable|string', // مثال
-                'mtivation' => 'nullable|numeric', // مثال
+                'motivation' => 'nullable|numeric', // مثال
                 'sal_cash_visa' => 'nullable|string', // مثال
                 'bank_name' => 'nullable|string', // مثال
                 'bank_ID' => 'nullable|string', // مثال
@@ -330,7 +330,7 @@ DB::beginTransaction();
                 'emp_sal' => $request->emp_sal,
                 'emp_fixed_allowances' => $request->emp_fixed_allowances,
                 'emp_military_status' => $request->emp_military_status,
-                'mtivation' => $request->mtivation,
+                'motivation' => $request->motivation,
                 'national_id' => $request->national_id,
                 'sal_cash_visa' => $request->sal_cash_visa,
                 'bank_name' => $request->bank_name,

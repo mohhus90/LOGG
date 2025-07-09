@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('branch_name',250);
             $table->tinyInteger('active')->default(1)->comment('واحد مفعل- صفر معطل');
-            $table->string('address',250);
-            $table->string('phone',250);
+            $table->string('address',250)->nullable();
+            $table->string('phone',250)->nullable();
             $table->string('email',50)->nullable();
             $table->integer('added_by');
             $table->integer('updated_by')->nullable();

@@ -54,8 +54,8 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $this->getresignation_statusText($employee->resignation_status),
             $employee->resignation_date,
             $employee->resignation_cause,
-            $this->getmtivation_typeText($employee->mtivation_type),
-            $employee->mtivation,
+            $this->getmotivation_typeText($employee->motivation_type),
+            $employee->motivation,
             $this->getsal_cash_visaText($employee->sal_cash_visa),
             $employee->bank_name,
             $employee->bank_account,
@@ -80,8 +80,8 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $this->getvacation_formulaText($employee->vacation_formula),
             $this->getsensitive_dataText($employee->sensitive_data),
             $employee->branches->branch_name ?? 'غير محدد',
-            $employee->company->com_name ?? 'غير محدد'	,
-            $employee->addedBy->name ?? 'غير محدد',
+            $employee->comp->com_name ?? 'غير محدد',
+            $employee->added->name ?? 'غير محدد',
             $employee->updatedBy->name ?? 'غير محدد',
             $employee->created_at,
             $employee->updated_at
@@ -147,9 +147,9 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                 default => 'غير محدد'
             };
         }
-        private function getmtivation_typeText($mtivation_typeCode)
+        private function getmotivation_typeText($motivation_typeCode)
         {
-            return match($mtivation_typeCode) {
+            return match($motivation_typeCode) {
                 1 => 'ثابت',
                 2 => 'متغير',
                 0=> 'لايوجد',

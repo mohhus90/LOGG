@@ -28,8 +28,8 @@ return new class extends Migration
             $table->tinyInteger('resignation_status')->default(1)->comment('(1=استقالة),(2= فصل),(3= ترك العمل),(4= سن المعاش),(5= الوفاة)')->nullable();
             $table->date('resignation_date')->nullable();
             $table->string('resignation_cause')->nullable()->comment('سبب ترك العمل');
-            $table->tinyInteger('mtivation_type')->default(0)->comment('(1=ثابت),(2= متغير),(0= لايوجد)')->nullable();
-            $table->decimal('mtivation',10,2)->default(0)->nullable();
+            $table->tinyInteger('motivation_type')->default(0)->comment('(1=ثابت),(2= متغير),(0= لايوجد)')->nullable();
+            $table->decimal('motivation',10,2)->default(0)->nullable();
             $table->tinyInteger('sal_cash_visa')->default(0)->comment('(1=كاش),(2= فيزا)')->nullable();
             $table->string('bank_name',50)->nullable();
             $table->string('bank_account',50)->nullable();
