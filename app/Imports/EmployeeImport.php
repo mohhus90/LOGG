@@ -18,7 +18,7 @@ class EmployeeImport implements ToCollection
                 'finger_id' => $row[1],
                 'employee_name_A' => $row[2],
                 'employee_name_E' => $row[3],
-                'employee_adress' =>$row[4],
+                'employee_address' =>$row[4],
                 'emp_gender' => $row[5],
                 'emp_social_status' => $row[6],
                 'emp_military_status' => $row[7],

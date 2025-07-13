@@ -13,7 +13,7 @@ class Employee extends Model
     protected $table = "employees";
     protected $guarded = [];
  
-    public function added(){
+    public function addedBy(){
         return $this->belongsTo(Admin::class,'added_by');
     }
     public function updatedBy(){
@@ -31,7 +31,6 @@ class Employee extends Model
     {
         return $this->belongsTo(Shifts_type::class, 'shifts_types_id');
     }
-    
     public function comp()
     {
         return $this->belongsTo(Admin_panel_setting::class, 'com_code');

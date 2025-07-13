@@ -36,6 +36,8 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::post('logout',[AdminLoginController::class,'logout'])->name('admin.dashboard.logout');
     // الضبط العام
     Route::get('generalsetting',[AdminPanelSettingController::class,'index'])->name('generalsetting.index')->middleware('auth:admin');
+    Route::get('generalsetting/create',[AdminPanelSettingController::class,'create'])->name('generalsetting.create');
+    Route::post('generalsetting/store',[AdminPanelSettingController::class,'store'])->name('generalsetting.store');
     Route::get('generalsetting/edit',[AdminPanelSettingController::class,'edit'])->name('generalsetting.edit');
     Route::get('generalsetting/update',[AdminPanelSettingController::class,'update'])->name('generalsetting.update');
     // الفروع

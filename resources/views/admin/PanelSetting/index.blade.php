@@ -17,8 +17,11 @@
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">بيانات الضبط العام للنظام</h3>
+            <h3 class="card-title card_title_center">بيانات الضبط العام للشركة
+              <a class="btn btn-success" href="{{ route('generalsetting.create') }}">اضافة شركة جديدة</a>
+            </h3>
         </div>
+       
         <div class="card-body">
             @if(@isset($data) and !@empty($data) )
             <table class="table table-bordered">

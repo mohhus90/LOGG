@@ -92,6 +92,7 @@ class Finance_calendersController extends Controller
                     $datamonth['updated_at']=date('Y-m-d H:i:s');
                     $datamonth['start_date_finger_print']=date('Y-m-01',strtotime($date->format('Y-m-d')));
                     $datamonth['end_date_finger_print']=date('Y-m-01',strtotime($date->format('Y-m-d')));
+                    $datamonth['com_code'] = auth()->guard('admin')->user()->com_code; // أضف هذا السطر
                     Finance_cln_period::insert($datamonth);
                 }
             }
