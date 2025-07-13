@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Jobs_categories;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Department;
+use App\Models\jobs_categories;
+
 class Jobs_categoriesController extends Controller
 {
     /**
@@ -60,12 +60,12 @@ class Jobs_categoriesController extends Controller
     //     }
     // }
 
-public function store(Request $request, Department $Department)
+public function store(Request $request, Jobs_categories $jobs_categories)
 {
     $request->validate([
-        "dep_name" => "required",
+        "job_name" => "required",
     ],[
-        "dep_name.required" => "يجب ادخال اسم الادارة",
+        "job_name.required" => "يجب ادخال اسم الادارة",
     ]);
    
     DB::beginTransaction(); 
@@ -77,26 +77,23 @@ public function store(Request $request, Department $Department)
             throw new \Exception("كود الشركة غير موجود في بيانات المستخدم");
         }
         
-        $checkexist = Department::select('id')
-                      ->where(["com_code" => $admin->com_code, "dep_name" => $request->dep_name])
+        $checkexist = Jobs_categories::select('id')
+                      ->where(["com_code" => $admin->com_code, "job_name" => $request->job_name])
                       ->first();
                       
         if(!empty($checkexist)){
-            return redirect()->back()->with(['error'=>'عفوا اسم الادارة مسجل من قبل'])->withInput();
+            return redirect()->back()->with(['error'=>'عفوا اسم الوظيفة مسجل من قبل'])->withInput();
         }
         
         $createdData = [
-            'added_by' => $admin->id,
-            'com_code' => $admin->com_code,
-            'dep_name' => $request->dep_name,
-            'phone' => $request->phone,
-            'email' => $request->email,
-            'notes' => $request->notes,
+            'added_by' => auth()->guard('admin')->user()->id,
+            'com_code' => auth()->guard('admin')->user()->com_code,
+            'job_name' => $request->job_name,
         ];
         
-        $Department->create($createdData);
+        $jobs_categories->create($createdData);
         DB::commit();
-        return redirect()->route('departs.index')->with(['success' => 'تم اضافة الادارة بنجاح'])->withInput();
+        return redirect()->route('jobs_categores.index')->with(['success' => 'تم اضافة الادارة بنجاح'])->withInput();
     } catch(\Exception $ex){
             DB::rollBack();
             return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();

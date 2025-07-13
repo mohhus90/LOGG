@@ -34,7 +34,7 @@ class Employee extends Model
     
     public function comp()
     {
-        return $this->belongsTo(Admin::class, 'com_code');
+        return $this->belongsTo(Admin_panel_setting::class, 'com_code');
     }
     public function branches()
     {

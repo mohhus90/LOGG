@@ -26,9 +26,9 @@
        
 
         <div class="form-group form-inline" style="padding: 5px">
-          <label for="employee_name" class="col-sm-2">اسم الموظف</label>
+          <label for="employee_name_A" class="col-sm-2">اسم الموظف</label>
           <div class="">
-              <input type="text" class="col-sm-10 form-control" name="employee_name_search" value="" id="employee_name_search">
+              <input type="text" class="col-sm-10 form-control" name="employee_name_A_search" value="" id="employee_name_A_search">
           </div>
       </div>
         <div class="card-body" id="ajax_res_search_div">
@@ -37,7 +37,8 @@
               <thead>
                 <tr>
                 <th scope="col">كود الوظيفة</th>
-                <th scope="col">اسم الموظف</th>
+                <th scope="col">اسم الموظف عربى</th>
+                <th scope="col">اسم الموظف امجليزى</th>
                 <th scope="col">الاضافة بواسطة</th>
                 <th scope="col">تاريخ الاضافة </th>
                 <th scope="col">التحديث بواسطة</th>
@@ -49,7 +50,8 @@
                 @foreach ($data as $info)
                   <tr>
                     <td> {{ $info->id }}</td>
-                    <td> {{ $info->employee_name }}</td>
+                    <td> {{ $info->employee_name_A }}</td>
+                    <td> {{ $info->employee_name_E }}</td>
                     <td> {{ $info->added->name }}</td>
                     <td> {{ $info->created_at }}</td>
                     
@@ -115,10 +117,10 @@ $(document).ready(function () {
     };
 
     function ajax_search(linkurl = null) {
-        var employee_name_search = $("#employee_name_search").val();
+        var employee_name_A_search = $("#employee_name_A_search").val();
         // Add more variables for additional search inputs if needed
 
-        var data = {"_token": '{{ csrf_token() }}', employee_name_search: employee_name_search };
+        var data = {"_token": '{{ csrf_token() }}', employee_name_A_search: employee_name_A_search };
         // Add more data for additional search inputs if needed
 
         // Check if a link URL is provided (pagination)

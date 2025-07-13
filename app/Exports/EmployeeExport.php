@@ -20,13 +20,13 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
     public function headings(): array
     {
         return [
-            'ID', 'Employee ID', 'Finger ID', 'Employee Name', 'Employee Address', 
+            'ID', 'Employee ID', 'Finger ID', 'Employee Name Arabic','Employee Name English', 'Employee Address', 
             'Gender', 'Social Status', 'Military Status', 'Qualification', 
             'Qualification Year', 'Qualification Grade', 'Start Date', 
-            'Functional Status', 'Resignation Status', 'Resignation Date', 
+            'Insurance status', 'Resignation Status', 'Resignation Date', 
             'Resignation Cause', 'Motivation Type', 'Motivation', 'Salary Cash Visa', 
             'Bank Name', 'Bank Account', 'Bank ID', 'Bank Branch', 'Daily Work Hours', 
-            'job name', 'National ID', 'Department', 'Home Tel', 'Mobile', 
+            'job name', 'National ID','insurance no', 'Department', 'Home Tel', 'Mobile', 
             'Email', 'Photo', 'Birth Date', 'Salary', 'Fixed Allowances', 
             'Salary Insurance', 'Medical Insurance', 'Has Fixed Shift', 
             'Shift Type', 'Has Finger', 'Vacation Formula', 'Sensitive Data', 
@@ -41,7 +41,8 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $employee->id,
             $employee->employee_id,
             $employee->finger_id,
-            $employee->employee_name,
+            $employee->employee_name_A,
+            $employee->employee_name_E,
             $employee->employee_address,
             $this->getGenderText($employee->emp_gender),
             $this->getemp_social_statusText($employee->emp_social_status),
@@ -50,7 +51,7 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $employee->qualification_year,
             $this->getqualification_gradeText($employee->qualification_grade),
             $employee->emp_start_date,
-            $this->getfunctional_statusText($employee->functional_status),
+            $this->getinsurance_statusText($employee->insurance_status),
             $this->getresignation_statusText($employee->resignation_status),
             $employee->resignation_date,
             $employee->resignation_cause,
@@ -64,6 +65,7 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $employee->daily_work_hours,
             $employee->jobs_categories->job_name ?? 'غير محدد',
             $employee->national_id,
+            $employee->insurance_no,
             $employee->department->dep_name ?? 'غير محدد', // عرض اسم القسم بدلاً من ID
             $employee->emp_home_tel,
             $employee->emp_mobile,
@@ -128,9 +130,9 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                 default => 'غير محدد'
             };
         }
-        private function getfunctional_statusText($functional_statusCode)
+        private function getinsurance_statusText($insurance_statusCode)
         {
-            return match($functional_statusCode) {
+            return match($insurance_statusCode) {
                 1 => 'يعمل',
                 2 => 'لايعمل',
                 default => 'غير محدد'
@@ -199,7 +201,7 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
     public function styles(Worksheet $sheet)
     {
         // تنسيق رؤوس الأعمدة
-        $sheet->getStyle('A1:AU1')->applyFromArray([
+        $sheet->getStyle('A1:AW1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => '000000']
@@ -219,13 +221,13 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
         ]);
 
         // تنسيق الحدود لجميع الخلايا
-        $sheet->getStyle('A1:AU' . ($sheet->getHighestRow()))
+        $sheet->getStyle('A1:AW' . ($sheet->getHighestRow()))
               ->getBorders()
               ->getAllBorders()
               ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
         // محاذاة النص لجميع الخلايا
-        $sheet->getStyle('A2:AU' . ($sheet->getHighestRow()))
+        $sheet->getStyle('A2:AW' . ($sheet->getHighestRow()))
               ->getAlignment()
               ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
               ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);

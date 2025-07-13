@@ -94,7 +94,8 @@ public function store(Request $request)
             // التحقق من صحة البيانات المطلوبة
             // لا تضع هذا الجزء داخل try-catch إذا كنت تريد أن يتم توجيه الأخطاء تلقائيًا إلى الواجهة
             $request->validate([
-                'employee_name' => 'required|string',
+                'employee_name_A' => 'required|string',
+                'employee_name_E' => 'required|string',
                 'employee_id' => 'required|unique:employees,employee_id',
                 'national_id' => 'required|unique:employees,national_id',
                 'emp_departments_id' => 'required|exists:departments,id',
@@ -108,7 +109,7 @@ public function store(Request $request)
                 'emp_gender' => 'nullable|string', // مثال
                 'emp_social_status' => 'nullable|string', // مثال
                 'emp_start_date' => 'nullable|date', // مثال
-                'functional_status' => 'nullable|string', // مثال
+                'insurance_status' => 'nullable|string', // مثال
                 'resignation_status' => 'nullable|string', // مثال
                 'qualification_grade' => 'nullable|string', // مثال
                 'emp_military_status' => 'nullable|string', // مثال
@@ -118,7 +119,8 @@ public function store(Request $request)
                 'bank_ID' => 'nullable|string', // مثال
                 'bank_branch' => 'nullable|string', // مثال
             ], [
-                'employee_name.required' => 'حقل اسم الموظف مطلوب',
+                'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
+                'employee_name_E.required' => 'حقل اسم الموظف مطلوب',
                 'employee_id.required' => 'حقل كود الموظف مطلوب',
                 'employee_id.unique' => 'كود الموظف تم ادخاله مسبقا',
                 'national_id.required' => 'حقل الرقم القومى مطلوب',
@@ -142,12 +144,13 @@ public function store(Request $request)
                 'com_code' => auth()->guard('admin')->user()->com_code,
                 'employee_id' => $request->employee_id,
                 'finger_id' => $request->finger_id,
-                'employee_name' => $request->employee_name,
+                'employee_name_A' => $request->employee_name_A,
+                'employee_name_E' => $request->employee_name_E,
                 'employee_address' => $request->employee_address,
                 'emp_gender' => $request->emp_gender,
                 'emp_social_status' => $request->emp_social_status,
                 'emp_start_date' => $request->emp_start_date,
-                'functional_status' => $request->functional_status,
+                'insurance_status' => $request->insurance_status,
                 'resignation_status' => $request->resignation_status,
                 'qualification_grade' => $request->qualification_grade,
                 'emp_qualification' => $request->emp_qualification,
@@ -167,6 +170,7 @@ public function store(Request $request)
                 'emp_military_status' => $request->emp_military_status,
                 'motivation' => $request->motivation,
                 'national_id' => $request->national_id,
+                'insurance_no' => $request->insurance_no,
                 'sal_cash_visa' => $request->sal_cash_visa,
                 'bank_name' => $request->bank_name,
                 'bank_account' => $request->bank_account,
@@ -252,14 +256,21 @@ public function store(Request $request)
             return redirect()->back()->with(['error'=>'قد تم ادخال الرقم القومى هذا لموظف اخر'])->withInput();
         }
         $validator3 = Validator::make($request->all(),[
-            'bank_account'=>[Rule::unique('employees')->ignore($id)],
+            'insurance_no'=>['required',Rule::unique('employees')->ignore($id)],
         ]);
         if($validator3->fails()){
+            return redirect()->back()->with(['error'=>'قد تم ادخال الرقم التأمينى هذا لموظف اخر'])->withInput();
+        }
+        $validator4 = Validator::make($request->all(),[
+            'bank_account'=>[Rule::unique('employees')->ignore($id)],
+        ]);
+        if($validator4->fails()){
             return redirect()->back()->with(['error'=>'قد تم ادخال حساب البنك هذا لموظف اخر'])->withInput();
         }
 
             $request->validate([
-                'employee_name' => 'required|string',
+                'employee_name_A' => 'required|string',
+                'employee_name_E' => 'required|string',
                 'employee_id' => 'required',
                 'national_id' => 'required',
                 'emp_departments_id' => 'required|exists:departments,id',
@@ -272,7 +283,7 @@ public function store(Request $request)
                 'emp_gender' => 'nullable|string', // مثال
                 'emp_social_status' => 'nullable|string', // مثال
                 'emp_start_date' => 'nullable|date', // مثال
-                'functional_status' => 'nullable|string', // مثال
+                'insurance_status' => 'nullable|string', // مثال
                 'resignation_status' => 'nullable|string', // مثال
                 'qualification_grade' => 'nullable|string', // مثال
                 'emp_military_status' => 'nullable|string', // مثال
@@ -282,7 +293,8 @@ public function store(Request $request)
                 'bank_ID' => 'nullable|string', // مثال
                 'bank_branch' => 'nullable|string', // مثال
             ], [
-                'employee_name.required' => 'حقل اسم الموظف مطلوب',
+                'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
+                'employee_name_E.required' => 'حقل اسم الموظف مطلوب',
                 'employee_id.required' => 'حقل كود الموظف مطلوب',
                 'national_id.required' => 'حقل الرقم القومى مطلوب',
                 'branches_id.required' => 'حقل الفرع مطلوب',
@@ -307,12 +319,13 @@ DB::beginTransaction();
                 'com_code' => auth()->guard('admin')->user()->com_code,
                 'employee_id' => $request->employee_id,
                 'finger_id' => $request->finger_id,
-                'employee_name' => $request->employee_name,
+                'employee_name_A' => $request->employee_name_A,
+                'employee_name_E' => $request->employee_name_E,
                 'employee_address' => $request->employee_address,
                 'emp_gender' => $request->emp_gender,
                 'emp_social_status' => $request->emp_social_status,
                 'emp_start_date' => $request->emp_start_date,
-                'functional_status' => $request->functional_status,
+                'insurance_status' => $request->insurance_status,
                 'resignation_status' => $request->resignation_status,
                 'qualification_grade' => $request->qualification_grade,
                 'emp_qualification' => $request->emp_qualification,
@@ -332,6 +345,7 @@ DB::beginTransaction();
                 'emp_military_status' => $request->emp_military_status,
                 'motivation' => $request->motivation,
                 'national_id' => $request->national_id,
+                'insurance_no' => $request->insurance_no,
                 'sal_cash_visa' => $request->sal_cash_visa,
                 'bank_name' => $request->bank_name,
                 'bank_account' => $request->bank_account,
@@ -375,17 +389,17 @@ DB::beginTransaction();
     public function ajaxsearch(Request $request){
        
         if($request->ajax()){
-            $employee_name_search=$request->employee_name_search;
-            if ($employee_name_search != "") {
-                $field1 = "employee_name";
+            $employee_name_A_search=$request->employee_name_A_search;
+            if ($employee_name_A_search != "") {
+                $field1 = "employee_name_A";
                 $op1 = "LIKE"; // Change the operator to LIKE
-                $val1 = '%' . $employee_name_search . '%'; // Use % for a partial match
+                $val1 = '%' . $employee_name_A_search . '%'; // Use % for a partial match
                 
                 $data = Employee::select("*")->where($field1, $op1, $val1)
                     ->orderBy("id", "DESC")
                     ->paginate(paginate_counter);
             } else {
-                // If $employee_name_search is empty, get all data without the filter
+                // If $employee_name_A_search is empty, get all data without the filter
                 $data = Employee::select("*")
                     ->orderBy("id", "DESC")
                     ->paginate(paginate_counter);

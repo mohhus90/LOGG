@@ -44,3 +44,14 @@
 </div>
    
 @endsection
+@section("script")
+   <input type="text" class="form-control" name="job_name" id="job_name" value="{{ old('job_name') }}" >
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#job_name').focus();
+    });
+</script>
+    </script>
+@endsection

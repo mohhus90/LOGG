@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
-            $table->integer('employee_id');
+            $table->integer('employee_id')->unique();
             $table->integer('finger_id');
-            $table->string('employee_name');
+            $table->string('employee_name_A');
+            $table->string('employee_name_E');
             $table->string('employee_address')->nullable();
             $table->tinyInteger('emp_gender')->comment('(1=ذكر),(2= انثى)')->nullable();
             $table->tinyInteger('emp_social_status')->comment('(1=اعزب),(2= متزوج),(3= متزوج ويعول)')->nullable();
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->string('qualification_year')->nullable();
             $table->tinyInteger('qualification_grade')->comment('(1=امتياز),(2= جيد جدا),(3= جيد مرتفع),(4= جيد),(4= مقبول)')->nullable();
             $table->date('emp_start_date')->nullable();
-            $table->tinyInteger('functional_status')->default(1)->comment('(1=يعمل),(2= لايعمل)')->nullable();
+            $table->tinyInteger('insurance_status')->default(1)->comment('(1=يعمل),(2= لايعمل)')->nullable();
             $table->tinyInteger('resignation_status')->default(1)->comment('(1=استقالة),(2= فصل),(3= ترك العمل),(4= سن المعاش),(5= الوفاة)')->nullable();
             $table->date('resignation_date')->nullable();
             $table->string('resignation_cause')->nullable()->comment('سبب ترك العمل');
@@ -32,16 +33,17 @@ return new class extends Migration
             $table->decimal('motivation',10,2)->default(0)->nullable();
             $table->tinyInteger('sal_cash_visa')->default(0)->comment('(1=كاش),(2= فيزا)')->nullable();
             $table->string('bank_name',50)->nullable();
-            $table->string('bank_account',50)->nullable();
+            $table->string('bank_account',50)->nullable()->unique();
             $table->string('bank_ID',50)->nullable();
             $table->string('bank_branch',50)->nullable();
             $table->decimal('daily_work_hours',10,2)->nullable();
             $table->foreignId('emp_jobs_id')->references('id')->on('jobs_categories')->onUpdate('cascade');
-            $table->string('national_id',50)->nullable();
+            $table->string('national_id',50)->nullable()->unique();
+            $table->string('insurance_no',50)->nullable()->unique();
             $table->foreignId('emp_departments_id')->references('id')->on('departments')->onUpdate('cascade');
             $table->string('emp_home_tel',50)->nullable();
-            $table->string('emp_mobile',50)->nullable();
-            $table->string('emp_email',50)->nullable();
+            $table->string('emp_mobile',50)->nullable()->unique();
+            $table->string('emp_email',50)->nullable()->unique();
             $table->string('emp_photo',100)->nullable();
             $table->date('birth_date')->nullable();
             $table->decimal('emp_sal',10,2)->nullable();
@@ -68,4 +70,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('employees');
     }
-};
+};    

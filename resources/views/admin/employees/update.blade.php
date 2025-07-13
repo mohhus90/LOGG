@@ -164,9 +164,18 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="employee_name">اسم الموظف</label>
-                                        <input type="text" class="form-control" name="employee_name" id="employee_name" value="{{  old('employee_name',$data['employee_name']) }}">
-                                        @error('employee_name')
+                                        <label for="employee_name_A">اسم الموظف رباعى</label>
+                                        <input type="text" class="form-control" name="employee_name_A" id="employee_name_A" value="{{  old('employee_name_A',$data['employee_name_A']) }}">
+                                        @error('employee_name_A')
+                                        <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="employee_name_E">اسم الموظف انجليزى</label>
+                                        <input type="text" class="form-control" name="employee_name_E" id="employee_name_E" value="{{  old('employee_name_E',$data['employee_name_E']) }}">
+                                        @error('employee_name_E')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -179,6 +188,15 @@
                                         <label for="employee_address">عنوان الموظف</label>
                                         <input type="text" class="form-control" name="employee_address" id="employee_address" value="{{  old('employee_address',$data['employee_address']) }}">
                                         @error('employee_address')
+                                        <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="national_id">الرقم القومي</label>
+                                        <input type="text" class="form-control" name="national_id" id="national_id" value="{{  old('national_id',$data['national_id'])}}">
+                                        @error('national_id')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -289,12 +307,12 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="functional_status">حالة الموظف</label>
-                                        <select class="form-control select2" name="functional_status" id="functional_status">
-                                            <option value="1" @if ( old('functional_status',$data['functional_status'])==1)selected @endif>يعمل</option>
-                                            <option value="2" @if ( old('functional_status',$data['functional_status'])==2)selected @endif>لا يعمل</option>
+                                        <label for="insurance_status">حالة الموظف</label>
+                                        <select class="form-control select2" name="insurance_status" id="insurance_status">
+                                            <option value="1" @if ( old('insurance_status',$data['insurance_status'])==1)selected @endif>يعمل</option>
+                                            <option value="2" @if ( old('insurance_status',$data['insurance_status'])==2)selected @endif>لا يعمل</option>
                                         </select>
-                                        @error('functional_status')
+                                        @error('insurance_status')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>
