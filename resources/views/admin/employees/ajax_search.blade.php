@@ -4,7 +4,7 @@
               <thead>
                 <th scope="col">كود الوظيفة</th>
                 <th scope="col">اسم الموظف عربى</th>
-                <th scope="col">اسم الموظف امجليزى</th>
+                <th scope="col">اسم الموظف انجليزى</th>
                 <th scope="col">الاضافة بواسطة</th>
                 <th scope="col">تاريخ الاضافة </th>
                 <th scope="col">التحديث بواسطة</th>
@@ -15,10 +15,10 @@
               <tbody>
                 @foreach ($data as $info)
                   <tr>
-                    <td> {{ $info->id }}</td>
+                    <td> {{ $info->employee_id }}</td>
                     <td> {{ $info->employee_name_A }}</td>
                     <td> {{ $info->employee_name_E }}</td>
-                    <td> {{ $info->added->name }}</td>
+                    <td> {{ $info->addedBy->name }}</td>
                     <td> {{ $info->created_at }}</td>
                     <td>
                       @if ($info->updated_by>0)

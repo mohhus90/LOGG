@@ -28,7 +28,7 @@ class EmployeeImport implements ToCollection
                 'emp_start_date' => \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[11]),
                 'insurance_status' => $row[12],
                 'resignation_status' => $row[13],
-                'resignation_date' => $row[14],
+                'resignation_date' => \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($row[14]),
                 'resignation_cause' => $row[15],
                 'motivation_type' => $row[16],
                 'motivation' => $row[17],

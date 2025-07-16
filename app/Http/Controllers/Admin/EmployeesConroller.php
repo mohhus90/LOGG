@@ -35,7 +35,7 @@ class EmployeesConroller extends Controller
     public function index()
     {
         // $data=get_data_where(new Employee,array("*"));
-        $data= Department::select('*')->orderby('id','ASC')->paginate(paginate_counter);
+        $data= Employee::select('*')->orderby('id','ASC')->paginate(paginate_counter);
 
         return view('admin.employees.index',['data'=>$data]);
     }
@@ -95,7 +95,7 @@ public function store(Request $request)
             // لا تضع هذا الجزء داخل try-catch إذا كنت تريد أن يتم توجيه الأخطاء تلقائيًا إلى الواجهة
             $request->validate([
                 'employee_name_A' => 'required|string',
-                'employee_name_E' => 'required|string',
+                'employee_name_E' => 'string',
                 'employee_id' => 'required|unique:employees,employee_id',
                 'national_id' => 'required|unique:employees,national_id',
                 'emp_departments_id' => 'required|exists:departments,id',
@@ -120,7 +120,6 @@ public function store(Request $request)
                 'bank_branch' => 'nullable|string', // مثال
             ], [
                 'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
-                'employee_name_E.required' => 'حقل اسم الموظف مطلوب',
                 'employee_id.required' => 'حقل كود الموظف مطلوب',
                 'employee_id.unique' => 'كود الموظف تم ادخاله مسبقا',
                 'national_id.required' => 'حقل الرقم القومى مطلوب',
