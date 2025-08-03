@@ -89,7 +89,7 @@
 </div>
    
 @endsection
- @section('script')
+ @section('script2')
 
 <script>
 $(document).ready(function () {
@@ -138,16 +138,16 @@ $(document).ready(function () {
             cache: false,
             data: data,
             success: function (data) {
-                $("#ajax_res_search_div").html(data);
+                $("#ajax_pagination_in_search").html(data);
 
                 // Initialize DataTable after search results are updated
-                $('#ajax_res_search_div table').DataTable({
-                    "paging": false,
-                    "lengthChange": false,
+                $('#ajax_pagination_in_search table').DataTable({
+                    "paging": true,
+                    "lengthChange": true,
                     "searching": false, // Disable searching here to avoid conflicts with custom search inputs
                     "ordering": true,
-                    "info": false,
-                    "autoWidth": false
+                    "info": true,
+                    "autoWidth": true
                 });
             },
             error: function (xhr, status, error) {
@@ -166,3 +166,72 @@ $(document).ready(function () {
 </script>
 @endsection
 
+@section('script')
+  <script>
+    $(document).ready(function(){
+        $(document).on('change','#type_search',function (e) {
+          ajax_search()
+        });
+        $(document).on('input','#hour_from_range',function (e) {
+          ajax_search()
+        });
+        $(document).on('input','#hour_to_range',function (e) {
+          ajax_search()
+        });
+        $(document).on('click','#ajax_pagination_in_search a',function (e) {
+          e.preventDefault();
+          var type_search=$("#type_search").val();
+          var hour_from_range=$("#hour_from_range").val();
+          var hour_to_range=$("#hour_to_range").val();
+          var linkurl = $(this).attr("href");
+
+          // Extract the page number from the link
+          var pageNumber = linkurl.split('page=')[1];
+
+              jQuery.ajax({
+                  url: linkurl,
+                  type: 'get',
+                  'datatype': 'html',
+                  cache: false,
+                  data: {"_token": '{{ csrf_token() }}', type_search: type_search, hour_from_range: hour_from_range, hour_to_range: hour_to_range},
+                  success: function (data) {
+                      $("#ajax_res_search_div").html(data);
+
+                      // Update the URL to reflect the current page
+                      window.history.pushState({}, '', linkurl);
+                  },
+                  error: function (xhr, status, error) {
+                var errorMessage = "عفوا لقد حدث خطأ";
+
+                // Check if the response contains a JSON error message
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+
+                alert(errorMessage);
+            }
+              });
+          });     
+      function ajax_search(){
+        var type_search=$("#type_search").val();
+        var hour_from_range=$("#hour_from_range").val();
+        var hour_to_range=$("#hour_to_range").val();
+        jQuery.ajax({
+          url:'{{ route('shifts.ajaxsearch') }}',
+          type:'post',
+          'datatype':'html',
+          cache:false,
+          data:{"_token":'{{ csrf_token() }}',type_search:type_search,hour_from_range:hour_from_range,hour_to_range:hour_to_range},
+          success: function(data){
+            $("#ajax_res_search_div").html(data);
+          },
+          error: function () {
+            alert("1عفوا لقد حدث خطأ")
+          }
+
+        });
+        
+            }
+          })
+  </script>
+@endsection
