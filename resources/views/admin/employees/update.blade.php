@@ -203,9 +203,9 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="national_id">الرقم القومي</label>
-                                        <input type="text" class="form-control" name="national_id" id="national_id" value="{{  old('national_id',$data['national_id'])}}">
-                                        @error('national_id')
+                                        <label for="insurance_no">الرقم التأمينى</label>
+                                        <input type="text" class="form-control" name="insurance_no" id="insurance_no" value="{{  old('insurance_no',$data['insurance_no'])}}">
+                                        @error('insurance_no')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -282,8 +282,20 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="emp_photo">اختر صورة الموظف</label>
-                                        <input type="file" class="form-control" name="emp_photo" id="emp_photo" value="{{  old('emp_photo',$data['emp_photo']) }}">
+                                        <input type="file" class="form-control" name="emp_photo" id="emp_photo">
+                                        @if(!empty($data['emp_photo']))
+                                            <img src="{{ asset('assets/admin/uploads/' . $data['emp_photo']) }}" alt="صورة الموظف" width="100" class="mt-2">
+                                        @endif
                                         @error('emp_photo')
+                                        <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="emp_ؤر">اختر السيرة الذاتية</label>
+                                        <input type="file" class="form-control" name="emp_ؤر" id="emp_ؤر" value="{{  old('emp_ؤر',$data['emp_ؤر']) }}">
+                                        @error('emp_ؤر')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -307,7 +319,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="insurance_status">حالة الموظف</label>
+                                        <label for="insurance_status">الحالة التامينية</label>
                                         <select class="form-control select2" name="insurance_status" id="insurance_status">
                                             <option value="1" @if ( old('insurance_status',$data['insurance_status'])==1)selected @endif>يعمل</option>
                                             <option value="2" @if ( old('insurance_status',$data['insurance_status'])==2)selected @endif>لا يعمل</option>

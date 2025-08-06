@@ -203,7 +203,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
-                                        <label for="insurance_no">الرقم القومي<span style="color: red">*</span></label>
+                                        <label for="insurance_no">الرقم التأمينى<span style="color: red">*</span></label>
                                         <input type="text" class="form-control" name="insurance_no" id="insurance_no" value="{{ old('insurance_no') }}">
                                         @error('insurance_no')
                                         <div class="text-danger">{{ $message }}</div>
@@ -284,6 +284,15 @@
                                         <label for="emp_photo">اختر صورة الموظف</label>
                                         <input type="file" class="form-control" name="emp_photo" id="emp_photo" value="{{ old('emp_photo') }}">
                                         @error('emp_photo')
+                                        <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="emp_cv">اختر السيرة الذاتية</label>
+                                        <input type="file" class="form-control" name="emp_cv" id="emp_cv" value="{{ old('emp_cv') }}">
+                                        @error('emp_cv')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>

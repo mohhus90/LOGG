@@ -43,6 +43,7 @@
                 <th scope="col">تاريخ الاضافة </th>
                 <th scope="col">التحديث بواسطة</th>
                 <th scope="col">تاريخ التحديث</th>
+                <th scope="col">الصورة</th>
                 <th scope="col">اجراء</th>
                 </tr>
               </thead>
@@ -67,6 +68,18 @@
                       {{ $info->updated_at }}
                       @else
                         لا يوجد
+                      @endif
+                    </td>
+                    <td> 
+                      @if(!@empty($info->emp_photo) )
+                      <img src="{{ asset('assets/admin/uploads/' . $info->emp_photo) }}" style="width: 80px; height: 80px;" class="rounded-circle" alt="صورة الموظف">
+              
+                      @else
+                        @if ($info->emp_gender==2)
+                         <img src="{{ asset('assets/admin/uploads/woman.png')}}" style="width: 80px; height: 80px;" class="rounded-circle"  alt="صورة الموظف">
+                        @else
+                          <img src="{{ asset('assets/admin/uploads/man.png')}}" style="width: 80px; height: 80px;" class="rounded-circle"  alt="صورة الموظف">
+                        @endif
                       @endif
                     </td>
                     <td>

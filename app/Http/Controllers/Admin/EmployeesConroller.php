@@ -87,126 +87,128 @@ class EmployeesConroller extends Controller
 
 
 public function store(Request $request)
-    {
-        DB::beginTransaction();
+{
+    // التحقق من صحة البيانات قبل الدخول في الـ try/catch
+    $request->validate([
+        'employee_name_A' => 'required|string',
+        'employee_name_E' => 'nullable|string',
+        'employee_id' => 'required|unique:employees,employee_id',
+        'national_id' => 'required|unique:employees,national_id',
+        'bank_account' => 'nullable|unique:employees,bank_account',
+        'emp_departments_id' => 'required|exists:departments,id',
+        'shifts_types_id' => 'required|exists:shifts_types,id',
+        'branches_id' => 'required|exists:branches,id',
+        'emp_jobs_id' => 'required|exists:jobs_categories,id',
+        'daily_work_hours' => 'numeric|min:1|max:24',
+        'finger_id' => 'nullable|string',
+        'employee_address' => 'nullable|string',
+        'emp_gender' => 'nullable|string',
+        'emp_social_status' => 'nullable|string',
+        'emp_start_date' => 'nullable|date',
+        'insurance_status' => 'nullable|string',
+        'resignation_status' => 'nullable|string',
+        'qualification_grade' => 'nullable|string',
+        'emp_military_status' => 'nullable|string',
+        'motivation' => 'nullable|numeric',
+        'sal_cash_visa' => 'nullable|string',
+        'bank_name' => 'nullable|string',
+        'bank_ID' => 'nullable|string',
+        'bank_branch' => 'nullable|string',
+        'emp_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
+    ], [
+        'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
+        'employee_id.required' => 'حقل كود الموظف مطلوب',
+        'employee_id.unique' => 'كود الموظف تم إدخاله مسبقًا',
+        'national_id.required' => 'حقل الرقم القومي مطلوب',
+        'national_id.unique' => 'هذا الرقم القومي تم إدخاله مسبقًا',
+        'bank_account.unique' => 'هذا الحساب البنكي تم إدخاله مسبقًا',
+        'branches_id.required' => 'حقل الفرع مطلوب',
+        'branches_id.exists' => 'الفرع المحدد غير موجود',
+        'shifts_types_id.required' => 'حقل الشيفت مطلوب',
+        'shifts_types_id.exists' => 'الشيفت المحدد غير موجود',
+        'emp_departments_id.required' => 'حقل الإدارة مطلوب',
+        'emp_departments_id.exists' => 'الإدارة المحددة غير موجودة',
+        'emp_jobs_id.required' => 'حقل الوظيفة مطلوب',
+        'emp_jobs_id.exists' => 'الوظيفة المحددة غير موجودة',
+        'daily_work_hours.min' => 'يجب ألا يقل عدد الساعات عن 1',
+        'daily_work_hours.max' => 'يجب ألا يزيد عدد الساعات عن 24',
+    ]);
 
-        try {
-            // التحقق من صحة البيانات المطلوبة
-            // لا تضع هذا الجزء داخل try-catch إذا كنت تريد أن يتم توجيه الأخطاء تلقائيًا إلى الواجهة
-            $request->validate([
-                'employee_name_A' => 'required|string',
-                'employee_name_E' => 'string',
-                'employee_id' => 'required|unique:employees,employee_id',
-                'national_id' => 'required|unique:employees,national_id',
-                'emp_departments_id' => 'required|exists:departments,id',
-                'bank_account' => 'unique:employees,bank_account',
-                'shifts_types_id' => 'required|exists:shifts_types,id',
-                'branches_id' => 'required|exists:branches,id',
-                'emp_jobs_id' => 'required|exists:jobs_categories,id',
-                'daily_work_hours' => 'numeric|min:1|max:24',
-                'finger_id' => 'nullable|string', // مثال
-                'employee_address' => 'nullable|string', // مثال
-                'emp_gender' => 'nullable|string', // مثال
-                'emp_social_status' => 'nullable|string', // مثال
-                'emp_start_date' => 'nullable|date', // مثال
-                'insurance_status' => 'nullable|string', // مثال
-                'resignation_status' => 'nullable|string', // مثال
-                'qualification_grade' => 'nullable|string', // مثال
-                'emp_military_status' => 'nullable|string', // مثال
-                'motivation' => 'nullable|numeric', // مثال
-                'sal_cash_visa' => 'nullable|string', // مثال
-                'bank_name' => 'nullable|string', // مثال
-                'bank_ID' => 'nullable|string', // مثال
-                'bank_branch' => 'nullable|string', // مثال
-            ], [
-                'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
-                'employee_id.required' => 'حقل كود الموظف مطلوب',
-                'employee_id.unique' => 'كود الموظف تم ادخاله مسبقا',
-                'national_id.required' => 'حقل الرقم القومى مطلوب',
-                'national_id.unique' => 'هذا الرقم القومى تم ادخاله مسبقا',
-                'bank_account.unique' => 'هذا الحساب البنكى تم ادخاله مسبقا',
-                'branches_id.required' => 'حقل الفرع مطلوب',
-                'branches_id.exists' => 'الفرع المحدد غير موجود',
-                'shifts_types_id.required' => 'حقل الشيفت مطلوب',
-                'shifts_types_id.exists' => 'الشيفت المحدد غير موجود',
-                'emp_departments_id.required' => 'حقل الادارة مطلوبة',
-                'emp_departments_id.exists' => 'الادارة المحدد غير موجودة',
-                'emp_jobs_id.required' => 'حقل الوظيفة مطلوبة',
-                'emp_jobs_id.exists' => 'الوظيفة المحددة غير موجودة',
-                'daily_work_hours.min' => 'يجب أن لا يقل عدد الساعات عن 1',
-                'daily_work_hours.max' => 'يجب أن لا يزيد عدد الساعات عن 24',
-            ]);
+    DB::beginTransaction();
 
-            // تجهيز البيانات للحفظ
-            $employeeData = [
-                'added_by' => auth()->guard('admin')->user()->id,
-                'com_code' => auth()->guard('admin')->user()->com_code,
-                'employee_id' => $request->employee_id,
-                'finger_id' => $request->finger_id,
-                'employee_name_A' => $request->employee_name_A,
-                'employee_name_E' => $request->employee_name_E,
-                'employee_address' => $request->employee_address,
-                'emp_gender' => $request->emp_gender,
-                'emp_social_status' => $request->emp_social_status,
-                'emp_start_date' => $request->emp_start_date,
-                'insurance_status' => $request->insurance_status,
-                'resignation_status' => $request->resignation_status,
-                'qualification_grade' => $request->qualification_grade,
-                'emp_qualification' => $request->emp_qualification,
-                'qualification_year' => $request->qualification_year,
-                'resignation_date' => $request->resignation_date,
-                'resignation_cause' => $request->resignation_cause,
-                'emp_home_tel' => $request->emp_home_tel,
-                'emp_mobile' => $request->emp_mobile,
-                'emp_email' => $request->emp_email,
-                'emp_photo' => $request->emp_photo,
-                'birth_date' => $request->birth_date,
-                'emp_sal' => $request->emp_sal,
-                'emp_sal_insurance' => $request->emp_sal_insurance,
-                'medical_insurance' => $request->medical_insurance,
-                'emp_sal' => $request->emp_sal,
-                'emp_fixed_allowances' => $request->emp_fixed_allowances,
-                'emp_military_status' => $request->emp_military_status,
-                'motivation' => $request->motivation,
-                'national_id' => $request->national_id,
-                'insurance_no' => $request->insurance_no,
-                'sal_cash_visa' => $request->sal_cash_visa,
-                'bank_name' => $request->bank_name,
-                'bank_account' => $request->bank_account,
-                'bank_ID' => $request->bank_ID,
-                'bank_branch' => $request->bank_branch,
-                'daily_work_hours' => $request->daily_work_hours,
-                'emp_departments_id' => $request->emp_departments_id,
-                'emp_jobs_id' => $request->emp_jobs_id,
-                'shifts_types_id' => $request->shifts_types_id,
-                'branches_id' => $request->branches_id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-            // حفظ البيانات
-            Employee::create($employeeData);
+    try {
+        $imageName = null;
 
-            DB::commit();
-            return redirect()->route('employees.index')
-                ->with('success', 'تم إضافة الموظف بنجاح');
-
-        } catch (ValidationException $e) {
-            // إذا كان هناك خطأ في التحقق من الصحة، سيعيد Laravel التوجيه تلقائيًا مع الأخطاء
-            // لذلك لا تحتاج إلى 'return redirect()->back()->withErrors($e->errors())' هنا
-            DB::rollBack();
-            return redirect()->back()
-                ->withErrors($e->errors()) // هذا سيمرر الأخطاء إلى الواجهة
-                ->withInput();
+        // ✅ معالجة الصورة
+        if ($request->hasFile('emp_photo')) {
+            $image = $request->file('emp_photo');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            // $destinationPath = public_path('assets/admin/uploads');
+            $image->move('assets/admin/uploads', $imageName);
         }
-        catch (\Exception $e) {
-            // هذا الجزء يلتقط الأخطاء الأخرى غير أخطاء التحقق من الصحة
-            DB::rollBack();
-            Log::error('Error during employee save: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'حدث خطأ غير متوقع: ' . $e->getMessage())
-                ->withInput();
-        }
+
+        // ✅ تجهيز البيانات للحفظ
+        $employeeData = [
+            'added_by' => auth()->guard('admin')->user()->id,
+            'com_code' => auth()->guard('admin')->user()->com_code,
+            'employee_id' => $request->employee_id,
+            'finger_id' => $request->finger_id,
+            'employee_name_A' => $request->employee_name_A,
+            'employee_name_E' => $request->employee_name_E,
+            'employee_address' => $request->employee_address,
+            'emp_gender' => $request->emp_gender,
+            'emp_social_status' => $request->emp_social_status,
+            'emp_start_date' => $request->emp_start_date,
+            'insurance_status' => $request->insurance_status,
+            'resignation_status' => $request->resignation_status,
+            'qualification_grade' => $request->qualification_grade,
+            'emp_qualification' => $request->emp_qualification,
+            'qualification_year' => $request->qualification_year,
+            'resignation_date' => $request->resignation_date,
+            'resignation_cause' => $request->resignation_cause,
+            'emp_home_tel' => $request->emp_home_tel,
+            'emp_mobile' => $request->emp_mobile,
+            'emp_email' => $request->emp_email,
+            'emp_photo' => $imageName, // حفظ الصورة
+            'emp_cv' => $request->emp_cv,
+            'birth_date' => $request->birth_date,
+            'emp_sal' => $request->emp_sal,
+            'emp_sal_insurance' => $request->emp_sal_insurance,
+            'medical_insurance' => $request->medical_insurance,
+            'emp_fixed_allowances' => $request->emp_fixed_allowances,
+            'emp_military_status' => $request->emp_military_status,
+            'motivation' => $request->motivation,
+            'national_id' => $request->national_id,
+            'insurance_no' => $request->insurance_no,
+            'sal_cash_visa' => $request->sal_cash_visa,
+            'bank_name' => $request->bank_name,
+            'bank_account' => $request->bank_account,
+            'bank_ID' => $request->bank_ID,
+            'bank_branch' => $request->bank_branch,
+            'daily_work_hours' => $request->daily_work_hours,
+            'emp_departments_id' => $request->emp_departments_id,
+            'emp_jobs_id' => $request->emp_jobs_id,
+            'shifts_types_id' => $request->shifts_types_id,
+            'branches_id' => $request->branches_id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        // ✅ حفظ البيانات
+        Employee::create($employeeData);
+
+        DB::commit();
+        return redirect()->route('employees.index')
+            ->with('success', 'تم إضافة الموظف بنجاح');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Error during employee save: ' . $e->getMessage());
+        return redirect()->back()
+            ->with('error', 'حدث خطأ غير متوقع: ' . $e->getMessage())
+            ->withInput();
     }
+}
+
     /**
      * Display the specified resource.
      */
@@ -239,133 +241,158 @@ public function store(Request $request)
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        
-        $validator1 = Validator::make($request->all(),[
-            'employee_id'=>['required',Rule::unique('employees')->ignore($id)],
-        ]);
-        if($validator1->fails()){
-            return redirect()->back()->with(['error'=>'قد تم ادخال كود الموظف هذا لموظف اخر'])->withInput();
-        }
-        $validator2 = Validator::make($request->all(),[
-            'national_id'=>['required',Rule::unique('employees')->ignore($id)],
-        ]);
-        if($validator2->fails()){
-            return redirect()->back()->with(['error'=>'قد تم ادخال الرقم القومى هذا لموظف اخر'])->withInput();
-        }
-        $validator3 = Validator::make($request->all(),[
-            'insurance_no'=>['required',Rule::unique('employees')->ignore($id)],
-        ]);
-        if($validator3->fails()){
-            return redirect()->back()->with(['error'=>'قد تم ادخال الرقم التأمينى هذا لموظف اخر'])->withInput();
-        }
-        $validator4 = Validator::make($request->all(),[
-            'bank_account'=>[Rule::unique('employees')->ignore($id)],
-        ]);
-        if($validator4->fails()){
-            return redirect()->back()->with(['error'=>'قد تم ادخال حساب البنك هذا لموظف اخر'])->withInput();
+   public function update(Request $request, string $id)
+{
+    // التحقق من الحقول المكررة
+    $validator1 = Validator::make($request->all(), [
+        'employee_id' => ['required', Rule::unique('employees')->ignore($id)],
+    ]);
+    if ($validator1->fails()) {
+        return redirect()->back()->with(['error' => 'قد تم إدخال كود الموظف هذا لموظف آخر'])->withInput();
+    }
+
+    $validator2 = Validator::make($request->all(), [
+        'national_id' => ['required', Rule::unique('employees')->ignore($id)],
+    ]);
+    if ($validator2->fails()) {
+        return redirect()->back()->with(['error' => 'قد تم إدخال الرقم القومي هذا لموظف آخر'])->withInput();
+    }
+
+    $validator3 = Validator::make($request->all(), [
+        'insurance_no' => ['required', Rule::unique('employees')->ignore($id)],
+    ]);
+    if ($validator3->fails()) {
+        return redirect()->back()->with(['error' => 'قد تم إدخال الرقم التأميني هذا لموظف آخر'])->withInput();
+    }
+
+    $validator4 = Validator::make($request->all(), [
+        'bank_account' => ['nullable', Rule::unique('employees')->ignore($id)],
+    ]);
+    if ($validator4->fails()) {
+        return redirect()->back()->with(['error' => 'قد تم إدخال حساب البنك هذا لموظف آخر'])->withInput();
+    }
+
+    // التحقق من الحقول الأخرى
+    $request->validate([
+        'employee_name_A' => 'required|string',
+        'employee_name_E' => 'required|string',
+        'employee_id' => 'required',
+        'national_id' => 'required',
+        'emp_departments_id' => 'required|exists:departments,id',
+        'shifts_types_id' => 'required|exists:shifts_types,id',
+        'branches_id' => 'required|exists:branches,id',
+        'emp_jobs_id' => 'required|exists:jobs_categories,id',
+        'daily_work_hours' => 'numeric|min:1|max:24',
+        'finger_id' => 'nullable|string',
+        'employee_address' => 'nullable|string',
+        'emp_gender' => 'nullable|string',
+        'emp_social_status' => 'nullable|string',
+        'emp_start_date' => 'nullable|date',
+        'insurance_status' => 'nullable|string',
+        'resignation_status' => 'nullable|string',
+        'qualification_grade' => 'nullable|string',
+        'emp_military_status' => 'nullable|string',
+        'motivation' => 'nullable|numeric',
+        'sal_cash_visa' => 'nullable|string',
+        'bank_name' => 'nullable|string',
+        'bank_ID' => 'nullable|string',
+        'bank_branch' => 'nullable|string',
+        'emp_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
+    ], [
+        'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
+        'employee_name_E.required' => 'حقل اسم الموظف مطلوب',
+        'employee_id.required' => 'حقل كود الموظف مطلوب',
+        'national_id.required' => 'حقل الرقم القومي مطلوب',
+        'branches_id.required' => 'حقل الفرع مطلوب',
+        'branches_id.exists' => 'الفرع المحدد غير موجود',
+        'shifts_types_id.required' => 'حقل الشيفت مطلوب',
+        'shifts_types_id.exists' => 'الشيفت المحدد غير موجود',
+        'emp_departments_id.required' => 'حقل الإدارة مطلوب',
+        'emp_departments_id.exists' => 'الإدارة المحددة غير موجودة',
+        'emp_jobs_id.required' => 'حقل الوظيفة مطلوب',
+        'emp_jobs_id.exists' => 'الوظيفة المحددة غير موجودة',
+        'daily_work_hours.min' => 'يجب ألا يقل عدد الساعات عن 1',
+        'daily_work_hours.max' => 'يجب ألا يزيد عدد الساعات عن 24',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        $employee = Employee::findOrFail($id);
+
+        // الاحتفاظ بالاسم القديم
+        $imageName = $employee->emp_photo;
+
+        // معالجة رفع صورة جديدة
+        if ($request->hasFile('emp_photo')) {
+            $image = $request->file('emp_photo');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            // $destinationPath = public_path('assets/admin/uploads');
+            $image->move('assets/admin/uploads', $imageName);
+
+            // حذف الصورة القديمة إن وجدت
+            if ($employee->emp_photo && file_exists('assets/admin/uploads' . '/' . $employee->emp_photo)) {
+                unlink('assets/admin/uploads'. '/' . $employee->emp_photo);
+            }
         }
 
-            $request->validate([
-                'employee_name_A' => 'required|string',
-                'employee_name_E' => 'required|string',
-                'employee_id' => 'required',
-                'national_id' => 'required',
-                'emp_departments_id' => 'required|exists:departments,id',
-                'shifts_types_id' => 'required|exists:shifts_types,id',
-                'branches_id' => 'required|exists:branches,id',
-                'emp_jobs_id' => 'required|exists:jobs_categories,id',
-                'daily_work_hours' => 'numeric|min:1|max:24',
-                'finger_id' => 'nullable|string', // مثال
-                'employee_address' => 'nullable|string', // مثال
-                'emp_gender' => 'nullable|string', // مثال
-                'emp_social_status' => 'nullable|string', // مثال
-                'emp_start_date' => 'nullable|date', // مثال
-                'insurance_status' => 'nullable|string', // مثال
-                'resignation_status' => 'nullable|string', // مثال
-                'qualification_grade' => 'nullable|string', // مثال
-                'emp_military_status' => 'nullable|string', // مثال
-                'motivation' => 'nullable|numeric', // مثال
-                'sal_cash_visa' => 'nullable|string', // مثال
-                'bank_name' => 'nullable|string', // مثال
-                'bank_ID' => 'nullable|string', // مثال
-                'bank_branch' => 'nullable|string', // مثال
-            ], [
-                'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
-                'employee_name_E.required' => 'حقل اسم الموظف مطلوب',
-                'employee_id.required' => 'حقل كود الموظف مطلوب',
-                'national_id.required' => 'حقل الرقم القومى مطلوب',
-                'branches_id.required' => 'حقل الفرع مطلوب',
-                'branches_id.exists' => 'الفرع المحدد غير موجود',
-                'shifts_types_id.required' => 'حقل الشيفت مطلوب',
-                'shifts_types_id.exists' => 'الشيفت المحدد غير موجود',
-                'emp_departments_id.required' => 'حقل الادارة مطلوبة',
-                'emp_departments_id.exists' => 'الادارة المحدد غير موجودة',
-                'emp_jobs_id.required' => 'حقل الوظيفة مطلوبة',
-                'emp_jobs_id.exists' => 'الوظيفة المحددة غير موجودة',
-                'daily_work_hours.min' => 'يجب أن لا يقل عدد الساعات عن 1',
-                'daily_work_hours.max' => 'يجب أن لا يزيد عدد الساعات عن 24',
-            ]);
-DB::beginTransaction();
-        try{
-            $data=Employee::select('*')->where(['id'=>$id])->first();
-            if(empty($data)){
-                return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
-            }
-            $dataupdate = [
-                'updated_by' => auth()->guard('admin')->user()->id,
-                'com_code' => auth()->guard('admin')->user()->com_code,
-                'employee_id' => $request->employee_id,
-                'finger_id' => $request->finger_id,
-                'employee_name_A' => $request->employee_name_A,
-                'employee_name_E' => $request->employee_name_E,
-                'employee_address' => $request->employee_address,
-                'emp_gender' => $request->emp_gender,
-                'emp_social_status' => $request->emp_social_status,
-                'emp_start_date' => $request->emp_start_date,
-                'insurance_status' => $request->insurance_status,
-                'resignation_status' => $request->resignation_status,
-                'qualification_grade' => $request->qualification_grade,
-                'emp_qualification' => $request->emp_qualification,
-                'qualification_year' => $request->qualification_year,
-                'resignation_date' => $request->resignation_date,
-                'resignation_cause' => $request->resignation_cause,
-                'emp_home_tel' => $request->emp_home_tel,
-                'emp_mobile' => $request->emp_mobile,
-                'emp_email' => $request->emp_email,
-                'emp_photo' => $request->emp_photo,
-                'birth_date' => $request->birth_date,
-                'emp_sal' => $request->emp_sal,
-                'emp_sal_insurance' => $request->emp_sal_insurance,
-                'medical_insurance' => $request->medical_insurance,
-                'emp_sal' => $request->emp_sal,
-                'emp_fixed_allowances' => $request->emp_fixed_allowances,
-                'emp_military_status' => $request->emp_military_status,
-                'motivation' => $request->motivation,
-                'national_id' => $request->national_id,
-                'insurance_no' => $request->insurance_no,
-                'sal_cash_visa' => $request->sal_cash_visa,
-                'bank_name' => $request->bank_name,
-                'bank_account' => $request->bank_account,
-                'bank_ID' => $request->bank_ID,
-                'bank_branch' => $request->bank_branch,
-                'daily_work_hours' => $request->daily_work_hours,
-                'emp_departments_id' => $request->emp_departments_id,
-                'emp_jobs_id' => $request->emp_jobs_id,
-                'shifts_types_id' => $request->shifts_types_id,
-                'branches_id' => $request->branches_id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-            Employee::where(['id'=>$id])->update($dataupdate);
-            DB::commit();
-            return redirect()->route('employees.index')->with(['success'=>'تم التحديث بنجاح']);
-        }catch(\Exception $ex){
-            DB::rollBack();
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();
-        }
+        // بيانات التحديث
+        $dataupdate = [
+            'updated_by' => auth()->guard('admin')->user()->id,
+            'com_code' => auth()->guard('admin')->user()->com_code,
+            'employee_id' => $request->employee_id,
+            'finger_id' => $request->finger_id,
+            'employee_name_A' => $request->employee_name_A,
+            'employee_name_E' => $request->employee_name_E,
+            'employee_address' => $request->employee_address,
+            'emp_gender' => $request->emp_gender,
+            'emp_social_status' => $request->emp_social_status,
+            'emp_start_date' => $request->emp_start_date,
+            'insurance_status' => $request->insurance_status,
+            'resignation_status' => $request->resignation_status,
+            'qualification_grade' => $request->qualification_grade,
+            'emp_qualification' => $request->emp_qualification,
+            'qualification_year' => $request->qualification_year,
+            'resignation_date' => $request->resignation_date,
+            'resignation_cause' => $request->resignation_cause,
+            'emp_home_tel' => $request->emp_home_tel,
+            'emp_mobile' => $request->emp_mobile,
+            'emp_email' => $request->emp_email,
+            'emp_photo' => $imageName, // ✅ نستخدم اسم الصورة الصحيح
+            'emp_cv' => $request->emp_cv,
+            'birth_date' => $request->birth_date,
+            'emp_sal' => $request->emp_sal,
+            'emp_sal_insurance' => $request->emp_sal_insurance,
+            'medical_insurance' => $request->medical_insurance,
+            'emp_fixed_allowances' => $request->emp_fixed_allowances,
+            'emp_military_status' => $request->emp_military_status,
+            'motivation' => $request->motivation,
+            'national_id' => $request->national_id,
+            'insurance_no' => $request->insurance_no,
+            'sal_cash_visa' => $request->sal_cash_visa,
+            'bank_name' => $request->bank_name,
+            'bank_account' => $request->bank_account,
+            'bank_ID' => $request->bank_ID,
+            'bank_branch' => $request->bank_branch,
+            'daily_work_hours' => $request->daily_work_hours,
+            'emp_departments_id' => $request->emp_departments_id,
+            'emp_jobs_id' => $request->emp_jobs_id,
+            'shifts_types_id' => $request->shifts_types_id,
+            'branches_id' => $request->branches_id,
+            'updated_at' => now(),
+        ];
+
+        // تحديث البيانات
+        $employee->update($dataupdate);
+
+        DB::commit();
+        return redirect()->route('employees.index')->with(['success' => 'تم التحديث بنجاح']);
+
+    } catch (\Exception $ex) {
+        DB::rollBack();
+        return redirect()->back()->with(['error' => 'عفواً حدث خطأ: ' . $ex->getMessage()])->withInput();
     }
+}
 
     /**
      * Remove the specified resource from storage.

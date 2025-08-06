@@ -45,6 +45,7 @@ return new class extends Migration
             $table->string('emp_mobile',50)->nullable()->unique();
             $table->string('emp_email',50)->nullable()->unique();
             $table->string('emp_photo',100)->nullable();
+            $table->string('emp_cv',100)->nullable();
             $table->date('birth_date')->nullable();
             $table->decimal('emp_sal',10,2)->nullable();
             $table->decimal('emp_fixed_allowances',10,2)->nullable();
