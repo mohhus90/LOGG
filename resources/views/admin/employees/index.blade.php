@@ -25,12 +25,24 @@
         </div>
        
 
-        <div class="form-group form-inline" style="padding: 5px">
+        {{-- <div class="form-group form-inline" style="padding: 5px">
           <label for="employee_name_A" class="col-sm-2">اسم الموظف</label>
           <div class="">
               <input type="text" class="col-sm-10 form-control" name="employee_name_A_search" value="" id="employee_name_A_search">
           </div>
-      </div>
+        </div> --}}
+        <div class="row "style="padding: 5px" > {{-- Start a Bootstrap row for grouping inputs --}}
+          <div class="col-md-4" > {{-- Each input will take 4 columns (12/3 = 4) --}}
+              <label for="employee_id">كود الموظف </label>
+              <input type="text" class=" col-sm-10 form-control" name="employee_id_search" id="employee_id_search" value="">
+          </div>
+            <div class="col-md-4" >
+            <label for="employee_name_A">اسم الموظف</label>
+            <div class="">
+                <input type="text" class="col-sm-10 form-control" name="employee_name_A_search" value="" id="employee_name_A_search">
+            </div>
+          </div>
+        </div>
         <div class="card-body" id="ajax_res_search_div">
             @if(@isset($data) and !@empty($data) )
             <table id="example2" class="table table-bordered table-hover">
@@ -102,7 +114,7 @@
 </div>
    
 @endsection
- @section('script2')
+ {{-- @section('script2')
 
 <script>
 $(document).ready(function () {
@@ -177,74 +189,138 @@ $(document).ready(function () {
     }
 });
 </script>
-@endsection
+@endsection --}}
 
-@section('script')
-  <script>
-    $(document).ready(function(){
-        $(document).on('change','#type_search',function (e) {
-          ajax_search()
-        });
-        $(document).on('input','#hour_from_range',function (e) {
-          ajax_search()
-        });
-        $(document).on('input','#hour_to_range',function (e) {
-          ajax_search()
-        });
-        $(document).on('click','#ajax_pagination_in_search a',function (e) {
-          e.preventDefault();
-          var type_search=$("#type_search").val();
-          var hour_from_range=$("#hour_from_range").val();
-          var hour_to_range=$("#hour_to_range").val();
-          var linkurl = $(this).attr("href");
+{{-- @section('script')
+<script>
+$(document).ready(function(){
 
-          // Extract the page number from the link
-          var pageNumber = linkurl.split('page=')[1];
+    // البحث أثناء الكتابة
+    $(document).on('input','#employee_name_A_search',function () {
+        ajax_search();
+    });
 
-              jQuery.ajax({
-                  url: linkurl,
-                  type: 'get',
-                  'datatype': 'html',
-                  cache: false,
-                  data: {"_token": '{{ csrf_token() }}', type_search: type_search, hour_from_range: hour_from_range, hour_to_range: hour_to_range},
-                  success: function (data) {
-                      $("#ajax_res_search_div").html(data);
+    // الضغط على روابط الصفحات فى البحث
+    $(document).on('click','#ajax_pagination_in_search a',function (e) {
+        e.preventDefault();
+        var employee_name_A_search = $("#employee_name_A_search").val();
+        var linkurl = $(this).attr("href");
+        // استخراج رقم الصفحة
+        var pageNumber = linkurl.split('page=')[1];
+        $.ajax({
+            url: linkurl,
+            type: 'get',
+            dataType: 'html',
+            cache: false,
+            data: {
+                "_token": '{{ csrf_token() }}',
+                employee_name_A_search: employee_name_A_search
+            },
+            success: function (data) {
+                $("#ajax_res_search_div").html(data);
+                // تحديث الرابط فى شريط العنوان
+                // window.history.pushState({}, '', linkurl);
+                window.history.pushState({}, '', '/employees?page=' + pageNumber);
+            },
+             error: function (xhr) {
+                var errorMessage = "حدث خطأ غير متوقع";
 
-                      // Update the URL to reflect the current page
-                      window.history.pushState({}, '', linkurl);
-                  },
-                  error: function (xhr, status, error) {
-                var errorMessage = "عفوا لقد حدث خطأ";
-
-                // Check if the response contains a JSON error message
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage = xhr.responseJSON.error;
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                else if (xhr.responseText) {
+                    errorMessage = xhr.responseText;
                 }
 
                 alert(errorMessage);
             }
-              });
-          });     
-      function ajax_search(){
-        var type_search=$("#type_search").val();
-        var hour_from_range=$("#hour_from_range").val();
-        var hour_to_range=$("#hour_to_range").val();
-        jQuery.ajax({
-          url:'{{ route('shifts.ajaxsearch') }}',
-          type:'post',
-          'datatype':'html',
-          cache:false,
-          data:{"_token":'{{ csrf_token() }}',type_search:type_search,hour_from_range:hour_from_range,hour_to_range:hour_to_range},
-          success: function(data){
-            $("#ajax_res_search_div").html(data);
-          },
-          error: function () {
-            alert("1عفوا لقد حدث خطأ")
-          }
-
         });
-        
+    });
+
+    // دالة البحث
+    function ajax_search(){
+        var employee_name_A_search = $("#employee_name_A_search").val();
+
+        $.ajax({
+            url: '{{ route('employees.ajaxsearch') }}',
+            type: 'post',
+            dataType: 'html',
+            cache: false,
+            data: {
+                "_token": '{{ csrf_token() }}',
+                employee_name_A_search: employee_name_A_search
+            },
+            success: function(data){
+                $("#ajax_res_search_div").html(data);
+            },
+            error: function (xhr) {
+                var errorMessage = "حدث خطأ غير متوقع";
+
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                else if (xhr.responseText) {
+                    errorMessage = xhr.responseText;
+                }
+
+                alert(errorMessage);
             }
-          })
-  </script>
+        });
+    }
+
+});
+</script>
+@endsection --}}
+
+@section('script')
+<script>
+$(document).ready(function(){
+
+    // البحث
+    $(document).on('input', '#employee_name_A_search', function(){
+        ajax_search(1);
+    });
+    $(document).on('input', '#employee_id_search', function(){
+        ajax_search(1);
+    });
+
+    // الضغط على الصفحات
+    $(document).on('click', '#ajax_pagination_in_search a', function(e){
+        e.preventDefault();
+        var pageNumber = $(this).attr('href').split('page=')[1];
+        ajax_search(pageNumber);
+    });
+
+    function ajax_search(page){
+        var employee_name_A_search = $("#employee_name_A_search").val();
+        var employee_id_search = $("#employee_id_search").val();
+        $.ajax({
+            url: '{{ route("employees.index") }}?page=' + page,
+            type: 'get',
+            dataType: 'html',
+            cache: false,
+            data: {
+                employee_name_A_search: employee_name_A_search,
+                employee_id_search: employee_id_search
+            },
+            success: function(data){
+                $("#ajax_res_search_div").html(data);
+                window.history.pushState({}, '', '{{ route("employees.index") }}?page=' + page);
+            },
+            error: function(xhr){
+                var errorMessage = "حدث خطأ غير متوقع";
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    errorMessage = xhr.responseText;
+                }
+                alert(errorMessage);
+            }
+        });
+    }
+
+});
+
+</script>
 @endsection
+

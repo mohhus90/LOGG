@@ -32,14 +32,50 @@ class EmployeesConroller extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
+
     {
-        // $data=get_data_where(new Employee,array("*"));
-        $data= Employee::select('*')->orderby('id','ASC')->paginate(paginate_counter);
+       
+        // $data= Employee::select('*')->orderby('id','ASC')->paginate(paginate_counter);
 
-        return view('admin.employees.index',['data'=>$data]);
+        // return view('admin.employees.index',['data'=>$data]);
+
+        $employee_name_A_search = $request->employee_name_A_search;
+        $employee_id_search = $request->employee_id_search;
+
+        if ($employee_name_A_search == 'all' || empty($employee_name_A_search)) {
+            $field1 = "id";
+            $op1 = ">";
+            $val1 = 0;
+        } else {
+            $field1 = "employee_name_A";
+            $op1 = "like";
+            $val1 = '%' . $employee_name_A_search . '%';
+        }
+        if ($employee_id_search == 'all' || empty($employee_id_search)) {
+            $field2 = "id";
+            $op2 = ">";
+            $val2 = 0;
+        } else {
+            $field2 = "employee_id";
+            $op2 = "like";
+            $val2 = '%' . $employee_id_search . '%';
+        }
+
+        $data = Employee::where($field1, $op1, $val1)
+            ->where($field2, $op2, $val2)
+            ->orderBy("id", "DESC")
+            ->paginate(10);
+
+        if ($request->ajax()) {
+            return view('admin.employees.ajaxsearch', compact('data'))->render();
+        }
+
+        return view('admin.employees.index', compact('data'));
+
+    
     }
-
+    
 
 
      public function uploadexcel()
@@ -412,33 +448,33 @@ public function store(Request $request)
         }
         
     }
-    public function ajaxsearch(Request $request){
+    
+    // public function ajaxsearch(Request $request){
        
-        if($request->ajax()){
-            $employee_name_A_search=$request->employee_name_A_search;
-            if ($employee_name_A_search != "") {
-                $field1 = "employee_name_A";
-                $op1 = "LIKE"; // Change the operator to LIKE
-                $val1 = '%' . $employee_name_A_search . '%'; // Use % for a partial match
-                
-                $data = Employee::select("*")->where($field1, $op1, $val1)
-                    ->orderBy("id", "DESC")
-                    ->paginate(paginate_counter);
-            } else {
-                // If $employee_name_A_search is empty, get all data without the filter
-                $data = Employee::select("*")
-                    ->orderBy("id", "DESC")
-                    ->paginate(paginate_counter);
-            }
-              
-                if ($request->ajax()) {
-                    // Return partial view for AJAX request
-                    return view('admin.employees.ajax_search', ['data' => $data]);
-                } else {
-                    // Return full view for initial load or page refresh
-                    return view('admin.employees.index', ['data' => $data]);
-                }
-        }
+    //     if($request->ajax()){
+    //         $employee_name_A_search=$request->employee_name_A_search;
+    //         if($employee_name_A_search=='all'){
+    //             $field1="id";
+    //             $op1=">";
+    //             $val1=0;
+    //         }else{
+    //             $field1="employee_name_A";
+    //             $op1="like";
+    //             $val1='%' . $employee_name_A_search . '%';
+    //         }
+    //         $data = Employee::select("*")
+    //         ->where($field1, $op1, $val1)
+    //         ->orderBy("id", "DESC")
+    //         ->paginate(paginate_counter);
+    
+    //             if ($request->ajax()) {
+    //                 // Return partial view for AJAX request
+    //                return view('admin.employees.ajaxsearch', ['data' => $data]);
+    //             } else {
+    //                 // Return full view for initial load or page refresh
+    //                 return view('admin.employees.index', ['data' => $data]);
+    //             }
+    //     }
         
-    }
+    // }
 }

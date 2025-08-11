@@ -89,7 +89,8 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::get('employees/delete/{id}',[EmployeesConroller::class,'delete'])->name('employees.delete')->middleware('auth:admin');
     Route::get('employees/uploadexcel',[EmployeesConroller::class,'uploadexcel'])->name('employees.uploadexcel')->middleware('auth:admin');
     Route::post('employees/douploadexcel',[EmployeesConroller::class,'douploadexcel'])->name('employees.douploadexcel')->middleware('auth:admin');
-    Route::match(['get', 'post'], 'employees/ajaxsearch', [EmployeesConroller::class, 'ajaxsearch'])->name('employees.ajaxsearch')->middleware('auth:admin');
+    // Route::match(['get', 'post'], 'employees/ajaxsearch', [EmployeesConroller::class, 'ajaxsearch'])->name('employees.ajaxsearch')->middleware('auth:admin');
+    Route::get('/employees', [EmployeesConroller::class, 'index'])->name('employees.index')->middleware('auth:admin');
     Route::get('employees/export/', [EmployeesConroller::class, 'export'])->name('employees.export');
      // بداية السنة المالية
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
