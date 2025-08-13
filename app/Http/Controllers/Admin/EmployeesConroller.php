@@ -248,9 +248,22 @@ public function store(Request $request)
     /**
      * Display the specified resource.
      */
-    public function show(Employee $Employee)
+    public function show($id)
     {
-        //
+        $data=Employee::select('*')->where(['id'=>$id])->first();
+        if(empty($data)){
+            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
+        }else{
+            $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
+                                    ->get(['id', 'dep_name']);
+            $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
+                                ->get(['id', 'job_name']);
+            $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
+                                ->get(['id', 'type']);
+            $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
+                        ->get(['id', 'branch_name']);
+            return view('admin.employees.show',['data'=>$data],compact('shifts_types','departments','jobs_categories','branches'));
+        }
     }
 
     /**

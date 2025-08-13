@@ -97,6 +97,7 @@
                     <td>
                       <a href="{{ route('employees.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
                       <a href="{{ route('employees.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
+                      <a href="{{ route('employees.show',$info->id) }}" class="btn btn-sm btn-info">المزيد</a>
                     </td>
                   </tr>  
                 @endforeach
@@ -294,6 +295,7 @@ $(document).ready(function(){
     function ajax_search(page){
         var employee_name_A_search = $("#employee_name_A_search").val();
         var employee_id_search = $("#employee_id_search").val();
+        var interInput = employee_id_search  + '-' + employee_name_A_search
         $.ajax({
             url: '{{ route("employees.index") }}?page=' + page,
             type: 'get',
@@ -305,7 +307,7 @@ $(document).ready(function(){
             },
             success: function(data){
                 $("#ajax_res_search_div").html(data);
-                window.history.pushState({}, '', '{{ route("employees.index") }}?page=' + page);
+                window.history.pushState({}, '', '{{ route("employees.index") }}?page=' + page + '&employee=' + interInput);
             },
             error: function(xhr){
                 var errorMessage = "حدث خطأ غير متوقع";

@@ -82,6 +82,8 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
      Route::match(['get', 'post'], 'jobs_categores/ajaxsearch', [Jobs_categoriesController::class, 'ajaxsearch'])->name('jobs_categores.ajaxsearch');
     // الموظفين
     Route::get('employees',[EmployeesConroller::class,'index'])->name('employees.index')->middleware('auth:admin');
+    // Route::get('/employees',[EmployeesConroller::class, 'index'])->name('employees.index')->middleware('auth:admin');
+    Route::get('employees/show/{id}',[EmployeesConroller::class,'show'])->name('employees.show')->middleware('auth:admin');
     Route::get('employees/{id}/edit',[EmployeesConroller::class,'edit'])->name('employees.edit')->middleware('auth:admin');
     Route::get('employees/create',[EmployeesConroller::class,'create'])->name('employees.create')->middleware('auth:admin');
     Route::post('employees/store',[EmployeesConroller::class,'store'])->name('employees.store')->middleware('auth:admin');
