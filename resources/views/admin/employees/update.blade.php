@@ -48,12 +48,12 @@
     }
 
     /* لتحسين المحاذاة في النموذج، خاصة مع RTL */
-    .form-group.row .col-form-label {
+    ..row .col-form-label {
         text-align: right; /* محاذاة النص لليمين */
     }
 
     /* مسافات بين الحقول داخل الـ tab-pane */
-    .tab-pane .form-group {
+    .tab-pane . {
         margin-bottom: 1rem; /* مسافة افتراضية أفضل بين الحقول */
     }
     /* تحسين تنسيق Select2 */
@@ -63,7 +63,7 @@
     }
 
     /* تحسين محاذاة العناصر في النموذج */
-    .form-group {
+    . {
         margin-bottom: 1.5rem; /* زيادة المسافة بين الحقول */
     }
 
@@ -145,7 +145,7 @@
                             <br>
                             <div class="row"> {{-- Start a Bootstrap row for grouping inputs --}}
                                 <div class="col-md-4"> {{-- Each input will take 4 columns (12/3 = 4) --}}
-                                    <div class="form-group"> {{-- Removed form-inline, it's not ideal with col grid --}}
+                                    <div class=""> {{-- Removed form-inline, it's not ideal with col grid --}}
                                         <label for="employee_id">كود الموظف</label>
                                         <input type="text" class="form-control" name="employee_id" id="employee_id" value="{{  old('employee_id',$data['employee_id']) }}">
                                         @error('employee_id')
@@ -154,7 +154,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="finger_id">كود البصمة</label>
                                         <input type="text" class="form-control" name="finger_id" id="finger_id" value="{{  old('finger_id',$data['finger_id']) }}">
                                         @error('finger_id')
@@ -163,7 +163,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="employee_name_A">اسم الموظف رباعى</label>
                                         <input type="text" class="form-control" name="employee_name_A" id="employee_name_A" value="{{  old('employee_name_A',$data['employee_name_A']) }}">
                                         @error('employee_name_A')
@@ -172,7 +172,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="employee_name_E">اسم الموظف انجليزى</label>
                                         <input type="text" class="form-control" name="employee_name_E" id="employee_name_E" value="{{  old('employee_name_E',$data['employee_name_E']) }}">
                                         @error('employee_name_E')
@@ -180,11 +180,8 @@
                                         @enderror
                                     </div>
                                 </div>
-                            </div> {{-- End of row --}}
-
-                            <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="employee_address">عنوان الموظف</label>
                                         <input type="text" class="form-control" name="employee_address" id="employee_address" value="{{  old('employee_address',$data['employee_address']) }}">
                                         @error('employee_address')
@@ -193,7 +190,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="national_id">الرقم القومي</label>
                                         <input type="text" class="form-control" name="national_id" id="national_id" value="{{  old('national_id',$data['national_id'])}}">
                                         @error('national_id')
@@ -202,7 +199,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="insurance_no">الرقم التأمينى</label>
                                         <input type="text" class="form-control" name="insurance_no" id="insurance_no" value="{{  old('insurance_no',$data['insurance_no'])}}">
                                         @error('insurance_no')
@@ -211,7 +208,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_mobile">موبيل</label>
                                         <input type="text" class="form-control" name="emp_mobile" id="emp_mobile" value="{{  old('emp_mobile',$data['emp_mobile']) }}">
                                         @error('emp_mobile')
@@ -219,11 +216,8 @@
                                         @enderror
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_home_tel">تليفون المنزل</label>
                                         <input type="text" class="form-control" name="emp_home_tel" id="emp_home_tel" value="{{  old('emp_home_tel',$data['emp_home_tel']) }}">
                                         @error('emp_home_tel')
@@ -232,7 +226,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_email">Email</label>
                                         <input type="email" class="form-control" name="emp_email" id="emp_email" value="{{  old('emp_email',$data['emp_email'])}}">
                                         @error('emp_email')
@@ -241,7 +235,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="birth_date">تاريخ الميلاد</label>
                                         <input type="date" class="form-control" name="birth_date" id="birth_date" value="{{  old('birth_date',$data['birth_date']) }}">
                                         @error('birth_date')
@@ -249,11 +243,8 @@
                                         @enderror
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_gender">نوع الجنس</label>
                                         <select class="form-control select2" name="emp_gender" id="emp_gender">
                                             <option value="">اختر النوع</option>
@@ -266,7 +257,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_social_status">الحالة الاجتماعية</label>
                                         <select class="form-control select2" name="emp_social_status" id="emp_social_status">
                                             <option value="">اختر الحالة</option>
@@ -280,11 +271,18 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_photo">اختر صورة الموظف</label>
                                         <input type="file" class="form-control" name="emp_photo" id="emp_photo">
-                                        @if(!empty($data['emp_photo']))
-                                            <img src="{{ asset('assets/admin/uploads/' . $data['emp_photo']) }}" alt="صورة الموظف" width="100" class="mt-2">
+                                        @if(!@empty($data['emp_photo']) )
+                                            <img src="{{ asset('assets/admin/uploads/' . $data['emp_photo']) }}" style="width: 80px; height: 80px;" class="rounded-circle" alt="صورة الموظف">
+                                    
+                                            @else
+                                                @if (($data['emp_gender'])==2)
+                                                <img src="{{ asset('assets/admin/uploads/woman.png')}}" style="width: 80px; height: 80px;" class="rounded-circle"  alt="صورة الموظف">
+                                                @else
+                                                <img src="{{ asset('assets/admin/uploads/man.png')}}" style="width: 80px; height: 80px;" class="rounded-circle"  alt="صورة الموظف">
+                                                @endif
                                         @endif
                                         @error('emp_photo')
                                         <div class="text-danger">{{ $message }}</div>
@@ -292,7 +290,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_ؤر">اختر السيرة الذاتية</label>
                                         <input type="file" class="form-control" name="emp_ؤر" id="emp_ؤر" value="{{  old('emp_ؤر',$data['emp_ؤر']) }}">
                                         @error('emp_ؤر')
@@ -303,13 +301,12 @@
 
                             </div> {{-- End of row --}}
                         </div>
-
                         {{-- بيانات الوظيفة --}}
                         <div class="tab-pane fade" id="custom-content-below-job_data" role="tabpanel" aria-labelledby="custom-content-below-job_data-tab">
                             <br>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_start_date">تاريخ الالتحاق</label>
                                         <input type="date" class="form-control" name="emp_start_date" id="emp_start_date" value="{{  old('emp_start_date',$data['emp_start_date']) }}">
                                         @error('emp_start_date')
@@ -318,7 +315,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="insurance_status">الحالة التامينية</label>
                                         <select class="form-control select2" name="insurance_status" id="insurance_status">
                                             <option value="1" @if ( old('insurance_status',$data['insurance_status'])==1)selected @endif>يعمل</option>
@@ -330,7 +327,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_jobs_id">الوظيفة</label>
                                         <select name="emp_jobs_id" id="emp_jobs_id" class="form-control select2">
                                             <option value="">اختر الوظيفة</option>
@@ -349,7 +346,7 @@
 
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_departments_id">الادارة</label>
                                         <select name="emp_departments_id" id="emp_departments_id" class="form-control select2">
                                             <option value="">اختر الادارة</option>
@@ -365,7 +362,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="shifts_types_id">الشيفت</label>
                                         <select name="shifts_types_id" id="shifts_types_id" class="form-control select2">
                                             <option value="">اختر الشيفت</option>
@@ -381,7 +378,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="branches_id">الفرع</label>
                                         <select name="branches_id" id="branches_id" class="form-control select2">
                                             <option value="">اختر الفرع</option>
@@ -400,7 +397,7 @@
 
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="daily_work_hours">عدد ساعات العمل</label>
                                         <input type="number" class="form-control" name="daily_work_hours" id="daily_work_hours" value="{{  old('daily_work_hours',$data['daily_work_hours']) }}">
                                         @error('daily_work_hours')
@@ -409,7 +406,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="resignation_status">حالة ترك العمل</label>
                                         <select class="form-control select2" name="resignation_status" id="resignation_status">
                                             <option value="">اختر الحالة</option>
@@ -425,7 +422,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="resignation_date">تاريخ ترك العمل</label>
                                         <input type="date" class="form-control" name="resignation_date" id="resignation_date" value="{{  old('resignation_date',$data['resignation_date']) }}">
                                         @error('resignation_date')
@@ -437,7 +434,7 @@
 
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="resignation_cause">سبب ترك العمل</label>
                                         <input type="text" class="form-control" name="resignation_cause" id="resignation_cause" value="{{  old('resignation_cause',$data['resignation_cause']) }}">
                                         @error('resignation_cause')
@@ -453,7 +450,7 @@
                             <br>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_military_status">الخدمة العسكرية</label>
                                         <select class="form-control select2" name="emp_military_status" id="emp_military_status">
                                             <option value="">اختر الحالة</option>
@@ -467,7 +464,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_qualification">المؤهل الدراسي</label>
                                         <input type="text" class="form-control" name="emp_qualification" id="emp_qualification" value="{{  old('emp_qualification',$data['emp_qualification']) }}">
                                         @error('emp_qualification')
@@ -476,7 +473,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="qualification_year">سنة المؤهل</label>
                                         <input type="text" class="form-control" name="qualification_year" id="qualification_year" value="{{  old('qualification_year',$data['qualification_year']) }}">
                                         @error('qualification_year')
@@ -488,7 +485,7 @@
 
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="qualification_grade">تقدير المؤهل</label>
                                         <select class="form-control select2" name="qualification_grade" id="qualification_grade">
                                             <option value="">اختر التقدير</option>
@@ -511,7 +508,7 @@
                             <br>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_sal">الراتب الاساسي</label>
                                         <input type="number" class="form-control" name="emp_sal" id="emp_sal" value="{{  old('emp_sal',$data['emp_sal']) }}">
                                         @error('emp_sal')
@@ -520,7 +517,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_sal_insurance">الراتب التأميني</label>
                                         <input type="number" class="form-control" name="emp_sal_insurance" id="emp_sal_insurance" value="{{  old('emp_sal_insurance',$data['emp_sal_insurance']) }}">
                                         @error('emp_sal_insurance')
@@ -529,7 +526,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="emp_fixed_allowances">علاوة ثابتة</label>
                                         <input type="number" class="form-control" name="emp_fixed_allowances" id="emp_fixed_allowances" value="{{  old('emp_fixed_allowances',$data['emp_fixed_allowances']) }}">
                                         @error('emp_fixed_allowances')
@@ -541,7 +538,7 @@
 
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="mtivation">الحافز</label>
                                         <input type="number" class="form-control" name="mtivation" id="mtivation" value="{{  old('mtivation',$data['mtivation']) }}">
                                         @error('mtivation')
@@ -550,7 +547,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="medical_insurance">التأمين الصحي الخاص</label>
                                         <input type="number" class="form-control" name="medical_insurance" id="medical_insurance" value="{{  old('medical_insurance',$data['medical_insurance'])}}">
                                         @error('medical_insurance')
@@ -559,7 +556,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="sal_cash_visa">طريقة الدفع</label>
                                         <select class="form-control select2" name="sal_cash_visa" id="sal_cash_visa">
                                             <option value="">اختر طريقة الدفع</option>
@@ -575,7 +572,7 @@
 
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="bank_name">اسم البنك</label>
                                         <input type="text" class="form-control" name="bank_name" id="bank_name" value="{{  old('bank_name',$data['bank_name']) }}">
                                         @error('bank_name')
@@ -584,7 +581,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="bank_account">رقم الحساب البنكي</label>
                                         <input type="text" class="form-control" name="bank_account" id="bank_account" value="{{  old('bank_account',$data['bank_account']) }}">
                                         @error('bank_account')
@@ -593,7 +590,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="bank_ID">bank ID</label>
                                         <input type="text" class="form-control" name="bank_ID" id="bank_ID" value="{{  old('bank_ID',$data['bank_ID'])}}">
                                         @error('bank_ID')
@@ -605,7 +602,7 @@
 
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="form-group">
+                                    <div class="">
                                         <label for="bank_branch">bank branch</label>
                                         <input type="text" class="form-control" name="bank_branch" id="bank_branch" value="{{  old('bank_branch',$data['bank_branch']) }}">
                                         @error('bank_branch')
