@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\Shifts_typeController;
 use App\Http\Controllers\Admin\DepartmentsController;
 use App\Http\Controllers\Admin\Jobs_categoriesController;
 use App\Http\Controllers\Admin\EmployeesConroller;
+use App\Http\Controllers\Admin\Main_vacations_balanceController;
 
 
 use App\Models\Admin;
@@ -98,9 +99,10 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     Route::get('finance_calender/delete/{id}',[Finance_calendersController::class,'delete'])->name('finance_calender.delete');
     Route::post('finance_calender/show_year_monthes',[Finance_calendersController::class,'show_year_monthes'])->name('finance_calender.show_year_monthes');
     Route::get('finance_calender/updatee/{id}',[Finance_calendersController::class,'updatee'])->name('finance_calender.updatee');
-    
     Route::resource('finance_calender',Finance_calendersController::class)->middleware('auth:admin');
     
+     // الرصيد السنوى
+    Route::get('Main_vacations_balance',[Main_vacations_balanceController::class,'index'])->name('Main_vacations_balance.index')->middleware('auth:admin');
 
 
 });
