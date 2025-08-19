@@ -103,6 +103,7 @@ Route::group(['prefix'=>'admin/dashboard',],function () {
     
      // الرصيد السنوى
     Route::get('Main_vacations_balance',[Main_vacations_balanceController::class,'index'])->name('Main_vacations_balance.index')->middleware('auth:admin');
+    Route::get('Main_vacations_balance/show/{id}',[Main_vacations_balanceController::class,'show'])->name('Main_vacations_balance.show')->middleware('auth:admin');
 
 
 });

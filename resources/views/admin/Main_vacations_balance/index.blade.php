@@ -6,7 +6,7 @@
 قائمة السنوى
 @endsection
 @section('home')
-<a href="{{ route('employees.index') }}"> رصيد السنوى</a>
+<a href="{{ route('Main_vacations_balance.index') }}"> رصيد السنوى</a>
 
 @endsection
 @section('startpage')
@@ -72,7 +72,7 @@
                       @endif
                     </td>
                     <td>
-                         <a href="{{ route('employees.show',$info->id) }}" class="btn btn-sm btn-info">عرض</a>
+                         <a href="{{ route('Main_vacations_balance.show',$info->id) }}" class="btn btn-sm btn-info">عرض</a>
                     </td>
                   </tr>  
                 @endforeach
@@ -272,7 +272,7 @@ $(document).ready(function(){
         var employee_id_search = $("#employee_id_search").val();
         var interInput = employee_id_search  + '-' + employee_name_A_search
         $.ajax({
-            url: '{{ route("employees.index") }}?page=' + page,
+            url: '{{ route("Main_vacations_balance.index") }}?page=' + page,
             type: 'get',
             dataType: 'html',
             cache: false,
@@ -282,7 +282,7 @@ $(document).ready(function(){
             },
             success: function(data){
                 $("#ajax_res_search_div").html(data);
-                window.history.pushState({}, '', '{{ route("employees.index") }}?page=' + page + '&employee=' + interInput);
+                window.history.pushState({}, '', '{{ route("Main_vacations_balance.index") }}?page=' + page + '&employee=' + interInput);
             },
             error: function(xhr){
                 var errorMessage = "حدث خطأ غير متوقع";

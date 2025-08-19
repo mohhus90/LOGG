@@ -26,7 +26,7 @@ class Main_vacations_balanceController extends Controller
        
         // $data= Employee::select('*')->orderby('id','ASC')->paginate(paginate_counter);
 
-        // return view('admin.employees.index',['data'=>$data]);
+        // return view('admin.Main_vacations_balance.index',['data'=>$data]);
 
         $employee_name_A_search = $request->employee_name_A_search;
         $employee_id_search = $request->employee_id_search;
@@ -56,11 +56,30 @@ class Main_vacations_balanceController extends Controller
             ->paginate(10);
 
         if ($request->ajax()) {
-            return view('admin.employees.ajaxsearch', compact('data'))->render();
+            return view('admin.Main_vacations_balance.ajaxsearch', compact('data'))->render();
         }
 
         return view('admin.Main_vacations_balance.index', compact('data'));
 
     
     }
+
+    public function show($id)
+    {
+        $data=Employee::select('*')->where(['id'=>$id])->first();
+        if(empty($data)){
+            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
+        }else{
+            $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
+                                    ->get(['id', 'dep_name']);
+            $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
+                                ->get(['id', 'job_name']);
+            $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
+                                ->get(['id', 'type']);
+            $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
+                        ->get(['id', 'branch_name']);
+            return view('admin.Main_vacations_balance.show',['data'=>$data],compact('shifts_types','departments','jobs_categories','branches'));
+        }
+    }
+
 }
