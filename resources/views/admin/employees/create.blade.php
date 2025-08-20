@@ -307,12 +307,24 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
+                                        <label for="functional_status">الحالة التامينية</label>
+                                        <select class="form-control select2" name="functional_status" id="functional_status">
+                                            <option value="1" @if (old('functional_status')==1)selected @endif>يعمل</option>
+                                            <option value="2" @if (old('functional_status')==2)selected @endif>لا يعمل</option>
+                                        </select>
+                                        @error('functional_status')
+                                        <div class="text-danger">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
                                         <label for="insurance_status">الحالة التامينية</label>
                                         <select class="form-control select2" name="insurance_status" id="insurance_status">
                                             <option value="1" @if (old('insurance_status')==1)selected @endif>مؤمن</option>
                                             <option value="2" @if (old('insurance_status')==2)selected @endif>غير مؤمن</option>
-                                            <option value="3" @if (old('insurance_status')==3)selected @endif>منتهى خدمته</option>
-                                            <option value="4" @if (old('insurance_status')==4)selected @endif>تدريب</option>
+                                            <option value="3" @if (old('insurance_status')==3)selected @endif>تدريب</option>
+                                            <option value="4" @if (old('insurance_status')==4)selected @endif>منتهى خدمته</option>
                                         </select>
                                         @error('insurance_status')
                                         <div class="text-danger">{{ $message }}</div>

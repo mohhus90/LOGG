@@ -180,12 +180,12 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="insurance_status">الحالة التامينية</label>
-                                        <select disabled  class="form-control select2" name="insurance_status" id="insurance_status">
-                                            <option value="1" @if ( old('insurance_status',$data['insurance_status'])==1)selected @endif>يعمل</option>
-                                            <option value="2" @if ( old('insurance_status',$data['insurance_status'])==2)selected @endif>لا يعمل</option>
+                                        <label for="functional_status">الحالة التامينية</label>
+                                        <select disabled  class="form-control select2" name="functional_status" id="functional_status">
+                                            <option value="1" @if ( old('functional_status',$data['functional_status'])==1)selected @endif>يعمل</option>
+                                            <option value="2" @if ( old('functional_status',$data['functional_status'])==2)selected @endif>لا يعمل</option>
                                         </select>
-                                        @error('insurance_status')
+                                        @error('functional_status')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -269,5 +269,13 @@
                 </div>
         </div>
     </div>
+</div>
+<div class="card-body" id="ajax_res_search_div"> جدول رصيد الاجازات الثانوى   
+@if(@isset($dataVacations) and !@empty($dataVacations) )
+
+
+  @else
+            <div class="text-danger card_title_center"><h1>لا توجد بيانات للعرض</h1></div>
+@endif
 </div>
 @endsection

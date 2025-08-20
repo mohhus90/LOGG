@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Employee;
+use App\Models\finance_cln_period;
 use App\Models\Main_vacations_balance;
 use App\Models\Department;
 use App\Models\Jobs_categories;
@@ -24,10 +25,6 @@ class Main_vacations_balanceController extends Controller
 
     {
        
-        // $data= Employee::select('*')->orderby('id','ASC')->paginate(paginate_counter);
-
-        // return view('admin.Main_vacations_balance.index',['data'=>$data]);
-
         $employee_name_A_search = $request->employee_name_A_search;
         $employee_id_search = $request->employee_id_search;
 
@@ -61,6 +58,7 @@ class Main_vacations_balanceController extends Controller
 
         return view('admin.Main_vacations_balance.index', compact('data'));
 
+        
     
     }
 
@@ -80,6 +78,26 @@ class Main_vacations_balanceController extends Controller
                         ->get(['id', 'branch_name']);
             return view('admin.Main_vacations_balance.show',['data'=>$data],compact('shifts_types','departments','jobs_categories','branches'));
         }
+         $dataVacations= Main_vacations_balance::select('*')->orderby('id','ASC')->paginate(paginate_counter);
+
+        return view('admin.Main_vacations_balance.show',['dataVacations'=>$dataVacations]);
+
+    }
+
+    //دالة احتساب رصيد الاجازات السنوى
+    public function calculate_vacations_balance($employee_id)
+    {
+        $com_code = auth()->user()->com_code;
+        $Employee_data=get_cols_where_row(new Employee(),array('*'),array('com_code'=>$com_code,'employee_id'=>$employee_id,"functional_status"=>1));
+        if (!empty($Employee_data)) {
+            $currentOpenMonth = get_cols_where_row(new finance_cln_period(),array('*'),array('com_code'=>$com_code,'employee_id'=>$employee_id,"functional_status"=>1));
+            if ($Employee_data['vacation_formula']==0) {
+                //اول مره ينزله رصيد
+            }else{
+                 //نزله رصيد
+            }
+        }
+
     }
 
 }

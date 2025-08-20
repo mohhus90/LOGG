@@ -51,6 +51,7 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $employee->qualification_year,
             $this->getqualification_gradeText($employee->qualification_grade),
             $employee->emp_start_date,
+            $this->getfunctional_statusText($employee->functional_status),
             $this->getinsurance_statusText($employee->insurance_status),
             $this->getresignation_statusText($employee->resignation_status),
             $employee->resignation_date,
@@ -130,11 +131,21 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
                 default => 'غير محدد'
             };
         }
+        private function getfunctional_statusText($functional_statusCode)
+        {
+            return match($functional_statusCode) {
+                1 => 'يعمل',
+                2 => 'لايعمل',
+                default => 'غير محدد'
+            };
+        }
         private function getinsurance_statusText($insurance_statusCode)
         {
             return match($insurance_statusCode) {
-                1 => 'يعمل',
-                2 => 'لايعمل',
+                1 => 'مؤمن',
+                2 => 'غير مؤمن',
+                3 => 'تدريب',
+                4 => 'منتهى خدمته',
                 default => 'غير محدد'
             };
         }
