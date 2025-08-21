@@ -20,9 +20,9 @@
             <h3 class="card-title card_title_center">تحديث السنة المالية</h3>
         </div>
         <div class="card-body">
-              <form action="{{ route('finance_calender.updatee',$data['id']) }}" >
-                @csrf
-                @method('PUT')
+                <form method="POST" action="{{ route('finance_calender.updatee', $data['id']) }}">
+                  @csrf
+                  @method('PUT')
                 <div class="form-group row">
                   <label for="finance_yr" class="col-sm-2 col-form-label "> السنة المالية</label>
                   <div class="col-sm-5">
@@ -51,16 +51,23 @@
                   @enderror
                 </div>
                 <div class="form-group row">
-                  <label for="is_open" class="col-sm-2 col-form-label ">اغلاق</label>
-                  <div class="col-sm-5">
-                    <input type="text" class="form-control" name="is_open" id="is_open" value="{{ old('is_open',$data['is_open']) }}" >
-                  </div>
-                </div>  
-                <div class="text-center">
-                  <button type="submit" class="text-center btn btn-primary btn-lg col-2">تحديث</button>
-                  <a class="btn btn-warning btn-lg col-2" href="{{ route('finance_calender.index') }}">الغاء</a>
+                <label for="is_open" class="col-sm-2 col-form-label">اغلاق</label>
+                <div class="col-sm-5">
+                  <select class="form-control" name="is_open" id="is_open">
+                      <option value="0" @if (old('is_open')==1)selected @endif>مفتوح</option>
+                      <option value="1" @if (old('is_open')==2)selected @endif>مغلق</option>
+                  </select>
+                  @error('is_open')
+                  <div class="text-danger">{{ $message }}</div>
+                  @enderror
                 </div>
-              </form>
+              </div>
+
+              <div class="text-center">
+                <button type="submit" class="text-center btn btn-primary btn-lg col-2">تحديث</button>
+                <a class="btn btn-warning btn-lg col-2" href="{{ route('finance_calender.index') }}">الغاء</a>
+              </div>
+            </form>
         </div>
     </div>
 </div>

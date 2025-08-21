@@ -72,7 +72,7 @@
                     <td> {{ $data['monthly_vacation_balance'] }}</td>
                   </tr>
                   <tr>
-                    <th scope="row">رصيد الاجازات الاولى بعد مدة 6 شهور</th>
+                    <th scope="row">رصيد الاجازات الاولى بعد مدة 6 شهور مثلا</th>
                     <td> {{ $data['first_balance_begain_vacation'] }}</td>
                   </tr>
                   <tr>

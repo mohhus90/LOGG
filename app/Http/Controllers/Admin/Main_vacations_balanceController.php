@@ -13,6 +13,7 @@ use App\Models\Shifts_type;
 use App\Models\Branche;
 use App\Imports\EmployeeImport;
 use App\Exports\EmployeeExport;
+use App\Models\Admin_panel_setting;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\ValidationException;
@@ -89,13 +90,26 @@ class Main_vacations_balanceController extends Controller
     {
         $com_code = auth()->user()->com_code;
         $Employee_data=get_cols_where_row(new Employee(),array('*'),array('com_code'=>$com_code,'employee_id'=>$employee_id,"functional_status"=>1));
+        $admin_panel_settingsData=get_cols_where_row(new Admin_panel_setting(),array("*"),array('com_code'=>$com_code));
         if (!empty($Employee_data)) {
-            $currentOpenMonth = get_cols_where_row(new finance_cln_period(),array('*'),array('com_code'=>$com_code,'employee_id'=>$employee_id,"functional_status"=>1));
-            if ($Employee_data['vacation_formula']==0) {
+
+            $currentOpenMonth = get_cols_where_row(new finance_cln_period(),array('id','finance_year',"year_of_month"),array('com_code'=>$com_code,"is_open"=>0));
+            if (!empty($currentOpenMonth)) {
+                if ($Employee_data['vacation_formula']==0) {
                 //اول مره ينزله رصيد
-            }else{
-                 //نزله رصيد
+                $now = time();
+                $your_date = strtotime($Employee_data['emp_emp_start_date']);
+                $datediff = $now - $your_date;
+                $diffrence_days = round($datediff / (60*60*24));
+                if ($diffrence_days>=$admin_panel_settingsData['after_days_begain_vacation']) {
+                    # code...
+                }
+                
+                }else{
+                    //نزله رصيد
+                }
             }
+            
         }
 
     }

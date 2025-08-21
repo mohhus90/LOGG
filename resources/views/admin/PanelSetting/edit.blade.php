@@ -105,7 +105,7 @@
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="first_balance_begain_vacation" class="col-sm-2 col-form-label">رصيد الاجازات الاولى بعد مدة 6 شهور</label>
+                  <label for="first_balance_begain_vacation" class="col-sm-2 col-form-label">رصيد الاجازات الاولى بعد مدة 6 شهور مثلا</label>
                   <div class="col-sm-5">
                     <input type="text" class="form-control" name="first_balance_begain_vacation" id="first_balance_begain_vacation" value="{{ old('first_balance_begain_vacation',$data['first_balance_begain_vacation']) }}" >
                   </div>
@@ -140,10 +140,12 @@
                     <input type="text" class="form-control" name="sanctions_value_forth_abcence" id="sanctions_value_forth_abcence" value="{{ old('sanctions_value_forth_abcence',$data['sanctions_value_forth_abcence']) }}" >
                   </div>
                 </div>
-                <div class="row">
-                  <button type="submit" class="text-center" colspan="2" ><a class="btn btn-primary btn-lg col-2">تحديث</a></button>
+                <div class="text-center">
+                  <button type="submit" class="text-center btn btn-primary btn-lg col-2">تحديث</button>
+                  <a class="btn btn-warning btn-lg col-2" href="{{ route('generalsetting.index') }}">الغاء</a>
                 </div>
-                
+
+
               </form>
             @else
             <h2>لا توجد بيانات للعرض</h2>
