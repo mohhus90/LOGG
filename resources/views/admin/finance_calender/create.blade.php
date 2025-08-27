@@ -50,13 +50,17 @@
                   @enderror
                 </div>
                 <div class="form-group row">
-                  <label for="is_open" class="col-sm-2 col-form-label ">اغلاق</label>
-                  <div class="col-sm-5">
-                    <input type="text" class="form-control" name="is_open" id="is_open" value="{{ old('is_open') }}" >
-                  </div>
-                </div>  
+                <label for="is_open" class="col-sm-2 col-form-label">اغلاق</label>
+                <div class="col-sm-5">
+                  <select class="form-control" name="is_open" id="is_open">
+                      <option value="0" @if (old('is_open')==1)selected @endif>مفتوح</option>
+                      <option value="1" @if (old('is_open')==2)selected @endif>مغلق</option>
+                  </select>
+                  @error('is_open')
+                  <div class="text-danger">{{ $message }}</div>
+                  @enderror
                 <div class="text-center">
-                  <button type="submit" class="text-center btn btn-primary btn-lg col-2">اضافة</button>
+                  <button type="submit" class="text-center btn btn-primary btn-lg col-3">اضافة</button>
                   <a class="btn btn-warning btn-lg col-2" href="{{ route('finance_calender.index') }}">الغاء</a>
                 </div>
                 

@@ -271,11 +271,11 @@
     </div>
 </div>
 <div class="card-body" id="ajax_res_search_div"> جدول رصيد الاجازات الثانوى   
-@if(@isset($dataVacations) and !@empty($dataVacations) )
-
-
-  @else
-            <div class="text-danger card_title_center"><h1>لا توجد بيانات للعرض</h1></div>
+@if($dataVacations->isEmpty())
+    <div class="text-danger card_title_center"><h1>لا توجد بيانات للعرض</h1></div>
+@else
+    {{-- عرض البيانات --}}
 @endif
+
 </div>
 @endsection

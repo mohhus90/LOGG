@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Employee;
-use App\Models\finance_cln_period;
+use App\Models\Finance_cln_period;
 use App\Models\Main_vacations_balance;
 use App\Models\Department;
 use App\Models\Jobs_categories;
@@ -22,10 +22,10 @@ use Illuminate\Validation\Rule;
 
 class Main_vacations_balanceController extends Controller
 {
-     public function index(Request $request)
+    public function index(Request $request)
 
     {
-       
+
         $employee_name_A_search = $request->employee_name_A_search;
         $employee_id_search = $request->employee_id_search;
 
@@ -58,60 +58,147 @@ class Main_vacations_balanceController extends Controller
         }
 
         return view('admin.Main_vacations_balance.index', compact('data'));
-
-        
-    
     }
 
+    // public function show($id)
+    // {
+    //     $data = Employee::select('*')->where(['id' => $id])->first();
+    //     if (empty($data)) {
+    //         return redirect()->back()->with(['error' => 'عفوا حدث خطأ '])->withInput();
+    //     } else {
+    //         $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
+    //             ->get(['id', 'dep_name']);
+    //         $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
+    //             ->get(['id', 'job_name']);
+    //         $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
+    //             ->get(['id', 'type']);
+    //         $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
+    //             ->get(['id', 'branch_name']);
+    //      $this->calculate_vacations_balance($data->employee_id);
+    //         return view('admin.Main_vacations_balance.show', ['data' => $data], compact('shifts_types', 'departments', 'jobs_categories', 'branches'));
+    //     }
+
+    //     $dataVacations = Main_vacations_balance::select('*')->orderby('id', 'ASC')->paginate(paginate_counter);
+
+    //     return view('admin.Main_vacations_balance.show', ['dataVacations' => $dataVacations]);
+    // }
     public function show($id)
     {
-        $data=Employee::select('*')->where(['id'=>$id])->first();
-        if(empty($data)){
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
-        }else{
-            $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
-                                    ->get(['id', 'dep_name']);
-            $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
-                                ->get(['id', 'job_name']);
-            $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
-                                ->get(['id', 'type']);
-            $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'branch_name']);
-            return view('admin.Main_vacations_balance.show',['data'=>$data],compact('shifts_types','departments','jobs_categories','branches'));
+        $data = Employee::where('id', $id)->first();
+
+        if (!$data) {
+            return redirect()->back()->with(['error' => 'عفوا حدث خطأ'])->withInput();
         }
-         $dataVacations= Main_vacations_balance::select('*')->orderby('id','ASC')->paginate(paginate_counter);
 
-        return view('admin.Main_vacations_balance.show',['dataVacations'=>$dataVacations]);
+        // جلب البيانات المساعدة
+        $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
+            ->get(['id', 'dep_name']);
 
+        $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
+            ->get(['id', 'job_name']);
+
+        $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
+            ->get(['id', 'type']);
+
+        $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
+            ->get(['id', 'branch_name']);
+
+        // حساب الرصيد
+        $this->calculate_vacations_balance($data->employee_id);
+
+        // جلب أرصدة الأجازات
+        $dataVacations = Main_vacations_balance::orderBy('id', 'ASC')
+            ->paginate(paginate_counter);
+
+        // إرسال كل البيانات للعرض
+        return view('admin.Main_vacations_balance.show', compact(
+            'data',
+            'departments',
+            'jobs_categories',
+            'shifts_types',
+            'branches',
+            'dataVacations'
+        ));
     }
 
     //دالة احتساب رصيد الاجازات السنوى
     public function calculate_vacations_balance($employee_id)
     {
         $com_code = auth()->user()->com_code;
-        $Employee_data=get_cols_where_row(new Employee(),array('*'),array('com_code'=>$com_code,'employee_id'=>$employee_id,"functional_status"=>1));
-        $admin_panel_settingsData=get_cols_where_row(new Admin_panel_setting(),array("*"),array('com_code'=>$com_code));
+        $Employee_data = get_cols_where_row(new Employee(), array('*'), array('com_code' => $com_code, 'employee_id' => $employee_id, "functional_status" => 1));
+        $admin_panel_settingsData = get_cols_where_row(new Admin_panel_setting(), array("*"), array('com_code' => $com_code));
         if (!empty($Employee_data)) {
 
-            $currentOpenMonth = get_cols_where_row(new finance_cln_period(),array('id','finance_year',"year_of_month"),array('com_code'=>$com_code,"is_open"=>0));
+            $currentOpenMonth = get_cols_where_row(
+                new Finance_cln_period(),
+                ['id', 'finance_year', 'year_of_month'],
+                ['com_code' => $com_code, 'is_open' => 0]
+            );
+            // dd($currentOpenMonth);
+
+// $activeDays = $admin_panel_settingsData['after_days_begain_vacation'];
+// $current_year = $currentOpenMonth['finance_year'];
+// $dateOfActiveFrmoula = date('Y-m-d', strtotime($Employee_data['emp_start_date'] . '+' . $activeDays . 'days'));
+// $datainsert['currentmonth_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+// $datainsert['total_available_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+// $datainsert['net_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+// $datainsert['year_and_month'] = date('Y-m', strtotime($dateOfActiveFrmoula));
+// $datainsert['finance_yr'] = $current_year;
+// $datainsert['employee_id'] = $employee_id;
+// $datainsert['com_code'] = auth()->guard('admin')->user()->com_code;
+// $datainsert['added_by'] = auth()->guard('admin')->user()->id;
+// $datainsert['updated_by'] = auth()->guard('admin')->user()->id;
+// $datainsert['created_at'] = date('Y-m-d H:i:s');
+// $datainsert['updated_at'] = date('Y-m-d H:i:s');
+// insert(new Main_vacations_balance(), $datainsert);
             if (!empty($currentOpenMonth)) {
-                if ($Employee_data['vacation_formula']==0) {
-                //اول مره ينزله رصيد
-                $now = time();
-                $your_date = strtotime($Employee_data['emp_emp_start_date']);
-                $datediff = $now - $your_date;
-                $diffrence_days = round($datediff / (60*60*24));
-                if ($diffrence_days>=$admin_panel_settingsData['after_days_begain_vacation']) {
-                    # code...
-                }
-                
-                }else{
+                if ($Employee_data['vacation_formula'] == 1) {
+                    //اول مره ينزله رصيد
+                    $now = time();
+                    $your_date = strtotime($Employee_data['emp_start_date']);
+                    $datediff = $now - $your_date;
+                    $diffrence_days = round($datediff / (60 * 60 * 24));
+                    if ($diffrence_days >= $admin_panel_settingsData['after_days_begain_vacation']) {
+                        $activeDays = $admin_panel_settingsData['after_days_begain_vacation'];
+                        $current_year = $currentOpenMonth['finance_year'];
+                        $work_year = date('Y', strtotime($Employee_data['emp_start_date']));
+                        $dateOfActiveFrmoula = date('Y-m-d', strtotime($Employee_data['emp_start_date'] . '+' . $activeDays . 'days'));
+                        if ($current_year == $work_year) {
+                            $datainsert['currentmonth_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+                            $datainsert['total_available_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+                            $datainsert['net_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+                        } else {
+                            $datainsert['currentmonth_balance'] = $admin_panel_settingsData['monthly_vacation_balance'];
+                            $datainsert['total_available_balance'] = $admin_panel_settingsData['monthly_vacation_balance'];
+                            $datainsert['net_balance'] = $admin_panel_settingsData['monthly_vacation_balance'];
+                        }
+                        if ($diffrence_days <= 360) {
+                            $datainsert['year_and_month'] = date('Y-m', strtotime($dateOfActiveFrmoula));
+                        } else {
+                            $datainsert['year_and_month'] = $current_year . '-01';
+                        }
+                        $datainsert['finance_yr'] = $current_year;
+                        $datainsert['employee_id'] = $employee_id;
+                        $datainsert['com_code'] = auth()->guard('admin')->user()->com_code;
+                        $datainsert['added_by'] = auth()->guard('admin')->user()->id;
+                        $datainsert['updated_by'] = auth()->guard('admin')->user()->id;
+                        $datainsert['created_at'] = date('Y-m-d H:i:s');
+                        $datainsert['updated_at'] = date('Y-m-d H:i:s');
+                        $checkExist = get_cols_where_row(new Main_vacations_balance(), array('id'), array('employee_id' => $employee_id, 'finance_yr' => $current_year, 'com_code' => $com_code, 'year_and_month' => $datainsert['year_and_month']));
+                        if (empty($checkExist)) {
+                            $flag = insert(new Main_vacations_balance(), $datainsert);
+                            if ($flag) {
+                                $data_to_update['vacation_formula'] = 2;
+                                $data_to_update['updated_at'] = date('Y-m-d H:i:s');;
+                                $data_to_update['updated_by'] = auth()->guard('admin')->user()->id;
+                                update(new Employee(), $data_to_update, array('employee_id' => $employee_id, 'com_code' => $com_code));
+                            }
+                        }
+                    }
+                } else {
                     //نزله رصيد
                 }
             }
-            
         }
-
     }
-
 }
