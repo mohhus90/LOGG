@@ -21,9 +21,6 @@ return new class extends Migration
             $table->decimal('total_available_balance',10,2)->comment('اجمالى الرصيد المتاح')->nullable()->default('0');
             $table->decimal('spent_balance',10,2)->comment('الرصيد المستهلك')->nullable()->default('0');
             $table->decimal('net_balance',10,2)->comment('صافى الرصيد')->nullable()->default('0');
-            $table->tinyInteger('emp_military_status')->comment('(1=ادى الخدمة),(2= اعفاء),(3= مؤجل)')->nullable();
-            $table->string('emp_qualification')->nullable();
-            $table->decimal('daily_work_hours',10,2)->nullable();
             $table->integer('com_code');
             $table->integer('added_by')->refrences('id')->on('admins')->onupdate('cascade');
             $table->integer('updated_by')->nullable();

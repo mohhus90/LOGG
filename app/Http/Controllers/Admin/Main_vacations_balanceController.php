@@ -19,6 +19,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use PhpOffice\PhpSpreadsheet\Calculation\Engine\FormattedNumber;
 
 class Main_vacations_balanceController extends Controller
 {
@@ -136,21 +137,21 @@ class Main_vacations_balanceController extends Controller
             );
             // dd($currentOpenMonth);
 
-// $activeDays = $admin_panel_settingsData['after_days_begain_vacation'];
-// $current_year = $currentOpenMonth['finance_year'];
-// $dateOfActiveFrmoula = date('Y-m-d', strtotime($Employee_data['emp_start_date'] . '+' . $activeDays . 'days'));
-// $datainsert['currentmonth_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
-// $datainsert['total_available_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
-// $datainsert['net_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
-// $datainsert['year_and_month'] = date('Y-m', strtotime($dateOfActiveFrmoula));
-// $datainsert['finance_yr'] = $current_year;
-// $datainsert['employee_id'] = $employee_id;
-// $datainsert['com_code'] = auth()->guard('admin')->user()->com_code;
-// $datainsert['added_by'] = auth()->guard('admin')->user()->id;
-// $datainsert['updated_by'] = auth()->guard('admin')->user()->id;
-// $datainsert['created_at'] = date('Y-m-d H:i:s');
-// $datainsert['updated_at'] = date('Y-m-d H:i:s');
-// insert(new Main_vacations_balance(), $datainsert);
+            // $activeDays = $admin_panel_settingsData['after_days_begain_vacation'];
+            // $current_year = $currentOpenMonth['finance_year'];
+            // $dateOfActiveFrmoula = date('Y-m-d', strtotime($Employee_data['emp_start_date'] . '+' . $activeDays . 'days'));
+            // $datainsert['currentmonth_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+            // $datainsert['total_available_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+            // $datainsert['net_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
+            // $datainsert['year_and_month'] = date('Y-m', strtotime($dateOfActiveFrmoula));
+            // $datainsert['finance_yr'] = $current_year;
+            // $datainsert['employee_id'] = $employee_id;
+            // $datainsert['com_code'] = auth()->guard('admin')->user()->com_code;
+            // $datainsert['added_by'] = auth()->guard('admin')->user()->id;
+            // $datainsert['updated_by'] = auth()->guard('admin')->user()->id;
+            // $datainsert['created_at'] = date('Y-m-d H:i:s');
+            // $datainsert['updated_at'] = date('Y-m-d H:i:s');
+            // insert(new Main_vacations_balance(), $datainsert);
             if (!empty($currentOpenMonth)) {
                 if ($Employee_data['vacation_formula'] == 1) {
                     //اول مره ينزله رصيد
@@ -158,11 +159,13 @@ class Main_vacations_balanceController extends Controller
                     $your_date = strtotime($Employee_data['emp_start_date']);
                     $datediff = $now - $your_date;
                     $diffrence_days = round($datediff / (60 * 60 * 24));
+                    
                     if ($diffrence_days >= $admin_panel_settingsData['after_days_begain_vacation']) {
-                        $activeDays = $admin_panel_settingsData['after_days_begain_vacation'];
+                        $activeDays = number_format($admin_panel_settingsData['after_days_begain_vacation'])*1;
                         $current_year = $currentOpenMonth['finance_year'];
                         $work_year = date('Y', strtotime($Employee_data['emp_start_date']));
                         $dateOfActiveFrmoula = date('Y-m-d', strtotime($Employee_data['emp_start_date'] . '+' . $activeDays . 'days'));
+
                         if ($current_year == $work_year) {
                             $datainsert['currentmonth_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
                             $datainsert['total_available_balance'] = $admin_panel_settingsData['first_balance_begain_vacation'];
@@ -195,9 +198,46 @@ class Main_vacations_balanceController extends Controller
                             }
                         }
                     }
+                    
                 } else {
                     //نزله رصيد
+                    $last_added = get_cols_where_row_orderby(new Main_vacations_balance(),array("year_and_month"),array('employee_id' => $employee_id, 'com_code' => $com_code,'finance_yr'=>$currentOpenMonth['finance_year']),'id','DESC');
+                    $current_month = intval(date('m',strtotime($currentOpenMonth['finance_year'])));
+                    if(!empty($last_added))
+                    {
+                        if($last_added['year_and_month']!=$currentOpenMonth['finance_year'])
+                    {
+                        $i=intval(date('m',strtotime($last_added['year_and_month'])));
+                        $i+=1;
+                        while($i<=$current_month){
+                            if ($i<10) {
+                                $datainsert['year_and_month'] = $currentOpenMonth['finance_year'] . '-0'.$i;
+                            }else{
+                                $datainsert['year_and_month'] = $currentOpenMonth['finance_year'] . '-'.$i;
+                            }
+                        $datainsert['finance_yr'] = $currentOpenMonth['finance_year'];
+                        $datainsert['currentmonth_balance'] = $admin_panel_settingsData['monthly_vacation_balance'];
+                        $datainsert['total_available_balance'] = $admin_panel_settingsData['monthly_vacation_balance'];
+                        $datainsert['net_balance'] = $admin_panel_settingsData['monthly_vacation_balance'];
+                        $datainsert['employee_id'] = $employee_id;
+                        $datainsert['com_code'] = auth()->guard('admin')->user()->com_code;
+                        $datainsert['added_by'] = auth()->guard('admin')->user()->id;
+                        $datainsert['updated_by'] = auth()->guard('admin')->user()->id;
+                        $datainsert['created_at'] = date('Y-m-d H:i:s');
+                        $datainsert['updated_at'] = date('Y-m-d H:i:s');
+                        $checkExist = get_cols_where_row(new Main_vacations_balance(), array('id'), array('employee_id' => $employee_id, 'finance_yr'=>$currentOpenMonth['finance_year'], 'com_code' => $com_code, 'year_and_month' => $datainsert['year_and_month']));
+                        if (empty($checkExist)) {
+                            $flag = insert(new Main_vacations_balance(), $datainsert);
+
+                            $i++;
+                        }
+                        }
+                    }else{
+
+                    }
                 }
+
+                    }
             }
         }
     }
