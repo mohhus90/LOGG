@@ -270,11 +270,34 @@
         </div>
     </div>
 </div>
-<div class="card-body" id="ajax_res_search_div"> جدول رصيد الاجازات الثانوى   
+<div class="card-title card_title_center" id="ajax_res_search_div"> جدول رصيد الاجازات الثانوى   
 @if($dataVacations->isEmpty())
     <div class="text-danger card_title_center"><h1>لا توجد بيانات للعرض</h1></div>
 @else
-    {{-- عرض البيانات --}}
+    <table id="example2" class="table table-bordered table-hover">
+              <thead>
+                <tr>
+                <th scope="col">السنة والشهر</th>
+                <th scope="col">الرصيد المرحل من الشهر السابق</th>
+                <th scope="col">رصيد الشهر الحالى</th>
+                <th scope="col">اجمالى الرصيد المتاح</th>
+                <th scope="col">الرصيد المستهلك</th>
+                <th scope="col">صافى الرصيد</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach ($dataVacations as $info)
+                  <tr>
+                    <td> {{ $info->year_and_month }}</td>
+                    <td> {{ $info->carryover_from_previous_month }}</td>
+                    <td> {{ $info->currentmonth_balance }}</td>
+                    <td> {{ $info->total_available_balance }}</td>
+                    <td> {{ $info->spent_balance }}</td>
+                    <td> {{ $info->net_balance }}</td>
+                  </tr>  
+                @endforeach
+              </tbody>
+            </table>
 @endif
 
 </div>
