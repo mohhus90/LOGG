@@ -283,6 +283,10 @@
                 <th scope="col">اجمالى الرصيد المتاح</th>
                 <th scope="col">الرصيد المستهلك</th>
                 <th scope="col">صافى الرصيد</th>
+                <th scope="col">الاضافة بواسطة</th>
+                <th scope="col">التحديث بواسطة</th>
+                <th scope="col">الاضافة بتاريخ</th>
+                <th scope="col">التحديث بتاريخ</th>
                 </tr>
               </thead>
               <tbody>
@@ -294,6 +298,23 @@
                     <td> {{ $info->total_available_balance }}</td>
                     <td> {{ $info->spent_balance }}</td>
                     <td> {{ $info->net_balance }}</td>
+                    <td> {{ $info->addedBy->name }}</td>
+                    <td>
+                      @if ($info->updated_by>0)
+                      {{ $info->updatedBy->name }}
+                      @else
+                        لا يوجد
+                      @endif
+                    </td>
+                    <td> {{ $info->created_at }}</td>
+                    
+                    <td> 
+                      @if(@isset($info->updated_at) and !@empty($info->updated_at) )
+                      {{ $info->updated_at }}
+                      @else
+                        لا يوجد
+                      @endif
+                    </td>
                   </tr>  
                 @endforeach
               </tbody>

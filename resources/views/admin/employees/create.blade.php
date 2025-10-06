@@ -307,7 +307,7 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="functional_status">الحالة التامينية</label>
+                                        <label for="functional_status">الحالة الوظيفية</label>
                                         <select class="form-control select2" name="functional_status" id="functional_status">
                                             <option value="1" @if (old('functional_status')==1)selected @endif>يعمل</option>
                                             <option value="2" @if (old('functional_status')==2)selected @endif>لا يعمل</option>
