@@ -14,6 +14,9 @@ class Main_vacations_balance extends Model
     public function addedBy(){
         return $this->belongsTo(Admin::class,'added_by');
     }
+    public function empname(){
+        return $this->belongsTo(Employee::class,'employee_id');
+    }
     public function updatedBy(){
         return $this->belongsTo('App\Models\Admin','updated_by');
     }

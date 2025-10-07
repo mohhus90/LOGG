@@ -104,15 +104,15 @@ class Main_vacations_balanceController extends Controller
 
         $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
             ->get(['id', 'branch_name']);
-        $finance_calender_open_year = get_cols_where_row(new Finance_calender(), array('*'), array('com_code' =>auth()->guard('admin')->user()->com_code, "is_open" => 0));
-        if (!empty($finance_calender_open_year)) {
-            $main_employee_vacation_balance = get_cols_where_row(new Main_vacations_balance(), array('*'), array('com_code' =>auth()->guard('admin')->user()->com_code));
-        }
+        // $finance_calender_open_year = get_cols_where_row(new Finance_calender(), array('*'), array('com_code' =>auth()->guard('admin')->user()->com_code, "is_open" => 0));
+        // if (!empty($finance_calender_open_year)) {
+        //     $main_employee_vacation_balance = get_cols_where_row(new Main_vacations_balance(), array('*'), array('com_code' =>auth()->guard('admin')->user()->com_code));
+        // }
         // حساب الرصيد
         $this->calculate_vacations_balance($data->employee_id);
 
         // جلب أرصدة الأجازات
-        $dataVacations = Main_vacations_balance::orderBy('id', 'ASC')
+        $dataVacations = Main_vacations_balance::where('employee_id', $data->employee_id)->orderBy('id', 'ASC')
             ->paginate(paginate_counter);
 
         // إرسال كل البيانات للعرض
@@ -122,7 +122,7 @@ class Main_vacations_balanceController extends Controller
             'jobs_categories',
             'shifts_types',
             'branches',
-            'main_employee_vacation_balance',
+            // 'main_employee_vacation_balance',
             'dataVacations'
         ));
     }

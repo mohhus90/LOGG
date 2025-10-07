@@ -277,6 +277,7 @@
     <table id="example2" class="table table-bordered table-hover">
               <thead>
                 <tr>
+                <th scope="col">كود الموظف</th>
                 <th scope="col">السنة والشهر</th>
                 <th scope="col">الرصيد المرحل من الشهر السابق</th>
                 <th scope="col">رصيد الشهر الحالى</th>
@@ -292,6 +293,7 @@
               <tbody>
                 @foreach ($dataVacations as $info)
                   <tr>
+                    <td> {{ $info->employee_id }}</td>
                     <td> {{ $info->year_and_month }}</td>
                     <td> {{ $info->carryover_from_previous_month }}</td>
                     <td> {{ $info->currentmonth_balance }}</td>
