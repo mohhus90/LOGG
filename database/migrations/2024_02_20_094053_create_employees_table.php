@@ -38,10 +38,10 @@ return new class extends Migration
             $table->string('bank_ID',50)->nullable();
             $table->string('bank_branch',50)->nullable();
             $table->decimal('daily_work_hours',10,2)->nullable();
-            $table->foreignId('emp_jobs_id')->references('id')->on('jobs_categories')->onUpdate('cascade');
+            $table->foreignId('emp_jobs_id')->references('id')->on('jobs_categories')->onUpdate('cascade')->nullable();
             $table->string('national_id',50)->nullable()->unique();
             $table->string('insurance_no',50)->nullable()->unique();
-            $table->foreignId('emp_departments_id')->references('id')->on('departments')->onUpdate('cascade');
+            $table->foreignId('emp_departments_id')->references('id')->on('departments')->onUpdate('cascade')->nullable();
             $table->string('emp_home_tel',50)->nullable();
             $table->string('emp_mobile',50)->nullable()->unique();
             $table->string('emp_email',50)->nullable()->unique();
@@ -57,7 +57,7 @@ return new class extends Migration
             $table->tinyInteger('is_has_finger')->default(1)->comment('(1=يوجد),(2= لايوجد)')->nullable();
             $table->tinyInteger('vacation_formula')->default(1)->comment('(1=يوجد),(2= لايوجد)')->nullable();
             $table->tinyInteger('sensitive_data')->default(1)->comment('(1=يوجد),(2= لايوجد)')->nullable();
-            $table->foreignId('branches_id')->references('id')->on('branches')->onUpdate('cascade');
+            $table->foreignId('branches_id')->references('id')->on('branches')->onUpdate('cascade')->nullable();
             $table->integer('com_code');
             $table->integer('added_by')->refrences('id')->on('admins')->onupdate('cascade');
             $table->integer('updated_by')->nullable();
