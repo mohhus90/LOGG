@@ -88,28 +88,58 @@
         </ul>
       </li>
 
-      {{-- ===== الحضور والانصراف ===== --}}
-      <li class="nav-item has-treeview {{ request()->is('admin/dashboard/attendance*') ? 'menu-open' : '' }}">
-        <a href="#" class="nav-link {{ request()->is('admin/dashboard/attendance*') ? 'active' : '' }}">
+      {{-- ===== الحضور والانصراف (محدّث) ===== --}}
+      <li class="nav-item has-treeview {{ request()->is('admin/dashboard/attendance*','admin/dashboard/fingerprint*') ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ request()->is('admin/dashboard/attendance*','admin/dashboard/fingerprint*') ? 'active' : '' }}">
           <i class="nav-icon fas fa-fingerprint"></i>
           <p>الحضور والانصراف <i class="right fas fa-angle-left"></i></p>
         </a>
         <ul class="nav nav-treeview">
+
+          {{-- 1. إدخال فردي --}}
           <li class="nav-item">
-            <a href="{{ route('attendance.index') }}" class="nav-link {{ request()->is('admin/dashboard/attendance') || request()->is('admin/dashboard/attendance?*') ?'active':'' }}">
-              <i class="far fa-circle nav-icon"></i><p>سجلات الحضور</p>
+            <a href="{{ route('attendance.create') }}"
+              class="nav-link {{ request()->is('admin/dashboard/attendance/create') ? 'active' : '' }}">
+              <i class="far fa-circle nav-icon text-success"></i>
+              <p>تسجيل حضور فردي</p>
             </a>
           </li>
+
+          {{-- 2. إدخال دفعي --}}
           <li class="nav-item">
-            <a href="{{ route('attendance.create') }}" class="nav-link {{ request()->is('admin/dashboard/attendance/create')?'active':'' }}">
-              <i class="far fa-circle nav-icon"></i><p>تسجيل حضور</p>
+            <a href="{{ route('attendance.bulk_create') }}"
+              class="nav-link {{ request()->is('admin/dashboard/attendance/bulk') ? 'active' : '' }}">
+              <i class="far fa-circle nav-icon text-info"></i>
+              <p>إدخال دفعي يدوي</p>
             </a>
           </li>
+
+          {{-- 3. رفع Excel --}}
           <li class="nav-item">
-            <a href="{{ route('attendance.bulk_create') }}" class="nav-link {{ request()->is('admin/dashboard/attendance/bulk')?'active':'' }}">
-              <i class="far fa-circle nav-icon"></i><p>إدخال دفعي</p>
+            <a href="{{ route('attendance.excel_import_form') }}"
+              class="nav-link {{ request()->is('admin/dashboard/attendance/excel*') ? 'active' : '' }}">
+              <i class="far fa-circle nav-icon text-warning"></i>
+              <p>استيراد من Excel <small class="badge badge-warning">Finger ID</small></p>
             </a>
           </li>
+
+          {{-- 4. أجهزة البصمة --}}
+          <li class="nav-item">
+            <a href="{{ route('fingerprint_devices.index') }}"
+              class="nav-link {{ request()->is('admin/dashboard/fingerprint*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-microchip text-primary"></i>
+              <p>أجهزة البصمة المباشرة</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{{ route('attendance.index') }}"
+              class="nav-link {{ request()->routeIs('attendance.index') ? 'active' : '' }}">
+              <i class="far fa-circle nav-icon"></i>
+              <p>سجلات الحضور</p>
+            </a>
+          </li>
+
         </ul>
       </li>
 
