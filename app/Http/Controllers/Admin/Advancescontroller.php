@@ -10,10 +10,26 @@ use Illuminate\Support\Facades\Auth;
 
 class AdvancesController extends Controller
 {
+    // ✅ FIX: مساعد مركزي لـ com_code
+    private function comCode(): int
+    {
+        return (int) Auth::guard('admin')->user()->com_code;
+    }
+
+    // ✅ FIX: إضافة com_code filter لجلب الموظفين
+    private function employees()
+    {
+        return Employee::where('com_code', $this->comCode())
+            ->orderBy('employee_name_A')->get();
+    }
+
     public function index(Request $request)
     {
-        $employees = Employee::orderBy('employee_name_A')->get();
-        $query = Advance::with('employee');
+        $employees = $this->employees();
+
+        // ✅ FIX: فلترة بـ com_code
+        $query = Advance::with('employee')
+            ->where('com_code', $this->comCode());
 
         if ($request->filled('employee_id')) {
             $query->where('employee_id', $request->employee_id);
@@ -28,7 +44,7 @@ class AdvancesController extends Controller
 
     public function create()
     {
-        $employees = Employee::orderBy('employee_name_A')->get();
+        $employees = $this->employees();
         return view('admin.advances.create', compact('employees'));
     }
 
@@ -56,7 +72,8 @@ class AdvancesController extends Controller
             'remaining_amount'     => $request->amount,
             'status'               => 1,
             'notes'                => $request->notes,
-            'com_code'             => Auth::guard('admin')->user()->com_code,
+            // ✅ FIX: com_code من الأدمن
+            'com_code'             => $this->comCode(),
             'added_by'             => Auth::guard('admin')->id(),
         ]);
 
@@ -65,8 +82,9 @@ class AdvancesController extends Controller
 
     public function edit(int $id)
     {
-        $advance   = Advance::findOrFail($id);
-        $employees = Employee::orderBy('employee_name_A')->get();
+        // ✅ FIX: فلترة بـ com_code لمنع الوصول لسجلات شركات أخرى
+        $advance   = Advance::where('com_code', $this->comCode())->findOrFail($id);
+        $employees = $this->employees();
         return view('admin.advances.edit', compact('advance', 'employees'));
     }
 
@@ -77,7 +95,9 @@ class AdvancesController extends Controller
             'status'       => 'required|integer|between:1,3',
         ]);
 
-        $advance = Advance::findOrFail($id);
+        // ✅ FIX: فلترة بـ com_code
+        $advance = Advance::where('com_code', $this->comCode())->findOrFail($id);
+
         $advance->update([
             'installments'         => $request->installments,
             'monthly_installment'  => round($advance->amount / $request->installments, 2),
@@ -92,7 +112,8 @@ class AdvancesController extends Controller
 
     public function delete(int $id)
     {
-        Advance::findOrFail($id)->delete();
+        // ✅ FIX: فلترة بـ com_code
+        Advance::where('com_code', $this->comCode())->findOrFail($id)->delete();
         return redirect()->route('advances.index')->with('success', 'تم حذف السلفة بنجاح');
     }
 }

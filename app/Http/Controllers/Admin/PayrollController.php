@@ -20,7 +20,7 @@ class PayrollController extends Controller
 {
     private function comCode(): int
     {
-        return Auth::guard('admin')->user()->com_code;
+        return (int) Auth::guard('admin')->user()->com_code;
     }
 
     public function index(Request $request)
@@ -55,7 +55,10 @@ class PayrollController extends Controller
             'period_to'   => 'required|date|after:period_from',
         ]);
 
-        $employee   = Employee::findOrFail($request->employee_id);
+        // ✅ FIX: فلترة بـ com_code لمنع الوصول لموظفي شركات أخرى
+        $employee = Employee::where('com_code', $this->comCode())
+            ->findOrFail($request->employee_id);
+
         $periodFrom = Carbon::parse($request->period_from);
         $periodTo   = Carbon::parse($request->period_to);
 
@@ -68,7 +71,9 @@ class PayrollController extends Controller
 
         DB::beginTransaction();
         try {
-            $payroll = $this->computePayroll($employee, $request->month, $request->year, $periodFrom, $periodTo);
+            $payroll = $this->computePayroll(
+                $employee, $request->month, $request->year, $periodFrom, $periodTo
+            );
 
             if ($existing) {
                 $existing->update((array)$payroll);
@@ -126,14 +131,14 @@ class PayrollController extends Controller
     }
 
     // =========================================================
-    //  منطق الاحتساب الفعلي — يشمل KPI
+    //  منطق الاحتساب الفعلي
     // =========================================================
     private function computePayroll(
         Employee $employee, int $month, int $year,
         Carbon $periodFrom, Carbon $periodTo
     ): object {
         $admin     = Auth::guard('admin')->user();
-        $settings  = Admin_panel_setting::where('com_code', $admin->com_code)->first();
+        $settings  = Admin_panel_setting::where('com_code', (int)$admin->com_code)->first();
         $totalDays = $periodFrom->diffInDays($periodTo) + 1;
         $basicSal  = (float)($employee->emp_sal ?? 0);
         $dailyRate = $totalDays > 0 ? ($basicSal / $totalDays) : 0;
@@ -147,13 +152,12 @@ class PayrollController extends Controller
         $presentDays = $attendances->where('status', 1)->count();
         $absenceDays = $attendances->where('status', 2)->count();
         $leaveDays   = $attendances->whereIn('status', [3, 4, 5])->count();
-
-        $earnedSal = round($dailyRate * ($presentDays + $leaveDays), 2);
+        $earnedSal   = round($dailyRate * ($presentDays + $leaveDays), 2);
 
         // ── الأوفرتايم ──
         $overtimeAmount = round($attendances->sum('overtime_amount'), 2);
 
-        // ── التأخيرات (يحترم delay_calc_mode) ──
+        // ── التأخيرات ──
         $lateDeductions = $this->calcLateDeductions($attendances, $settings, $dailyRate, $hourlyRate);
 
         // ── خصم الغياب ──
@@ -163,16 +167,14 @@ class PayrollController extends Controller
         $commissionsAmount = round(
             Commission::where('employee_id', $employee->id)
                 ->where('month', $month)->where('year', $year)->where('status', 1)
-                ->sum('amount'),
-            2
+                ->sum('amount'), 2
         );
 
-        // ── الخصومات الأخرى ──
+        // ── الخصومات ──
         $deductionsAmount = round(
             Deduction::where('employee_id', $employee->id)
                 ->where('month', $month)->where('year', $year)->where('status', 1)
-                ->sum('amount'),
-            2
+                ->sum('amount'), 2
         );
 
         // ── السلفة ──
@@ -186,26 +188,17 @@ class PayrollController extends Controller
         // ── الإضافات الثابتة ──
         $fixedAllowances = (float)($employee->emp_fixed_allowances ?? 0);
 
-        // ── KPI: مكافآت وخصومات ──
-        $kpiScores = KpiEmployeeScore::where('employee_id', $employee->id)
+        // ── KPI ──
+        $kpiScores    = KpiEmployeeScore::where('employee_id', $employee->id)
             ->where('month', $month)->where('year', $year)->get();
-
         $kpiBonus     = round($kpiScores->where('effect_direction', 1)->sum('salary_effect_amount'), 2);
         $kpiDeduction = round($kpiScores->where('effect_direction', 2)->sum('salary_effect_amount'), 2);
 
-        // ── الإجمالي قبل الخصم ──
+        // ── الإجمالي والصافي ──
         $grossSalary = $earnedSal + $fixedAllowances + $overtimeAmount + $commissionsAmount + $kpiBonus;
-
-        // ── الصافي ──
-        $netSalary = max(0, round(
-            $grossSalary
-            - $lateDeductions
-            - $absenceDeductions
-            - $deductionsAmount
-            - $kpiDeduction
-            - $advanceInstallment
-            - $insurance,
-            2
+        $netSalary   = max(0, round(
+            $grossSalary - $lateDeductions - $absenceDeductions
+            - $deductionsAmount - $kpiDeduction - $advanceInstallment - $insurance, 2
         ));
 
         return (object)[
@@ -232,7 +225,7 @@ class PayrollController extends Controller
             'gross_salary'        => round($grossSalary, 2),
             'net_salary'          => $netSalary,
             'status'              => 1,
-            'com_code'            => $admin->com_code,
+            'com_code'            => (int)$admin->com_code,
             'added_by'            => $admin->id,
         ];
     }
@@ -244,52 +237,41 @@ class PayrollController extends Controller
     {
         $mode = $settings->delay_calc_mode ?? 1;
 
-        // الحضور المتأخر فعلاً (بعد تجاوز الهامش)
-        $lateAttendances = $attendances->where('status', 1)->filter(function ($att) use ($settings) {
-            $graceMinutes = $settings->after_minute_calc_delay ?? 0;
+        $graceMinutes = (float)($settings->after_minute_calc_delay ?? 0);
+        $lateAttendances = $attendances->where('status', 1)->filter(function ($att) use ($graceMinutes) {
             return $att->late_minutes > $graceMinutes;
         });
 
         switch ($mode) {
             case 1: // خصم بالدقيقة
-                $minuteRate = $settings->sanctions_value_minute_delay > 0
+                $minuteRate = (float)($settings->sanctions_value_minute_delay ?? 0) > 0
                     ? (float)$settings->sanctions_value_minute_delay
                     : ($hourlyRate / 60);
-
                 return round($lateAttendances->sum('late_minutes') * $minuteRate, 2);
 
-            case 2: // خصم نصف يوم / يوم بعد X مرة
+            case 2: // نصف يوم / يوم بعد X مرة
                 $count     = $lateAttendances->count();
                 $halfAfter = (int)($settings->after_time_half_daycut ?? 0);
                 $fullAfter = (int)($settings->after_time_allday_daycut ?? 0);
-                $deduction = 0;
 
-                if ($fullAfter > 0 && $count >= $fullAfter) {
-                    $deduction = $dailyRate;
-                } elseif ($halfAfter > 0 && $count >= $halfAfter) {
-                    $deduction = $dailyRate / 2;
-                }
-                return round($deduction, 2);
+                if ($fullAfter > 0 && $count >= $fullAfter) return round($dailyRate, 2);
+                if ($halfAfter > 0 && $count >= $halfAfter) return round($dailyRate / 2, 2);
+                return 0.0;
 
-            case 3: // مدمج: هامش + دقيقة بعده
-                $minuteRate = $settings->sanctions_value_minute_delay > 0
+            case 3: // مدمج
+                $minuteRate = (float)($settings->sanctions_value_minute_delay ?? 0) > 0
                     ? (float)$settings->sanctions_value_minute_delay
                     : ($hourlyRate / 60);
-
-                $totalLateMinutes = $lateAttendances->sum(function ($att) use ($settings) {
-                    $grace = $settings->after_minute_calc_delay ?? 0;
-                    return max(0, $att->late_minutes - $grace);
+                $totalLate = $lateAttendances->sum(function ($att) use ($graceMinutes) {
+                    return max(0, $att->late_minutes - $graceMinutes);
                 });
-                return round($totalLateMinutes * $minuteRate, 2);
+                return round($totalLate * $minuteRate, 2);
 
             default:
                 return round($attendances->sum('late_deduction'), 2);
         }
     }
 
-    // ─────────────────────────────────────────────
-    //  احتساب خصومات الغياب التراكمي
-    // ─────────────────────────────────────────────
     private function calcAbsenceDeductions(int $absenceDays, float $dailyRate, $settings): float
     {
         if ($absenceDays <= 0) return 0.0;
@@ -309,13 +291,9 @@ class PayrollController extends Controller
             };
             $deduction += $dailyRate * $multiplier;
         }
-
         return round($deduction, 2);
     }
 
-    // =========================================================
-    //  عرض مسير الراتب
-    // =========================================================
     public function show(int $id)
     {
         $payroll = MonthlyPayroll::with('employee')->findOrFail($id);
@@ -331,7 +309,6 @@ class PayrollController extends Controller
 
         $payroll->update(['status' => 2, 'updated_by' => Auth::guard('admin')->id()]);
 
-        // خصم قسط السلفة
         if ($payroll->advance_installment > 0) {
             $advance = Advance::where('employee_id', $payroll->employee_id)
                 ->where('status', 1)->where('remaining_amount', '>', 0)->first();

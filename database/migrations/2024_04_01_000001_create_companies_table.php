@@ -35,7 +35,7 @@ return new class extends Migration {
         Schema::table('admin_panel_settings', function (Blueprint $table) {
             $table->foreignId('company_id')->nullable()->after('id')
                 ->constrained('companies')->onDelete('cascade');
-            $table->string('logo', 300)->nullable()->change();
+            // $table->string('logo', 300)->nullable()->change();
             // حقول إضافية لنظام التأخير بالدقيقة
             // $table->decimal('sanctions_value_minute_delay', 10, 2)->default(0)
             //     ->comment('قيمة خصم الدقيقة (تأخير أو انصراف مبكر)');

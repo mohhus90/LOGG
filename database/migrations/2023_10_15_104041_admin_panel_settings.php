@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('com_name',250);
             $table->tinyInteger('saysem_status')->default(1)->comment('واحد مفعل- صفر معطل');
-            $table->string('logo',250)->nullable();
+            $table->string('image',250)->nullable();
             $table->string('phone',250)->nullable();
             $table->string('address',250)->nullable();
             $table->string('email',250)->nullable();

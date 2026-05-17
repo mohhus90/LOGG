@@ -67,13 +67,13 @@
           </select>
         </div>
         <div class="col-md-3 form-group">
-          <label>شعار الشركة (Logo)</label>
+          <label>شعار الشركة (image)</label>
           <div class="d-flex align-items-center">
             @if($data->image ?? null)
-              <img src="{{ asset('storage/'.$data->image) }}" alt="Logo"
+              <img src="{{ asset('storage/'.$data->image) }}" alt="image"
                 style="height:45px;margin-left:8px;border-radius:6px;border:1px solid #dee2e6">
             @endif
-            <input type="file" class="form-control-file" name="logo_file" accept="image/*">
+            <input type="file" class="form-control-file" name="image" accept="image/*">
           </div>
           <small class="text-muted">PNG, JPG — حجم أقصى 2MB</small>
         </div>
