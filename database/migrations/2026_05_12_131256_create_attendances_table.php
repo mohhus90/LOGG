@@ -15,6 +15,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('attendances')) {
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
@@ -36,6 +37,7 @@ return new class extends Migration
 
             $table->unique(['employee_id', 'attendance_date']);
         });
+        }
     }
 
     public function down(): void

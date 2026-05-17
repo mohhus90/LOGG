@@ -180,47 +180,87 @@
 
 @section('js')
 <script>
-const portDefaults = { zkteco:4370, suprema:4370, anviz:5010, hikvision:80, dahua:80, generic:8080 };
-const portHints    = {
-    zkteco:    'ZKTeco افتراضي: 4370',
-    suprema:   'Suprema افتراضي: 4370',
-    anviz:     'Anviz افتراضي: 5010',
-    hikvision: 'Hikvision HTTP افتراضي: 80',
-    dahua:     'Dahua HTTP افتراضي: 80',
-    generic:   'HTTP Webhook افتراضي: 8080',
+/* ── إصلاح اختيار بروتوكول جهاز البصمة ── */
+
+var portDefaults  = { zkteco:4370, suprema:4370, anviz:5010, hikvision:80, dahua:80, generic:8080 };
+var portHintTexts = {
+  zkteco:    'ZKTeco / ZKLib — البورت الافتراضي: 4370',
+  suprema:   'Suprema BioStation — البورت الافتراضي: 4370',
+  anviz:     'Anviz — البورت الافتراضي: 5010',
+  hikvision: 'Hikvision HTTP REST — البورت الافتراضي: 80',
+  dahua:     'Dahua HTTP REST — البورت الافتراضي: 80',
+  generic:   'Generic HTTP Webhook — البورت الافتراضي: 8080',
 };
 
 function selectProtocol(val, el) {
-    document.querySelectorAll('.protocol-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    document.getElementById('protocolInput').value = val;
-    document.getElementById('portInput').value      = portDefaults[val] || 4370;
-    document.getElementById('portHint').textContent = portHints[val] || '';
+  // إلغاء تحديد الكل
+  document.querySelectorAll('.protocol-card').forEach(function(card) {
+    card.classList.remove('selected');
+    card.style.borderColor = '#dee2e6';
+    card.style.background  = '';
+  });
 
-    // عرض التلميح المناسب
-    const isHttp = ['hikvision','dahua','generic'].includes(val);
-    document.getElementById('zktecoTip').classList.toggle('d-none', isHttp);
-    document.getElementById('httpTip').classList.toggle('d-none', !isHttp);
+  // تحديد المختار
+  el.classList.add('selected');
+  el.style.borderColor = '#007bff';
+  el.style.background  = '#f0f7ff';
+
+  // تحديث الـ input المخفي
+  document.getElementById('protocolInput').value = val;
+
+  // تحديث البورت والتلميح
+  var portInp  = document.getElementById('portInput');
+  var portHint = document.getElementById('portHint');
+  if (portInp)  portInp.value       = portDefaults[val]  || 4370;
+  if (portHint) portHint.textContent = portHintTexts[val] || '';
+
+  // عرض/إخفاء التلميح المناسب
+  var isHttp = ['hikvision','dahua','generic'].indexOf(val) !== -1;
+  var zkTip   = document.getElementById('zktecoTip');
+  var httpTip = document.getElementById('httpTip');
+  if (zkTip)  zkTip.classList.toggle('d-none',  isHttp);
+  if (httpTip) httpTip.classList.toggle('d-none', !isHttp);
 }
 
-@if(isset($device))
+// تفعيل عند التحميل
+document.addEventListener('DOMContentLoaded', function() {
+  var currentProtocol = document.getElementById('protocolInput').value || 'zkteco';
+  var activeCard = document.querySelector('.protocol-card[onclick*="' + currentProtocol + '"]');
+  if (activeCard) {
+    activeCard.classList.add('selected');
+    activeCard.style.borderColor = '#007bff';
+    activeCard.style.background  = '#f0f7ff';
+  }
+  // تطبيق التلميح الأولي
+  var isHttp = ['hikvision','dahua','generic'].indexOf(currentProtocol) !== -1;
+  var zkTip  = document.getElementById('zktecoTip');
+  var httpTip= document.getElementById('httpTip');
+  if (zkTip)  zkTip.classList.toggle('d-none',  isHttp);
+  if (httpTip)httpTip.classList.toggle('d-none', !isHttp);
+});
+
+// اختبار الاتصال في صفحة التعديل
 function testConnectionInline(id, btn) {
-    const original = btn.innerHTML;
-    btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i>';
-    btn.disabled   = true;
+  var original = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  btn.disabled  = true;
 
-    fetch(`{{ url('admin/dashboard/fingerprint_devices') }}/${id}/test`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(r => r.json())
-    .then(data => {
-        const result = document.getElementById('testResult');
-        result.className  = 'badge badge-' + (data.success ? 'success' : 'danger') + ' mr-2';
-        result.textContent = data.message;
-    })
-    .catch(() => { document.getElementById('testResult').textContent = 'خطأ'; })
-    .finally(() => { btn.innerHTML = original; btn.disabled = false; });
+  fetch('/admin/dashboard/fingerprint_devices/' + id + '/test', {
+    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var result    = document.getElementById('testResult');
+    if (result) {
+      result.className   = 'badge badge-' + (data.success ? 'success' : 'danger') + ' mr-2 p-2';
+      result.textContent = data.message;
+    }
+  })
+  .catch(function() {
+    var result = document.getElementById('testResult');
+    if (result) { result.className = 'badge badge-danger mr-2'; result.textContent = 'خطأ في الاتصال'; }
+  })
+  .finally(function() { btn.innerHTML = original; btn.disabled = false; });
 }
-@endif
 </script>
 @endsection

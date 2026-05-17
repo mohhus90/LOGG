@@ -111,11 +111,76 @@ tr.already-saved{background:#f0fff4!important}tr.marked-absent{background:#fff5f
 @endsection
 @section('js')
 <script>
-function markAll(v){document.querySelectorAll('.ss:not(:disabled)').forEach(s=>{s.value=v;onSC(s);});}
-function onSC(s){const r=s.closest('tr');if(s.value==='2'){r.querySelectorAll('.ci,.co').forEach(i=>{if(!i.readOnly)i.value='';});r.classList.add('marked-absent');}else{r.classList.remove('marked-absent');}}
-function setGIn(v){document.querySelectorAll('.ci:not([readonly])').forEach(i=>{const r=i.closest('tr');if(r.querySelector('.ss').value==='1')i.value=v;});}
-function setGOut(v){document.querySelectorAll('.co:not([readonly])').forEach(i=>{const r=i.closest('tr');if(r.querySelector('.ss').value==='1')i.value=v;});}
-function askTimes(){const si=prompt('وقت الحضور الافتراضي:','08:00');const so=prompt('وقت الانصراف الافتراضي:','17:00');if(!si||!so)return;document.getElementById('gIn').value=si;setGIn(si);document.getElementById('gOut').value=so;setGOut(so);}
-function clearTimes(){if(!confirm('مسح الأوقات؟'))return;document.querySelectorAll('.ci:not([readonly]),.co:not([readonly])').forEach(i=>i.value='');}
+/* ── إصلاح الأزرار السريعة في الإدخال الدفعي ── */
+
+// تعليم الكل حضر أو غياب
+function markAll(status) {
+  document.querySelectorAll('select[name*="[status]"]:not(:disabled)').forEach(function(sel) {
+    sel.value = String(status);
+    onStatusChange(sel);
+  });
+}
+
+// عند تغيير حالة موظف
+function onStatusChange(sel) {
+  var row = sel.closest('tr');
+  if (!row) return;
+  var ci = row.querySelector('input[name*="[check_in]"]');
+  var co = row.querySelector('input[name*="[check_out]"]');
+  if (sel.value === '2') {
+    if (ci && !ci.readOnly) ci.value = '';
+    if (co && !co.readOnly) co.value = '';
+    row.classList.add('marked-absent');
+  } else {
+    row.classList.remove('marked-absent');
+  }
+}
+
+// تعبئة وقت حضور موحد لكل الحاضرين
+function setGIn(val) {
+  document.querySelectorAll('input[name*="[check_in]"]:not([readonly])').forEach(function(inp) {
+    var row = inp.closest('tr');
+    var sel = row ? row.querySelector('select[name*="[status]"]') : null;
+    if (!sel || sel.value === '1') inp.value = val;
+  });
+}
+
+// تعبئة وقت انصراف موحد
+function setGOut(val) {
+  document.querySelectorAll('input[name*="[check_out]"]:not([readonly])').forEach(function(inp) {
+    var row = inp.closest('tr');
+    var sel = row ? row.querySelector('select[name*="[status]"]') : null;
+    if (!sel || sel.value === '1') inp.value = val;
+  });
+}
+
+// سؤال عن الأوقات ثم تعبئتها
+function askTimes() {
+  var si = prompt('أدخل وقت الحضور الافتراضي (مثال: 08:00):', '08:00');
+  if (!si) return;
+  var so = prompt('أدخل وقت الانصراف الافتراضي (مثال: 17:00):', '17:00');
+  if (!so) return;
+
+  var gIn  = document.getElementById('gIn');
+  var gOut = document.getElementById('gOut');
+  if (gIn)  { gIn.value  = si; setGIn(si);   }
+  if (gOut) { gOut.value = so; setGOut(so);  }
+}
+
+// مسح كل الأوقات
+function clearTimes() {
+  if (!confirm('مسح جميع الأوقات المدخلة؟')) return;
+  document.querySelectorAll(
+    'input[name*="[check_in]"]:not([readonly]), input[name*="[check_out]"]:not([readonly])'
+  ).forEach(function(inp) { inp.value = ''; });
+}
+
+// ربط الـ global inputs بعد التحميل
+document.addEventListener('DOMContentLoaded', function () {
+  var gIn  = document.getElementById('gIn');
+  var gOut = document.getElementById('gOut');
+  if (gIn)  gIn.addEventListener('change', function() { setGIn(this.value);  });
+  if (gOut) gOut.addEventListener('change', function() { setGOut(this.value); });
+});
 </script>
 @endsection

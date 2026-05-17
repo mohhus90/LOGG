@@ -15,11 +15,12 @@ return new class extends Migration
     {
         // تعديل جدول الأدمن لإضافة حقل is_super_admin
         Schema::table('admins', function (Blueprint $table) {
-            $table->tinyInteger('is_super_admin')->default(0)->after('com_code')
-                  ->comment('(1=سوبر ادمن),(0=ادمن عادي)');
+            // $table->tinyInteger('is_super_admin')->default(0)->after('com_code')
+            //       ->comment('(1=سوبر ادمن),(0=ادمن عادي)');
         });
 
         // جدول الأقسام/الموديولات
+        if (!Schema::hasTable('admin_modules')) {
         Schema::create('admin_modules', function (Blueprint $table) {
             $table->id();
             $table->string('module_key', 50)->unique()->comment('مفتاح القسم مثل employees, attendance ...');
@@ -27,9 +28,11 @@ return new class extends Migration
             $table->string('module_icon', 50)->nullable()->comment('أيقونة FontAwesome');
             $table->integer('sort_order')->default(0);
             $table->timestamps();
-        });
+            });
+        }
 
         // جدول صلاحيات الأدمن
+        if (!Schema::hasTable('admin_permissions')) {
         Schema::create('admin_permissions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('admin_id')->constrained('admins')->onDelete('cascade');
@@ -43,6 +46,7 @@ return new class extends Migration
 
             $table->unique(['admin_id', 'module_id']);
         });
+        }
     }
 
     public function down(): void

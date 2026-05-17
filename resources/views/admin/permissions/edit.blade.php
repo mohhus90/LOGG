@@ -116,22 +116,27 @@
 
 @section('js')
 <script>
+/* ── إصلاح أزرار الصلاحيات ── */
+
+// تحديد/إلغاء تحديد عمود كامل
 function checkAll(permType) {
-    const checkboxes = document.querySelectorAll('.' + permType);
-    const allChecked = [...checkboxes].every(cb => cb.checked);
-    checkboxes.forEach(cb => cb.checked = !allChecked);
+  var checkboxes = document.querySelectorAll('input[name*="[' + permType + ']"]');
+  var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+  checkboxes.forEach(function(cb) { cb.checked = !allChecked; });
 }
 
+// تحديد/إلغاء تحديد كل الصلاحيات
 function checkRow() {
-    const allCheckboxes = document.querySelectorAll('.perm-check');
-    const allChecked = [...allCheckboxes].every(cb => cb.checked);
-    allCheckboxes.forEach(cb => cb.checked = !allChecked);
+  var all = document.querySelectorAll('.perm-check');
+  var allChecked = Array.from(all).every(function(cb) { return cb.checked; });
+  all.forEach(function(cb) { cb.checked = !allChecked; });
 }
 
+// تحديد/إلغاء صف قسم واحد بالكامل
 function checkRowById(moduleId) {
-    const row = document.querySelectorAll(`input[name^="permissions[${moduleId}]"]`);
-    const allChecked = [...row].every(cb => cb.checked);
-    row.forEach(cb => cb.checked = !allChecked);
+  var row = document.querySelectorAll('input[name^="permissions[' + moduleId + ']"]');
+  var allChecked = Array.from(row).every(function(cb) { return cb.checked; });
+  row.forEach(function(cb) { cb.checked = !allChecked; });
 }
 </script>
 @endsection
