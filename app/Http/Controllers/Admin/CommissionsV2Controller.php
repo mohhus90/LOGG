@@ -8,7 +8,7 @@ use App\Models\CommissionRule;
 use App\Models\SalesRecord;
 use App\Models\Commission;
 use App\Models\Employee;
-use App\Models\branches;
+use App\Models\Branche;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -21,13 +21,13 @@ class CommissionsV2Controller extends Controller
     {
         $rules    = CommissionRule::where('com_code', $this->comCode())
             ->with('branch')->orderBy('name')->get();
-        $branches = branches::where('com_code', $this->comCode())->get();
+        $branches = Branche::where('com_code', $this->comCode())->get();
         return view('admin.commissions_v2.rules', compact('rules', 'branches'));
     }
 
     public function createRule()
     {
-        $branches = branches::where('com_code', $this->comCode())->get();
+        $branches = Branche::where('com_code', $this->comCode())->get();
         return view('admin.commissions_v2.create_rule', compact('branches'));
     }
 
@@ -78,7 +78,7 @@ class CommissionsV2Controller extends Controller
         $year      = $request->year  ?? now()->year;
         $employees = Employee::where('com_code', $this->comCode())
             ->orderBy('employee_name_A')->get();
-        $branches  = branches::where('com_code', $this->comCode())->get();
+        $branches  = Branche::where('com_code', $this->comCode())->get();
 
         $existing = SalesRecord::where('com_code', $this->comCode())
             ->where('month', $month)->where('year', $year)

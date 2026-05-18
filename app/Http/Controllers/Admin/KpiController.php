@@ -1,5 +1,5 @@
 <?php
-// FILE: app/Http/Controllers/Admin/KpiController.php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -9,15 +9,27 @@ use App\Models\KpiEmployeeScore;
 use App\Models\Employee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class KpiController extends Controller
 {
-    private function comCode(): int { return Auth::guard('admin')->user()->com_code; }
+    private function comCode(): int
+    {
+        return (int) Auth::guard('admin')->user()->com_code;
+    }
 
-    // ── تعريف المؤشرات ──
+    // ─────────────────────────────────────────────
+    // تعريف المؤشرات
+    // ─────────────────────────────────────────────
     public function definitions()
     {
-        $kpis = KpiDefinition::where('com_code', $this->comCode())->orderBy('sort_order')->get();
+        // ✅ FIX: استخدام id بدلاً من sort_order لتجنب خطأ العمود المفقود
+        // بعد تشغيل migration الإصلاح سيعود sort_order للعمل تلقائياً
+        $orderColumn = Schema::hasColumn('kpi_definitions', 'sort_order') ? 'sort_order' : 'id';
+
+        $kpis = KpiDefinition::where('com_code', $this->comCode())
+            ->orderBy($orderColumn)->get();
+
         return view('admin.kpi.definitions', compact('kpis'));
     }
 
@@ -29,21 +41,46 @@ class KpiController extends Controller
     public function storeDefinition(Request $request)
     {
         $request->validate([
-            'name'             => 'required|string|max:150',
-            'code'             => 'required|string|max:50|unique:kpi_definitions,code',
-            'category'         => 'required|string',
-            'target_value'     => 'required|numeric|min:0',
-            'weight'           => 'required|numeric|min:0|max:100',
-            'affects_salary'   => 'nullable|boolean',
+            'name'           => 'required|string|max:150',
+            'code'           => 'required|string|max:50|unique:kpi_definitions,code',
+            'category'       => 'required|string',
+            'target_value'   => 'required|numeric|min:0',
+            'weight'         => 'required|numeric|min:0|max:100',
+            'affects_salary' => 'nullable|boolean',
+        ], [
+            'name.required'         => 'حقل اسم المؤشر مطلوب',
+            'code.required'         => 'حقل كود المؤشر مطلوب',
+            'code.unique'           => 'هذا الكود مستخدم من قبل',
+            'category.required'     => 'اختر فئة المؤشر',
+            'target_value.required' => 'أدخل القيمة المستهدفة',
+            'weight.required'       => 'أدخل الوزن النسبي',
         ]);
 
-        KpiDefinition::create([
-            ...$request->except('_token'),
-            'affects_salary'   => $request->boolean('affects_salary'),
-            'is_active'        => 1,
-            'com_code'         => $this->comCode(),
-            'added_by'         => Auth::guard('admin')->id(),
-        ]);
+        // ✅ FIX: استخراج البيانات يدوياً بدلاً من ...$request->except()
+        // لمنع إرسال أعمدة غير موجودة في قاعدة البيانات
+        $data = [
+            'name'                => $request->name,
+            'code'                => $request->code,
+            'category'            => $request->category,
+            'measurement_unit'    => $request->measurement_unit,
+            'target_value'        => $request->target_value,
+            'weight'              => $request->weight,
+            'affects_salary'      => $request->boolean('affects_salary'),
+            'salary_effect_type'  => $request->salary_effect_type   ?? 'bonus',
+            'max_bonus_pct'       => $request->max_bonus_pct        ?? 0,
+            'max_deduction_pct'   => $request->max_deduction_pct    ?? 0,
+            'is_active'           => 1,
+            'description'         => $request->description,
+            'com_code'            => $this->comCode(),
+            'added_by'            => Auth::guard('admin')->id(),
+        ];
+
+        // ✅ FIX: أضف sort_order فقط إذا كان العمود موجوداً في قاعدة البيانات
+        if (Schema::hasColumn('kpi_definitions', 'sort_order')) {
+            $data['sort_order'] = $request->sort_order ?? 0;
+        }
+
+        KpiDefinition::create($data);
 
         return redirect()->route('kpi.definitions')
             ->with('success', 'تم إضافة مؤشر الأداء بنجاح');
@@ -58,8 +95,30 @@ class KpiController extends Controller
     public function updateDefinition(Request $request, int $id)
     {
         $kpi = KpiDefinition::where('com_code', $this->comCode())->findOrFail($id);
-        $kpi->update([...$request->except('_token','_method'), 'affects_salary' => $request->boolean('affects_salary')]);
-        return redirect()->route('kpi.definitions')->with('success', 'تم تحديث المؤشر');
+
+        $data = [
+            'name'               => $request->name,
+            'code'               => $request->code,
+            'category'           => $request->category,
+            'measurement_unit'   => $request->measurement_unit,
+            'target_value'       => $request->target_value,
+            'weight'             => $request->weight,
+            'affects_salary'     => $request->boolean('affects_salary'),
+            'salary_effect_type' => $request->salary_effect_type ?? 'bonus',
+            'max_bonus_pct'      => $request->max_bonus_pct      ?? 0,
+            'max_deduction_pct'  => $request->max_deduction_pct  ?? 0,
+            'is_active'          => $request->is_active           ?? 1,
+            'description'        => $request->description,
+        ];
+
+        // ✅ FIX: sort_order اختياري
+        if (Schema::hasColumn('kpi_definitions', 'sort_order')) {
+            $data['sort_order'] = $request->sort_order ?? 0;
+        }
+
+        $kpi->update($data);
+
+        return redirect()->route('kpi.definitions')->with('success', 'تم تحديث المؤشر بنجاح');
     }
 
     public function deleteDefinition(int $id)
@@ -68,15 +127,20 @@ class KpiController extends Controller
         return redirect()->route('kpi.definitions')->with('success', 'تم الحذف');
     }
 
-    // ── إدخال قراءات الموظفين ──
+    // ─────────────────────────────────────────────
+    // إدخال قراءات الموظفين
+    // ─────────────────────────────────────────────
     public function scores(Request $request)
     {
         $month     = $request->month ?? now()->month;
         $year      = $request->year  ?? now()->year;
-        $employees = Employee::where('com_code', $this->comCode())->orderBy('employee_name_A')->get();
-        $kpis      = KpiDefinition::where('com_code', $this->comCode())->where('is_active', 1)->get();
+        $employees = Employee::where('com_code', $this->comCode())
+            ->orderBy('employee_name_A')->get();
 
-        // جلب النتائج الحالية
+        $orderColumn = Schema::hasColumn('kpi_definitions', 'sort_order') ? 'sort_order' : 'id';
+        $kpis = KpiDefinition::where('com_code', $this->comCode())
+            ->where('is_active', 1)->orderBy($orderColumn)->get();
+
         $scores = KpiEmployeeScore::where('com_code', $this->comCode())
             ->where('month', $month)->where('year', $year)
             ->get()->groupBy('employee_id');
@@ -93,13 +157,13 @@ class KpiController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->scores ?? [] as $empId => $kpiScores) {
-                $employee = Employee::where('id', $empId)->where('com_code', $admin->com_code)->first();
+                $employee = Employee::where('id', $empId)
+                    ->where('com_code', $admin->com_code)->first();
                 if (!$employee) continue;
 
                 foreach ($kpiScores as $kpiId => $actualValue) {
                     if ($actualValue === null || $actualValue === '') continue;
 
-                    $kpi   = KpiDefinition::find($kpiId);
                     $score = KpiEmployeeScore::firstOrNew([
                         'kpi_id'      => $kpiId,
                         'employee_id' => $empId,
@@ -107,8 +171,8 @@ class KpiController extends Controller
                         'year'        => $year,
                     ]);
 
-                    $score->actual_value = (float) $actualValue;
-                    $score->com_code     = $admin->com_code;
+                    $score->actual_value = (float)$actualValue;
+                    $score->com_code     = (int)$admin->com_code;
                     $score->added_by     = $admin->id;
                     $score->calculate($employee->emp_sal ?? 0);
                     $score->save();
@@ -124,29 +188,30 @@ class KpiController extends Controller
             ->with('success', "تم حفظ تقييمات {$month}/{$year}");
     }
 
-    // ── تقرير KPI الشهري ──
+    // ─────────────────────────────────────────────
+    // تقرير KPI الشهري
+    // ─────────────────────────────────────────────
     public function report(Request $request)
     {
-        $month     = $request->month ?? now()->month;
-        $year      = $request->year  ?? now()->year;
+        $month  = $request->month ?? now()->month;
+        $year   = $request->year  ?? now()->year;
 
         $scores = KpiEmployeeScore::with(['employee', 'kpi'])
             ->where('com_code', $this->comCode())
             ->where('month', $month)->where('year', $year)
             ->get();
 
-        // تجميع بالموظف
         $byEmployee = $scores->groupBy('employee_id')->map(function ($empScores) {
             $emp = $empScores->first()->employee;
             return [
-                'employee'         => $emp,
-                'total_score'      => $empScores->sum('score'),
-                'avg_achievement'  => $empScores->avg('achievement_pct'),
-                'total_bonus'      => $empScores->where('effect_direction', 1)->sum('salary_effect_amount'),
-                'total_deduction'  => $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
-                'net_effect'       => $empScores->where('effect_direction', 1)->sum('salary_effect_amount')
-                                    - $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
-                'scores'           => $empScores,
+                'employee'        => $emp,
+                'total_score'     => $empScores->sum('score'),
+                'avg_achievement' => $empScores->avg('achievement_pct'),
+                'total_bonus'     => $empScores->where('effect_direction', 1)->sum('salary_effect_amount'),
+                'total_deduction' => $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
+                'net_effect'      => $empScores->where('effect_direction', 1)->sum('salary_effect_amount')
+                                   - $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
+                'scores'          => $empScores,
             ];
         })->sortByDesc('total_score');
 

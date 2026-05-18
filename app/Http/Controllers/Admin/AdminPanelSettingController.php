@@ -2,23 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Admin_panel_setting;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class AdminPanelSettingController extends Controller
 {
-    // ─────────────────────────────────────────────
-    // مساعد: com_code الأدمن الحالي
-    // ─────────────────────────────────────────────
-    private function comCode(): int
+    /**
+     * ✅ CORE FIX: com_code يُحدَّد دائماً من الأدمن — لا يأتي أبداً من الـ request
+     */
+    private function getComCode(): int
     {
         return (int) Auth::guard('admin')->user()->com_code;
+    }
+
+    /**
+     * ✅ CORE FIX: البحث عن السجل بـ com_code الأدمن — ليس بـ first() العشوائية
+     */
+    private function getSetting(): ?Admin_panel_setting
+    {
+        return Admin_panel_setting::where('com_code', $this->getComCode())->first();
     }
 
     // ─────────────────────────────────────────────
@@ -26,7 +34,7 @@ class AdminPanelSettingController extends Controller
     // ─────────────────────────────────────────────
     public function index()
     {
-        $data = Admin_panel_setting::where('com_code', $this->comCode())->first();
+        $data = $this->getSetting();
         return view('admin.PanelSetting.index', ['data' => $data]);
     }
 
@@ -46,52 +54,54 @@ class AdminPanelSettingController extends Controller
         DB::beginTransaction();
         try {
             $request->validate([
-                'com_name' => 'required|string|max:250',
+                'com_name' => 'required|string',
             ], [
                 'com_name.required' => 'حقل اسم الشركة مطلوب',
             ]);
 
             // منع التكرار لنفس الشركة
-            if (Admin_panel_setting::where('com_code', $this->comCode())->exists()) {
+            if ($this->getSetting()) {
                 return redirect()->route('generalsetting.edit')
                     ->with('errorUpdate', 'الضبط موجود مسبقاً. استخدم صفحة التعديل.');
             }
 
-            Admin_panel_setting::create([
+            $data = [
                 'added_by'                       => Auth::guard('admin')->id(),
                 'com_name'                       => $request->com_name,
-                'saysem_status'                  => $request->saysem_status ?? 1,
-                'phone'                          => $request->phone ?? '',
-                'address'                        => $request->address ?? '',
-                // ✅ FIX: com_code يُأخذ من الأدمن وليس من الـ request
-                'com_code'                       => $this->comCode(),
-                'email'                          => $request->email ?? '',
-                'after_minute_calc_delay'        => $request->after_minute_calc_delay ?? 0,
-                'after_minute_calc_early'        => $request->after_minute_calc_early ?? 0,
-                'after_minute_quarterday'        => $request->after_minute_quarterday ?? 0,
-                'after_time_half_daycut'         => $request->after_time_half_daycut ?? 0,
-                'after_time_allday_daycut'       => $request->after_time_allday_daycut ?? 0,
-                'monthly_vacation_balance'       => $request->monthly_vacation_balance ?? 1.75,
-                'first_balance_begain_vacation'  => $request->first_balance_begain_vacation ?? 0,
-                'after_days_begain_vacation'     => $request->after_days_begain_vacation ?? 0,
-                'sanctions_value_first_abcence'  => $request->sanctions_value_first_abcence ?? 0,
-                'sanctions_value_second_abcence' => $request->sanctions_value_second_abcence ?? 0,
-                'sanctions_value_third_abcence'  => $request->sanctions_value_third_abcence ?? 0,
-                'sanctions_value_forth_abcence'  => $request->sanctions_value_forth_abcence ?? 0,
+                'saysem_status'                  => $request->saysem_status       ?? 1,
+                'phone'                          => $request->phone               ?? '',
+                'address'                        => $request->address             ?? '',
+                // ✅ FIX: com_code من الأدمن — لا من الـ request
+                'com_code'                       => $this->getComCode(),
+                'email'                          => $request->email               ?? '',
+                'after_minute_calc_delay'        => $request->after_minute_calc_delay        ?? 0,
+                'after_minute_calc_early'        => $request->after_minute_calc_early        ?? 0,
+                'after_minute_quarterday'        => $request->after_minute_quarterday        ?? 0,
+                'after_time_half_daycut'         => $request->after_time_half_daycut         ?? 0,
+                'after_time_allday_daycut'       => $request->after_time_allday_daycut       ?? 0,
+                'monthly_vacation_balance'       => $request->monthly_vacation_balance       ?? 1.75,
+                'first_balance_begain_vacation'  => $request->first_balance_begain_vacation  ?? 0,
+                'after_days_begain_vacation'     => $request->after_days_begain_vacation     ?? 0,
+                'sanctions_value_first_abcence'  => $request->sanctions_value_first_abcence  ?? 1,
+                'sanctions_value_second_abcence' => $request->sanctions_value_second_abcence ?? 2,
+                'sanctions_value_third_abcence'  => $request->sanctions_value_third_abcence  ?? 3,
+                'sanctions_value_forth_abcence'  => $request->sanctions_value_forth_abcence  ?? 4,
                 'created_at'                     => now(),
                 'updated_at'                     => now(),
-            ]);
+            ];
+
+            Admin_panel_setting::create($data);
 
             DB::commit();
             return redirect()->route('generalsetting.index')
-                ->with('success', 'تم إضافة بيانات الشركة بنجاح');
+                ->with('success', 'تم إضافة الشركة بنجاح');
 
         } catch (ValidationException $e) {
             DB::rollBack();
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error during panelSetting save: ' . $e->getMessage());
+            Log::error('AdminPanelSettingController@store: ' . $e->getMessage());
             return redirect()->back()
                 ->with('error', 'حدث خطأ غير متوقع: ' . $e->getMessage())
                 ->withInput();
@@ -101,30 +111,29 @@ class AdminPanelSettingController extends Controller
     // ─────────────────────────────────────────────
     // EDIT
     // ─────────────────────────────────────────────
-    public function edit()
+    public function edit(Admin_panel_setting $admin_panel_setting = null)
     {
-        $data = Admin_panel_setting::where('com_code', $this->comCode())->first();
+        // ✅ FIX: البحث بـ com_code لا بـ Route Model Binding
+        $data = $this->getSetting();
         return view('admin.PanelSetting.edit', ['data' => $data]);
     }
 
     // ─────────────────────────────────────────────
-    // UPDATE — ✅ الإصلاح الرئيسي: com_code من الأدمن لا من الـ request
+    // UPDATE — الإصلاح الجذري
     // ─────────────────────────────────────────────
-    public function update(Request $request, Admin_panel_setting $admin_panel_setting)
+    public function update(Request $request, Admin_panel_setting $admin_panel_setting = null)
     {
         try {
-            // البحث عن السجل بـ com_code الأدمن (لا بـ route model binding)
-            $setting = Admin_panel_setting::where('com_code', $this->comCode())->first();
+            // ✅ FIX 1: البحث عن السجل بـ com_code الأدمن — ليس بـ $request->id
+            $setting = $this->getSetting();
 
-            // إذا لم يوجد سجل، أنشئه
             if (!$setting) {
-                $setting = new Admin_panel_setting();
-                $setting->added_by = Auth::guard('admin')->id();
-                $setting->com_code = $this->comCode(); // ✅ من الأدمن
+                // إذا لم يوجد سجل، أنشئه
+                return $this->store($request);
             }
 
-            // ── معالجة اللوجو ──
-            $logoPath = $setting->image ?? null;
+            // ✅ FIX 2: معالجة اللوجو
+            $logoPath = $setting->image ?? $setting->logo ?? null;
             if ($request->hasFile('logo_file') && $request->file('logo_file')->isValid()) {
                 if ($logoPath && Storage::disk('public')->exists($logoPath)) {
                     Storage::disk('public')->delete($logoPath);
@@ -132,43 +141,49 @@ class AdminPanelSettingController extends Controller
                 $logoPath = $request->file('logo_file')->store('logos', 'public');
             }
 
-            $setting->updated_by                    = Auth::guard('admin')->id();
-            $setting->com_name                      = $request->com_name ?? $setting->com_name;
-            // ✅ FIX: لا تأخذ com_code من الـ request أبداً — تأخذه من الأدمن
-            $setting->com_code                      = $this->comCode();
-            $setting->saysem_status                 = $request->saysem_status ?? 1;
-            $setting->phone                         = $request->phone ?? '';
-            $setting->email                         = $request->email ?? '';
-            $setting->address                       = $request->address ?? '';
-            $setting->image                         = $logoPath;
-            $setting->after_minute_calc_delay       = $request->after_minute_calc_delay ?? 0;
-            $setting->after_minute_calc_early       = $request->after_minute_calc_early ?? 0;
-            $setting->after_minute_quarterday       = $request->after_minute_quarterday ?? 0;
-            $setting->after_time_half_daycut        = $request->after_time_half_daycut ?? 0;
-            $setting->after_time_allday_daycut      = $request->after_time_allday_daycut ?? 0;
-            $setting->monthly_vacation_balance      = $request->monthly_vacation_balance ?? 1.75;
-            $setting->first_balance_begain_vacation = $request->first_balance_begain_vacation ?? 0;
-            $setting->after_days_begain_vacation    = $request->after_days_begain_vacation ?? 0;
-            $setting->sanctions_value_first_abcence  = $request->sanctions_value_first_abcence ?? 0;
-            $setting->sanctions_value_second_abcence = $request->sanctions_value_second_abcence ?? 0;
-            $setting->sanctions_value_third_abcence  = $request->sanctions_value_third_abcence ?? 0;
-            $setting->sanctions_value_forth_abcence  = $request->sanctions_value_forth_abcence ?? 0;
+            // ✅ FIX 3: com_code من الأدمن — لا من الـ request أبداً
+            $updatedData = [
+                'updated_by'                     => Auth::guard('admin')->id(),
+                'com_name'                       => $request->com_name            ?? $setting->com_name,
+                // ❌ مُزال: 'com_code' => $request->com_code,
+                // ✅ مُضاف: com_code ثابت من الأدمن
+                'com_code'                       => $this->getComCode(),
+                'saysem_status'                  => $request->saysem_status       ?? 1,
+                'phone'                          => $request->phone               ?? '',
+                'email'                          => $request->email               ?? '',
+                'address'                        => $request->address             ?? '',
+                'image'                          => $logoPath,
+                'after_minute_calc_delay'        => $request->after_minute_calc_delay        ?? 0,
+                'after_minute_calc_early'        => $request->after_minute_calc_early        ?? 0,
+                'after_minute_quarterday'        => $request->after_minute_quarterday        ?? 0,
+                'after_time_half_daycut'         => $request->after_time_half_daycut         ?? 0,
+                'after_time_allday_daycut'       => $request->after_time_allday_daycut       ?? 0,
+                'monthly_vacation_balance'       => $request->monthly_vacation_balance       ?? 1.75,
+                'first_balance_begain_vacation'  => $request->first_balance_begain_vacation  ?? 0,
+                'after_days_begain_vacation'     => $request->after_days_begain_vacation     ?? 0,
+                'sanctions_value_first_abcence'  => $request->sanctions_value_first_abcence  ?? 1,
+                'sanctions_value_second_abcence' => $request->sanctions_value_second_abcence ?? 1,
+                'sanctions_value_third_abcence'  => $request->sanctions_value_third_abcence  ?? 1,
+                'sanctions_value_forth_abcence'  => $request->sanctions_value_forth_abcence  ?? 1,
+            ];
 
-            // حقول جديدة (إن وُجدت في قاعدة البيانات)
-            if ($request->filled('delay_calc_mode')) {
-                $setting->delay_calc_mode = $request->delay_calc_mode;
+            // الحقول الجديدة — تُضاف فقط إذا وجد العمود في قاعدة البيانات
+            if (Schema::hasColumn('admin_panel_settings', 'delay_calc_mode')) {
+                $updatedData['delay_calc_mode'] = $request->delay_calc_mode ?? 1;
             }
-            if ($request->filled('sanctions_value_minute_delay')) {
-                $setting->sanctions_value_minute_delay = $request->sanctions_value_minute_delay;
+            if (Schema::hasColumn('admin_panel_settings', 'sanctions_value_minute_delay')) {
+                $updatedData['sanctions_value_minute_delay'] = $request->sanctions_value_minute_delay ?? 0;
             }
 
-            $setting->save();
+            // ✅ FIX 4: البحث بـ com_code لا بـ $request->id الذي قد يكون null
+            Admin_panel_setting::where('com_code', $this->getComCode())
+                ->update($updatedData);
 
             return redirect()->route('generalsetting.index')
                 ->with('success', 'تم تحديث البيانات بنجاح');
 
         } catch (\Exception $ex) {
-            Log::error('Error during update: ' . $ex->getMessage());
+            Log::error('AdminPanelSettingController@update: ' . $ex->getMessage());
             return redirect()->back()
                 ->with('errorUpdate', 'حدث خطأ أثناء التحديث: ' . $ex->getMessage());
         }

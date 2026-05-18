@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Admin;
+
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -13,246 +14,236 @@ use DatePeriod;
 use DateTime;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules;
 
 class Finance_calendersController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    // ✅ FIX: مساعد com_code
+    private function comCode(): int
     {
-        $data= Finance_calender::select('*')->orderby('finance_yr','DESC')->paginate(paginate_counter);
-
-        return view('admin.finance_calender.index',['data'=>$data]);
+        return (int) auth()->guard('admin')->user()->com_code;
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    public function index()
+    {
+        // ✅ FIX: فلترة بـ com_code
+        $data = Finance_calender::where('com_code', $this->comCode())
+            ->orderBy('finance_yr', 'DESC')
+            ->paginate(paginate_counter);
+
+        return view('admin.finance_calender.index', ['data' => $data]);
+    }
+
     public function create()
     {
         return view('admin.finance_calender.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-
     public function store(Request $request, Finance_calender $Finance_calender)
     {
         $request->validate([
-            "finance_yr" => ["required", "unique:finance_calenders"],
-            "start_date" => "required",
-            "end_date" => "required",
-            // "is_open" => "required", 
-            // Add validation rule for is_open field
-            // Add validation rules for other fields here if necessary
-        ],[
-            "finance_yr.required" => "يجب ادخال السنة المالية",
-            "finance_yr.unique" => "قد تم ادخال هذه السنة من قبل",
-            "start_date.required" => "يجب ادخال تاريخ بداية السنة المالية",
-            "end_date.required" => "يجب ادخال تاريخ نهاية السنة المالية",
-            // "is_open.required" => "يجب ادخال حقل الإغلاق",
+            'finance_yr' => [
+                'required',
+                Rule::unique('finance_calenders')
+                    ->where('com_code', $this->comCode()), // ✅ FIX: unique لنفس الشركة فقط
+            ],
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after:start_date',
+        ], [
+            'finance_yr.required' => 'يجب إدخال السنة المالية',
+            'finance_yr.unique'   => 'قد تم إدخال هذه السنة من قبل',
+            'start_date.required' => 'يجب إدخال تاريخ بداية السنة المالية',
+            'end_date.required'   => 'يجب إدخال تاريخ نهاية السنة المالية',
+            'end_date.after'      => 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية',
         ]);
-       
-        DB::beginTransaction(); 
+
+        DB::beginTransaction();
         try {
+            $adminUser = auth()->guard('admin')->user();
+
+            // ✅ FIX: com_code من الأدمن لا من request
             $createdData = [
-                'added_by' => auth()->guard('admin')->user()->id,
-                'com_code' => auth()->guard('admin')->user()->com_code,
+                'added_by'   => $adminUser->id,
+                'com_code'   => $this->comCode(),
                 'finance_yr' => $request->finance_yr,
                 'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
-
+                'end_date'   => $request->end_date,
             ];
-    
-            $flag=$Finance_calender->create($createdData);
-            if($flag){
-                $dataParent=$Finance_calender->select('id')->where($createdData)->first();
-                $startDate=new DateTime($request->start_date);
-                $endDate=new DateTime($request->end_date);
-                $dateInterval=new DateInterval('P1M');
-                $datePeriod=new DatePeriod($startDate,$dateInterval,$endDate);
 
-                foreach($datePeriod as $date){
-                    $datamonth['finance_calenders_id']=$dataParent['id'];
-                    $monthname_en=$date->format('F');
-                    $dataParentMontn=Month::select('id')->where(['monthe_name_en'=>$monthname_en])->first();
-                    $datamonth['month_id']=$dataParentMontn['id'];
-                    $datamonth['finance_year']=$createdData['finance_yr'];
-                    $datamonth['start_date']=date('Y-m-01',strtotime($date->format('Y-m-d')));
-                    $datamonth['end_date']=date('Y-m-t',strtotime($date->format('Y-m-d')));
-                    $datamonth['year_of_month']=date('Y-m',strtotime($date->format('Y-m-d')));
-                    $dateDiff=strtotime($datamonth['end_date'])-strtotime($datamonth['start_date']);
-                    $datamonth['number_of_days']=round($dateDiff/(60*60*24))+1;
-                    $datamonth['added_by'] = auth()->guard('admin')->user()->id;
-                    $datamonth['updated_by'] = auth()->guard('admin')->user()->id;
-                    $datamonth['created_at']=date('Y-m-d H:i:s');
-                    $datamonth['updated_at']=date('Y-m-d H:i:s');
-                    $datamonth['start_date_finger_print']=date('Y-m-01',strtotime($date->format('Y-m-d')));
-                    $datamonth['end_date_finger_print']=date('Y-m-01',strtotime($date->format('Y-m-d')));
-                    $datamonth['com_code'] = auth()->guard('admin')->user()->com_code; // أضف هذا السطر
-                    Finance_cln_period::insert($datamonth);
-                }
+            $flag = Finance_calender::create($createdData);
+
+            if ($flag) {
+                $this->generatePeriods($flag->id, $request->start_date, $request->end_date, $adminUser);
             }
+
             DB::commit();
-            return redirect()->route('finance_calender.index')->with(['success' => 'تم اضافة السنة المالية بنجاح'])->withInput();
+            return redirect()->route('finance_calender.index')
+                ->with('success', 'تم إضافة السنة المالية بنجاح');
+
         } catch (\Exception $ex) {
-            // Log the exception message for debugging purposes
             DB::rollBack();
-            Log::error('Error during update: ' . $ex->getMessage());
-            
-            return redirect()->back()->with(['errorUpdate' => 'حدث خطأ أثناء اضافة السنة المالية: ' . $ex->getMessage()])->withInput();
+            Log::error('Finance Calendar store error: ' . $ex->getMessage());
+            return redirect()->back()
+                ->with('errorUpdate', 'حدث خطأ: ' . $ex->getMessage())
+                ->withInput();
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+    public function show(string $id) {}
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit($id)
     {
-        $data=Finance_calender::select('*')->where(['id'=>$id])->first();
-            if(empty($data)){
-                return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
-            }else{
-                return view('admin.finance_calender.update',['data'=>$data]);
-            }
-        
-           
+        // ✅ FIX: فلترة بـ com_code
+        $data = Finance_calender::where('com_code', $this->comCode())->find($id);
+
+        if (empty($data)) {
+            return redirect()->back()->with('error', 'عفوا حدث خطأ');
+        }
+        return view('admin.finance_calender.update', ['data' => $data]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-public function updatee(Request $request, string $id)
-{
-    $validator = Validator::make($request->all(),[
-        'finance_yr' => ['required', Rule::unique('finance_calenders')->ignore($id)],
-    ]);
-    if ($validator->fails()) {
-        return redirect()->back()->with(['error' => 'قد تم ادخال هذه السنة من قبل'])->withInput();
-    }
+    public function updatee(Request $request, string $id)
+    {
+        // ✅ FIX: فلترة بـ com_code عند التحقق من unique
+        $validator = Validator::make($request->all(), [
+            'finance_yr' => [
+                'required',
+                Rule::unique('finance_calenders')
+                    ->ignore($id)
+                    ->where('com_code', $this->comCode()),
+            ],
+        ]);
 
-    $request->validate([
-        "finance_yr" => "required",
-        "start_date" => "required|date",
-        "end_date"   => "required|date",
-    ],[
-        "finance_yr.required" => "يجب ادخال السنة المالية",
-        "start_date.required" => "يجب ادخال تاريخ بداية السنة المالية",
-        "end_date.required"   => "يجب ادخال تاريخ نهاية السنة المالية",
-    ]);
-
-    DB::beginTransaction();
-    try {
-        $data = Finance_calender::find($id);
-        if (!$data) {
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput();
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->with('error', 'قد تم إدخال هذه السنة من قبل')
+                ->withInput();
         }
 
-        $is_open = $request->input('is_open', 0);
+        $request->validate([
+            'finance_yr' => 'required',
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after:start_date',
+        ]);
 
-        $updatedData = [
-            'updated_by'  => auth()->guard('admin')->user()->id,
-            'com_code'    => auth()->guard('admin')->user()->com_code,
-            'finance_yr'  => $request->finance_yr,
-            'start_date'  => $request->start_date,
-            'end_date'    => $request->end_date,
-            'is_open'     => $is_open,
-        ];
+        DB::beginTransaction();
+        try {
+            // ✅ FIX: فلترة بـ com_code
+            $data = Finance_calender::where('com_code', $this->comCode())->find($id);
 
-        $flag = Finance_calender::where('id', $id)->update($updatedData);
+            if (!$data) {
+                return redirect()->back()->with('error', 'عفوا حدث خطأ');
+            }
 
-        if ($flag) {
-            // ✅ تحديث is_open للأبناء فى جميع الحالات
+            $adminUser = auth()->guard('admin')->user();
+            $is_open   = $request->input('is_open', 0);
+
+            $updatedData = [
+                'updated_by' => $adminUser->id,
+                // ✅ FIX: لا نحدّث com_code هنا لتجنب null
+                'finance_yr' => $request->finance_yr,
+                'start_date' => $request->start_date,
+                'end_date'   => $request->end_date,
+                'is_open'    => $is_open,
+            ];
+
+            Finance_calender::where('id', $id)->update($updatedData);
+
+            // تحديث is_open للأبناء
             Finance_cln_period::where('finance_calenders_id', $id)
                 ->update(['is_open' => $is_open]);
 
-            // لو التواريخ اتغيرت → امسح الشهور القديمة وأعد توليدها
+            // لو التواريخ تغيرت → أعد توليد الشهور
             if ($data->start_date != $request->start_date || $data->end_date != $request->end_date) {
                 Finance_cln_period::where('finance_calenders_id', $id)->delete();
-
-                $cursor = (new DateTime($request->start_date))->modify('first day of this month');
-                $end    = (new DateTime($request->end_date))->modify('last day of this month');
-
-                while ($cursor <= $end) {
-                    $monthname_en = $cursor->format('F');
-                    $monthRow = Month::select('id')->where('monthe_name_en', $monthname_en)->first();
-
-                    $start_of_month = $cursor->format('Y-m-01');
-                    $end_of_month   = $cursor->format('Y-m-t');
-
-                    $datamonth = [
-                        'finance_calenders_id'   => (int) $id,
-                        'is_open'                => $is_open,
-                        'month_id'               => $monthRow ? $monthRow->id : null,
-                        'finance_year'           => $updatedData['finance_yr'],
-                        'start_date'             => $start_of_month,
-                        'end_date'               => $end_of_month,
-                        'year_of_month'          => $cursor->format('Y-m'),
-                        'number_of_days'         => (int) ((strtotime($end_of_month) - strtotime($start_of_month)) / 86400) + 1,
-                        'added_by'               => auth()->guard('admin')->user()->id,
-                        'updated_by'             => auth()->guard('admin')->user()->id,
-                        'created_at'             => now(),
-                        'updated_at'             => now(),
-                        'start_date_finger_print'=> $start_of_month,
-                        'end_date_finger_print'  => $end_of_month,
-                    ];
-
-                    Finance_cln_period::insert($datamonth);
-
-                    $cursor->modify('first day of next month');
-                }
+                $this->generatePeriods($id, $request->start_date, $request->end_date, $adminUser, $is_open);
             }
+
+            DB::commit();
+            return redirect()->route('finance_calender.index')
+                ->with('success', 'تم تحديث السنة المالية بنجاح');
+
+        } catch (\Exception $ex) {
+            DB::rollBack();
+            Log::error('Finance Calendar update error: ' . $ex->getMessage());
+            return redirect()->back()
+                ->with('errorUpdate', 'حدث خطأ: ' . $ex->getMessage())
+                ->withInput();
         }
-
-        DB::commit();
-        return redirect()->route('finance_calender.index')->with(['success' => 'تم تحديث السنة المالية بنجاح']);
-    } catch (\Exception $ex) {
-        DB::rollBack();
-        Log::error('Error during update: ' . $ex->getMessage());
-        return redirect()->back()->with(['errorUpdate' => 'حدث خطأ أثناء تحديث السنة المالية: ' . $ex->getMessage()])->withInput();
     }
-}
 
-
-
-
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function delete(string $id)
     {
-        try{
-            $data=Finance_calender::select('*')->where(['id'=>$id])->first();
-            if(empty($data)){
-                return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
+        try {
+            // ✅ FIX: فلترة بـ com_code
+            $data = Finance_calender::where('com_code', $this->comCode())->find($id);
+            if (empty($data)) {
+                return redirect()->back()->with('error', 'عفوا حدث خطأ');
             }
-            Finance_calender::where(['id'=>$id])->delete();
-            return redirect()->route('finance_calender.index')->with(['success' => 'تم حذف السنة المالية بنجاح'])->withInput();
+            Finance_calender::where('id', $id)->delete();
+            return redirect()->route('finance_calender.index')
+                ->with('success', 'تم حذف السنة المالية بنجاح');
 
-        }catch(\Exception $ex){
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '],$ex->getMessage())->withInput();
+        } catch (\Exception $ex) {
+            return redirect()->back()->with('error', 'عفوا حدث خطأ: ' . $ex->getMessage());
         }
-        
     }
-    
-    function show_year_monthes(Request $request)
+
+    public function show_year_monthes(Request $request)
     {
-        if($request->ajax()){
-            $finance_cln_periods=Finance_cln_period::select("*")->where(['finance_calenders_id'=>$request->id])->get();
-            return view("admin.finance_calender.show_year_monthes",['finance_cln_periods'=>$finance_cln_periods]);
-            // echo "dd";
+        if ($request->ajax()) {
+            $finance_cln_periods = Finance_cln_period::where('finance_calenders_id', $request->id)->get();
+            return view('admin.finance_calender.show_year_monthes', ['finance_cln_periods' => $finance_cln_periods]);
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // ✅ مساعد: توليد الشهور لسنة مالية
+    // ─────────────────────────────────────────────
+    private function generatePeriods(
+        int $calendarId,
+        string $startDate,
+        string $endDate,
+        $adminUser,
+        int $isOpen = 0
+    ): void {
+        $start = new DateTime($startDate);
+        $end   = new DateTime($endDate);
+        $end->modify('+1 day'); // DatePeriod لا يشمل النهاية
+
+        $dateInterval = new DateInterval('P1M');
+        $datePeriod   = new DatePeriod($start, $dateInterval, $end);
+
+        foreach ($datePeriod as $date) {
+            $monthNameEn = $date->format('F'); // January, February...
+
+            // ✅ FIX: إذا لم يوجد الشهر في جدول monthes - لا نتوقف
+            $monthRow = Month::where('monthe_name_en', $monthNameEn)->first();
+
+            $startOfMonth = $date->format('Y-m-01');
+            $endOfMonth   = $date->format('Y-m-t');
+            $daysCount    = (int)(
+                (strtotime($endOfMonth) - strtotime($startOfMonth)) / 86400
+            ) + 1;
+
+            $periodData = [
+                'finance_calenders_id'    => $calendarId,
+                'is_open'                 => $isOpen,
+                'month_id'                => $monthRow ? $monthRow->id : null,
+                'finance_year'            => (int)$date->format('Y'),
+                'start_date'              => $startOfMonth,
+                'end_date'                => $endOfMonth,
+                'year_of_month'           => $date->format('Y-m'),
+                'number_of_days'          => $daysCount,
+                'added_by'                => $adminUser->id,
+                'updated_by'              => $adminUser->id,
+                'start_date_finger_print' => $startOfMonth,
+                'end_date_finger_print'   => $endOfMonth,
+                'com_code'                => $this->comCode(),
+                'created_at'              => now(),
+                'updated_at'              => now(),
+            ];
+
+            Finance_cln_period::insert($periodData);
         }
     }
 }
