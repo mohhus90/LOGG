@@ -46,7 +46,7 @@ class EmployeePortalController extends Controller
         }
 
         // كلمة المرور الافتراضية = رقم الهاتف
-        $defaultPassword = $employee->phone ?? $employee->employee_id;
+        $defaultPassword = $employee->emp_mobile ?? $employee->employee_id;
         $password        = $employee->password ?? $defaultPassword;
 
         $valid = Hash::check($request->password, $password)
