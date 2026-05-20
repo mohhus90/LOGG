@@ -236,7 +236,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 // ── اختيار الأساس ──
 function selectBasis(val, el) {

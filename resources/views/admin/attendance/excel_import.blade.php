@@ -172,7 +172,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 function previewFile(input) {
     if (!input.files.length) return;

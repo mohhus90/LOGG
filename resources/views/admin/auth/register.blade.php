@@ -162,7 +162,7 @@
 </div>
 @endsection
 
-@push('scripts')
+@section('script')
 <script>
 /**
  * ✅ FIX: وضع داخل DOMContentLoaded لضمان جاهزية العناصر
@@ -228,4 +228,4 @@ function selectMode(mode) {
   }
 }
 </script>
-@endpush
+@endsection

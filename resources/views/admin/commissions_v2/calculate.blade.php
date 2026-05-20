@@ -141,7 +141,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 function toggleAll(masterCb) {
   document.querySelectorAll('.com-check').forEach(cb => cb.checked = masterCb.checked);

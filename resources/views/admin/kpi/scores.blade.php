@@ -157,7 +157,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 // احتساب مبدئي للنسبة في الصف
 function calcRowScore(inp, empId) {

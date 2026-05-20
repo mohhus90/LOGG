@@ -105,7 +105,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 function calcRemaining(type) {
   // تلميح فقط — المستخدم يعدّل المتبقي يدوياً

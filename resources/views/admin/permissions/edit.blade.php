@@ -114,7 +114,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 /* ── إصلاح أزرار الصلاحيات ── */
 

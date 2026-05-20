@@ -91,7 +91,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 const originalAmount = {{ $advance->amount }};
 document.getElementById('instInput').addEventListener('input', function() {

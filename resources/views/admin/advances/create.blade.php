@@ -86,7 +86,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 function calcMonthly() {
     const amount = parseFloat(document.getElementById('amountInput').value) || 0;

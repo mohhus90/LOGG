@@ -170,7 +170,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 function updateWeightBar() {
   const v = parseFloat(document.getElementById('weightInput').value) || 0;

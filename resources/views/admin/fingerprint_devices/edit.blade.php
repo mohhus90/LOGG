@@ -178,7 +178,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 const portDefaults = { zkteco:4370, suprema:4370, anviz:5010, hikvision:80, dahua:80, generic:8080 };
 const portHints    = {

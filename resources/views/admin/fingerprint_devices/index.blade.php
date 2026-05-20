@@ -288,7 +288,7 @@
 
 @endsection
 
-@section('js')
+@section('script')
 <script>
 function testConnection(deviceId, btn) {
     const original = btn.innerHTML;

@@ -178,7 +178,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 /* ── إصلاح اختيار بروتوكول جهاز البصمة ── */
 

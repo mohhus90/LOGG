@@ -289,7 +289,7 @@
 </div>
 @endsection
 
-@section('js')
+@section('script')
 <script>
 function setMode(mode) {
   // تحديث اختيار الراديو

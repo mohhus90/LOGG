@@ -56,9 +56,11 @@
                       <option value="0" @if (old('is_open')==1)selected @endif>مفتوح</option>
                       <option value="1" @if (old('is_open')==2)selected @endif>مغلق</option>
                   </select>
+                
                   @error('is_open')
                   <div class="text-danger">{{ $message }}</div>
                   @enderror
+                </div>
                 <div class="text-center">
                   <button type="submit" class="text-center btn btn-primary btn-lg col-3">اضافة</button>
                   <a class="btn btn-warning btn-lg col-2" href="{{ route('finance_calender.index') }}">الغاء</a>
@@ -67,6 +69,5 @@
               </form>
         </div>
     </div>
-</div>
-   
+  </div>  
 @endsection

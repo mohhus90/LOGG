@@ -109,7 +109,7 @@ tr.already-saved{background:#f0fff4!important}tr.marked-absent{background:#fff5f
 </div>
 </div>
 @endsection
-@section('js')
+@section('script')
 <script>
 /* ── إصلاح الأزرار السريعة في الإدخال الدفعي ── */
 
