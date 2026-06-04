@@ -55,7 +55,7 @@ class EmployeeVacationBalance extends Model
      */
     public static function createForEmployee(Employee $employee, int $year, Admin_panel_setting $settings): self
     {
-        $annual        = $settings->annual_vacation_days  ?? 21;
+        $annual        = $settings->annual_vacation_days  ?? 15;
         $casual        = $settings->casual_vacation_days  ?? 6;
         $monthlyAccrual = $settings->monthly_vacation_balance ?? 1.75;
 

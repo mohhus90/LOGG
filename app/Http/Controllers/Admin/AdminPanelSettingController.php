@@ -134,11 +134,13 @@ class AdminPanelSettingController extends Controller
 
             // ✅ FIX 2: معالجة اللوجو
             $logoPath = $setting->image ?? $setting->logo ?? null;
-            if ($request->hasFile('logo_file') && $request->file('logo_file')->isValid()) {
+            // ✅ FIX: يقبل كلاً من 'image' و 'logo_file'
+            $uploadedFile = $request->file('image') ?? $request->file('logo_file');
+            if ($uploadedFile && $uploadedFile->isValid()) {
                 if ($logoPath && Storage::disk('public')->exists($logoPath)) {
                     Storage::disk('public')->delete($logoPath);
                 }
-                $logoPath = $request->file('logo_file')->store('logos', 'public');
+                $logoPath = $uploadedFile->store('logos', 'public');
             }
 
             // ✅ FIX 3: com_code من الأدمن — لا من الـ request أبداً

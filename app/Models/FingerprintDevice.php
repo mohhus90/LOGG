@@ -40,6 +40,7 @@ class FingerprintDevice extends Model
             'hikvision' => 'Hikvision',
             'dahua'     => 'Dahua',
             'generic'   => 'Generic HTTP/API',
+            'agent'     => 'Agent (فرع بعيد)',
             default     => $this->protocol,
         };
     }

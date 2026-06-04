@@ -8,12 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 class Jobs_categories extends Model
 {
     use HasFactory;
-    protected $table ="jobs_categories";
+    protected $table = 'jobs_categories';
     protected $guarded = [];
-    public function addedby(){
-        return $this->belongsTo('App\Models\Admin','added_by');
+
+    public function addedby()
+    {
+        return $this->belongsTo('App\Models\Admin', 'added_by');
     }
-    public function updatedby(){
-        return $this->belongsTo('App\Models\Admin','updated_by');
+
+    public function updatedby()
+    {
+        return $this->belongsTo('App\Models\Admin', 'updated_by');
+    }
+
+    public function orgLevel()
+    {
+        return $this->belongsTo(OrgLevel::class, 'org_level_id');
     }
 }

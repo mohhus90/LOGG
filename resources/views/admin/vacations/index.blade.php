@@ -1,141 +1,248 @@
-{{-- FILE: resources/views/admin/vacations/index.blade.php --}}
 @extends('admin.layouts.admin')
 @section('title') أرصدة الإجازات @endsection
 @section('start') شئون الموظفين @endsection
 @section('home') <a href="{{ route('vacations.index') }}">الإجازات</a> @endsection
 @section('startpage') الأرصدة السنوية @endsection
 
+@section('css')
+<style>
+.bal-chip{display:inline-block;padding:2px 10px;border-radius:20px;font-weight:700;font-size:.82em;}
+.bal-good{background:#d1fae5;color:#065f46;}
+.bal-warn{background:#fef3c7;color:#92400e;}
+.bal-zero{background:#fee2e2;color:#991b1b;}
+.vac-stat{text-align:center;padding:12px;border-radius:8px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+.vac-stat .num{font-size:1.7em;font-weight:800;color:#1e3a5f;}
+.age-warn{font-size:.72em;padding:2px 6px;border-radius:8px;background:#fff3cd;color:#856404;}
+</style>
+@endsection
+
 @section('content')
 <div class="col-12">
-<div class="card">
-  <div class="card-header">
-    <h3 class="card-title">
-      <i class="fas fa-umbrella-beach ml-2 text-success"></i>
-      أرصدة الإجازات السنوية
-    </h3>
-    <div class="card-tools d-flex align-items-center">
-      {{-- اختيار السنة --}}
-      <form method="GET" class="form-inline ml-3">
-        <label class="ml-1">السنة:</label>
-        <input type="number" name="year" class="form-control form-control-sm ml-1"
-          style="width:85px" value="{{ $year }}">
-        <button type="submit" class="btn btn-sm btn-primary ml-1">
-          <i class="fas fa-search"></i>
-        </button>
-      </form>
 
-      {{-- إنشاء رصيد دفعي --}}
-      <form method="POST" action="{{ route('vacations.create_bulk') }}" class="form-inline">
-        @csrf
-        <input type="hidden" name="year" value="{{ $year }}">
-        <button type="submit" class="btn btn-sm btn-success ml-1"
-          onclick="return confirm('إنشاء رصيد {{ $year }} لجميع الموظفين؟')">
-          <i class="fas fa-magic ml-1"></i>إنشاء أرصدة {{ $year }}
-        </button>
-      </form>
-
-      {{-- استحقاق شهري --}}
-      <form method="POST" action="{{ route('vacations.monthly_accrual') }}" class="form-inline">
-        @csrf
-        <input type="hidden" name="year" value="{{ $year }}">
-        <button type="submit" class="btn btn-sm btn-info"
-          onclick="return confirm('إضافة الاستحقاق الشهري لجميع الموظفين؟')">
-          <i class="fas fa-plus-circle ml-1"></i>استحقاق شهري
-        </button>
-      </form>
+{{-- إحصائيات --}}
+@if($stats)
+<div class="row mb-3">
+  <div class="col-md-3 col-6 mb-2">
+    <div class="vac-stat">
+      <div class="num text-success">{{ $stats->total_employees ?? 0 }}</div>
+      <div class="text-muted small">موظف لديهم رصيد {{ $year }}</div>
     </div>
   </div>
-
-  @if(session('success'))
-    <div class="alert alert-success mx-3 mt-2 alert-dismissible">
-      <button type="button" class="close" data-dismiss="alert">&times;</button>
-      {{ session('success') }}
+  <div class="col-md-3 col-6 mb-2">
+    <div class="vac-stat">
+      <div class="num">{{ number_format($stats->total_annual_remaining ?? 0, 1) }}</div>
+      <div class="text-muted small">رصيد اعتيادي متبقٍ (يوم)</div>
     </div>
-  @endif
-  @if(session('error'))
-    <div class="alert alert-danger mx-3 mt-2">{{ session('error') }}</div>
-  @endif
+  </div>
+  <div class="col-md-3 col-6 mb-2">
+    <div class="vac-stat">
+      <div class="num" style="color:#856404">{{ number_format($stats->total_annual_used ?? 0, 1) }}</div>
+      <div class="text-muted small">اعتيادي مستخدم (يوم)</div>
+    </div>
+  </div>
+  <div class="col-md-3 col-6 mb-2">
+    <div class="vac-stat">
+      <div class="num" style="color:#0d6efd">{{ number_format($stats->total_casual_remaining ?? 0, 1) }}</div>
+      <div class="text-muted small">رصيد عارضة متبقٍ (يوم)</div>
+    </div>
+  </div>
+</div>
+@endif
 
+{{-- شريط الأدوات --}}
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap:.5rem">
+  <h5 class="mb-0 font-weight-bold" style="color:#1e3a5f">
+    <i class="fas fa-umbrella-beach ml-2"></i>أرصدة الإجازات — سنة {{ $year }}
+    @if($settings)
+      <small class="text-muted" style="font-size:.72em">
+        (اعتيادي: {{ $settings->annual_vacation_days ?? 21 }} يوم |
+        عارض: {{ $settings->casual_vacation_days ?? 6 }} أيام |
+        شهري: {{ $settings->monthly_vacation_balance ?? 1.75 }} يوم)
+      </small>
+    @endif
+  </h5>
+  <div class="d-flex flex-wrap" style="gap:.4rem">
+    <form method="GET" class="form-inline">
+      <input type="number" name="year" class="form-control form-control-sm" style="width:82px" value="{{ $year }}">
+      <button type="submit" class="btn btn-sm btn-primary mr-1"><i class="fas fa-search"></i></button>
+    </form>
+    <form method="POST" action="{{ route('vacations.create_bulk') }}" class="d-inline">
+      @csrf
+      <input type="hidden" name="year" value="{{ $year }}">
+      <button type="submit" class="btn btn-sm btn-success"
+        onclick="return confirm('إنشاء رصيد {{ $year }} لجميع الموظفين؟')">
+        <i class="fas fa-magic ml-1"></i>إنشاء أرصدة {{ $year }}
+      </button>
+    </form>
+    <form method="POST" action="{{ route('vacations.monthly_accrual') }}" class="d-inline">
+      @csrf
+      <input type="hidden" name="year" value="{{ $year }}">
+      <button type="submit" class="btn btn-sm btn-info"
+        onclick="return confirm('إضافة الاستحقاق الشهري لجميع الموظفين؟')">
+        <i class="fas fa-plus-circle ml-1"></i>استحقاق شهري
+      </button>
+    </form>
+  </div>
+</div>
+
+@if(session('success'))
+  <div class="alert alert-success alert-dismissible">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    {{ session('success') }}
+  </div>
+@endif
+@if(session('error'))
+  <div class="alert alert-danger alert-dismissible">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    {{ session('error') }}
+  </div>
+@endif
+
+{{-- بحث --}}
+<div class="card mb-2" style="border-right:4px solid #2d5a9e">
+  <div class="card-body py-2">
+    <form method="GET" action="{{ route('vacations.index') }}">
+      <input type="hidden" name="year" value="{{ $year }}">
+      <div class="row align-items-end">
+        <div class="col-md-3 col-6 mb-1">
+          <input type="text" name="search_name" class="form-control form-control-sm"
+            placeholder="اسم الموظف" value="{{ request('search_name') }}">
+        </div>
+        <div class="col-md-2 col-6 mb-1">
+          <input type="text" name="search_code" class="form-control form-control-sm"
+            placeholder="الكود" value="{{ request('search_code') }}">
+        </div>
+        <div class="col-md-2 col-6 mb-1">
+          <input type="text" name="search_national" class="form-control form-control-sm"
+            placeholder="الرقم القومي" value="{{ request('search_national') }}">
+        </div>
+        <div class="col-md-2 col-6 mb-1">
+          <select name="has_balance" class="form-control form-control-sm">
+            <option value="">كل الموظفين</option>
+            <option value="1" {{ request('has_balance')=='1'?'selected':'' }}>لديهم رصيد</option>
+            <option value="0" {{ request('has_balance')=='0'?'selected':'' }}>بدون رصيد</option>
+          </select>
+        </div>
+        <div class="col-md-3 mb-1 d-flex" style="gap:.3rem">
+          <button type="submit" class="btn btn-primary btn-sm flex-fill">
+            <i class="fas fa-search ml-1"></i>بحث
+          </button>
+          <a href="{{ route('vacations.index',['year'=>$year]) }}"
+             class="btn btn-outline-secondary btn-sm flex-fill">مسح</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{-- الجدول --}}
+<div class="card">
   <div class="card-body p-0">
   <div class="table-responsive">
-  <table class="table table-bordered table-hover mb-0">
-    <thead class="thead-dark">
+  <table class="table table-bordered table-hover mb-0" style="font-size:.86em">
+    <thead>
       <tr>
         <th>#</th>
-        <th>الموظف</th>
-        <th colspan="3" class="text-center" style="background:#1e7e34">
-          🏖 إجازة اعتيادية (قانون: 21 يوم)
-        </th>
-        <th colspan="3" class="text-center" style="background:#856404">
-          📅 إجازة عارضة (قانون: 6 أيام)
-        </th>
+        <th>الكود</th>
+        <th>اسم الموظف</th>
+        <th>الرقم القومي</th>
+        <th>السن</th>
+        <th colspan="3" class="text-center" style="background:#e8f5e9">🏖 إجازة اعتيادية</th>
+        <th colspan="3" class="text-center" style="background:#fff8e1">📅 إجازة عارضة</th>
+        <th>شهري</th>
         <th>إجراء</th>
       </tr>
-      <tr class="table-dark">
-        <th colspan="2"></th>
-        <th>الرصيد الكلي</th>
-        <th>المستخدم</th>
-        <th>المتبقي</th>
-        <th>الرصيد الكلي</th>
-        <th>المستخدم</th>
-        <th>المتبقي</th>
-        <th></th>
+      <tr style="background:#f8f9fa;font-size:.78em">
+        <th colspan="5"></th>
+        <th class="text-center">الكلي</th>
+        <th class="text-center text-danger">مستخدم</th>
+        <th class="text-center text-success">متبقي</th>
+        <th class="text-center">الكلي</th>
+        <th class="text-center text-danger">مستخدم</th>
+        <th class="text-center text-success">متبقي</th>
+        <th></th><th></th>
       </tr>
     </thead>
     <tbody>
-      @foreach($employees as $emp)
-      @php $bal = $balances->get($emp->id); @endphp
-      <tr class="{{ !$bal ? 'table-warning' : '' }}">
-        <td>{{ $loop->iteration }}</td>
+      @forelse($employees as $emp)
+      @php
+        $bal  = $emp->vacationBalance->first();
+        $age  = $emp->birth_date ? \Carbon\Carbon::parse($emp->birth_date)->age : null;
+        $law30 = $age && $age >= 50;
+        if (!$law30 && $emp->emp_start_date)
+          $law30 = \Carbon\Carbon::parse($emp->emp_start_date)->diffInYears(now()) >= 10;
+      @endphp
+      <tr>
+        <td>{{ $employees->firstItem() + $loop->index }}</td>
+        <td><code style="font-size:.82em">{{ $emp->employee_id }}</code></td>
         <td>
           <strong>{{ $emp->employee_name_A }}</strong>
-          <br><small class="text-muted">{{ $emp->employee_id }}</small>
+          @if($law30)
+            <span class="age-warn mr-1" title="يستحق 30 يوم">30 يوم</span>
+          @endif
+        </td>
+        <td><small>{{ $emp->national_id ?? '—' }}</small></td>
+        <td class="text-center">
+          @if($age)
+            <span class="{{ $law30?'font-weight-bold text-warning':'' }}">{{ $age }}</span>
+          @else —
+          @endif
         </td>
         @if($bal)
           <td class="text-center">{{ $bal->annual_balance }}</td>
           <td class="text-center text-danger">{{ $bal->annual_used }}</td>
           <td class="text-center">
-            <span class="{{ $bal->annual_remaining <= 0 ? 'text-danger font-weight-bold' : 'text-success font-weight-bold' }}">
+            <span class="bal-chip {{ $bal->annual_remaining > 5 ? 'bal-good' : ($bal->annual_remaining > 0 ? 'bal-warn' : 'bal-zero') }}">
               {{ $bal->annual_remaining }}
             </span>
           </td>
           <td class="text-center">{{ $bal->casual_balance }}</td>
           <td class="text-center text-danger">{{ $bal->casual_used }}</td>
           <td class="text-center">
-            <span class="{{ $bal->casual_remaining <= 0 ? 'text-danger font-weight-bold' : 'text-success font-weight-bold' }}">
+            <span class="bal-chip {{ $bal->casual_remaining > 0 ? 'bal-good' : 'bal-zero' }}">
               {{ $bal->casual_remaining }}
             </span>
           </td>
+          <td class="text-center"><small>{{ $bal->monthly_accrual }}</small></td>
         @else
-          <td colspan="6" class="text-center text-muted">
-            <i class="fas fa-exclamation-triangle text-warning ml-1"></i>
-            لا يوجد رصيد لسنة {{ $year }}
+          <td colspan="7" class="text-center text-muted">
+            <i class="fas fa-exclamation-triangle text-warning ml-1"></i>لا يوجد رصيد
           </td>
         @endif
         <td>
           <a href="{{ route('vacations.edit', [$emp->id, $year]) }}"
-             class="btn btn-xs btn-warning">
+             class="btn btn-xs btn-warning" title="تعديل الرصيد">
             <i class="fas fa-edit"></i>
           </a>
+          @if($bal)
+          <button class="btn btn-xs btn-danger" title="حذف الرصيد"
+            onclick="if(confirm('حذف رصيد هذا الموظف؟'))document.getElementById('del_{{$emp->id}}_{{$year}}').submit()">
+            <i class="fas fa-trash"></i>
+          </button>
+          <form id="del_{{$emp->id}}_{{$year}}"
+            action="{{ route('vacations.delete_balance', [$emp->id, $year]) }}"
+            method="POST" style="display:none">
+            @csrf @method('DELETE')
+          </form>
+          @endif
         </td>
       </tr>
-      @endforeach
-    </tbody>
-    <tfoot class="table-light font-weight-bold">
+      @empty
       <tr>
-        <td colspan="2" class="text-left">الإجمالي</td>
-        <td class="text-center">{{ $balances->sum('annual_balance') }}</td>
-        <td class="text-center text-danger">{{ $balances->sum('annual_used') }}</td>
-        <td class="text-center text-success">{{ $balances->sum('annual_remaining') }}</td>
-        <td class="text-center">{{ $balances->sum('casual_balance') }}</td>
-        <td class="text-center text-danger">{{ $balances->sum('casual_used') }}</td>
-        <td class="text-center text-success">{{ $balances->sum('casual_remaining') }}</td>
-        <td></td>
+        <td colspan="14" class="text-center py-4 text-muted">
+          <i class="fas fa-search fa-2x mb-2 d-block"></i>
+          لا توجد نتائج
+        </td>
       </tr>
-    </tfoot>
+      @endforelse
+    </tbody>
   </table>
   </div>
   </div>
+  <div class="card-footer">
+    {{ $employees->appends(request()->except('page'))->links() }}
+  </div>
 </div>
+
 </div>
 @endsection

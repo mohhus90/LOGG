@@ -52,6 +52,10 @@ class FingerprintService
                     $result = $this->syncAnviz($device);
                     break;
 
+                case 'agent':
+                    // أجهزة Agent ترسل البيانات تلقائياً — لا يمكن الاتصال بها مباشرة
+                    return ['success' => true, 'count' => 0, 'error' => null];
+
                 default:
                     $result['error'] = 'البروتوكول غير مدعوم: ' . $device->protocol;
             }
@@ -179,7 +183,7 @@ class FingerprintService
     // ─────────────────────────────────────────────
     //  حفظ السجلات الخام في fingerprint_logs
     // ─────────────────────────────────────────────
-    private function saveLogs(FingerprintDevice $device, array $logs, string $protocol): array
+    public function saveLogs(FingerprintDevice $device, array $logs, string $protocol): array
     {
         $count = 0;
 
@@ -369,6 +373,15 @@ class FingerprintService
     public function testConnection(FingerprintDevice $device): array
     {
         try {
+            if ($device->protocol === 'agent') {
+                return [
+                    'success' => (bool)$device->api_token,
+                    'message' => $device->api_token
+                        ? "✅ جهاز Agent — التوكن نشط ({$device->device_name})"
+                        : '⚠️ لا يوجد توكن — قم بتجديده من صفحة التعديل',
+                ];
+            }
+
             if (in_array($device->protocol, ['zkteco', 'suprema', 'anviz'])) {
                 // TCP ping
                 $fp = @fsockopen($device->ip_address, $device->port, $errno, $errstr, 5);

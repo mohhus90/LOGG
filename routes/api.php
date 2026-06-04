@@ -17,3 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Branch Agent — يستقبل بيانات البصمة من الفروع البعيدة
+Route::post('/fingerprint-agent/push', [\App\Http\Controllers\Api\BranchAgentController::class, 'push'])
+    ->name('api.fingerprint_agent.push');

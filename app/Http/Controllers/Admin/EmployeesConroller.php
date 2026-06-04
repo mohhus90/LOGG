@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\Employee;
@@ -32,48 +33,60 @@ class EmployeesConroller extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-
+        public function index(Request $request)
     {
-       
-        // $data= Employee::select('*')->orderby('id','ASC')->paginate(paginate_counter);
+        $comCode = (int) Auth::guard('admin')->user()->com_code;
 
-        // return view('admin.employees.index',['data'=>$data]);
+        // قوائم الفلاتر
+        $departments     = Department::where('com_code', $comCode)->orderBy('dep_name')->get(['id','dep_name']);
+        $jobs_categories = Jobs_categories::where('com_code', $comCode)->orderBy('job_name')->get(['id','job_name']);
+        $branches        = Branche::where('com_code', $comCode)->orderBy('branch_name')->get(['id','branch_name']);
+        $shifts          = Shifts_type::where('com_code', $comCode)->orderBy('type')->get(['id','type']);
 
-        $employee_name_A_search = $request->employee_name_A_search;
-        $employee_id_search = $request->employee_id_search;
+        $query = Employee::where('com_code', $comCode);
 
-        if ($employee_name_A_search == 'all' || empty($employee_name_A_search)) {
-            $field1 = "id";
-            $op1 = ">";
-            $val1 = 0;
-        } else {
-            $field1 = "employee_name_A";
-            $op1 = "like";
-            $val1 = '%' . $employee_name_A_search . '%';
+        if ($request->filled('search_name')) {
+            $q = '%'.$request->search_name.'%';
+            $query->where(function($sq) use ($q) {
+                $sq->where('employee_name_A','like',$q)->orWhere('employee_name_E','like',$q);
+            });
         }
-        if ($employee_id_search == 'all' || empty($employee_id_search)) {
-            $field2 = "id";
-            $op2 = ">";
-            $val2 = 0;
-        } else {
-            $field2 = "employee_id";
-            $op2 = "like";
-            $val2 = '%' . $employee_id_search . '%';
-        }
+        if ($request->filled('search_code'))    $query->where('employee_id','like','%'.$request->search_code.'%');
+        if ($request->filled('search_national'))$query->where('national_id','like','%'.$request->search_national.'%');
+        if ($request->filled('search_phone'))   $query->where('phone','like','%'.$request->search_phone.'%');
+        if ($request->filled('search_finger'))  $query->where('finger_id',$request->search_finger);
+        if ($request->filled('search_branch'))  $query->where('branches_id',$request->search_branch);
+        if ($request->filled('search_dept'))    $query->where('emp_departments_id',$request->search_dept);
+        if ($request->filled('search_job'))     $query->where('emp_jobs_id',$request->search_job);
+        if ($request->filled('search_shift'))   $query->where('shifts_types_id',$request->search_shift);
+        if ($request->filled('search_func_status')) $query->where('functional_status',$request->search_func_status);
+        if ($request->filled('search_gender'))      $query->where('emp_gender',$request->search_gender);
+        if ($request->filled('search_insurance'))   $query->where('insurance_status',$request->search_insurance);
+        if ($request->filled('search_has_finger'))  $query->where('is_has_finger',$request->search_has_finger);
+        if ($request->filled('sal_from')) $query->where('emp_sal','>=',$request->sal_from);
+        if ($request->filled('sal_to'))   $query->where('emp_sal','<=',$request->sal_to);
+        if ($request->filled('hire_from'))$query->where('emp_start_date','>=',$request->hire_from);
+        if ($request->filled('hire_to'))  $query->where('emp_start_date','<=',$request->hire_to);
 
-        $data = Employee::where($field1, $op1, $val1)
-            ->where($field2, $op2, $val2)
-            ->orderBy("id", "DESC")
-            ->paginate(10);
+        $allowed = ['employee_name_A','employee_id','emp_sal','emp_start_date','functional_status'];
+        $sortBy  = in_array($request->sort_by, $allowed) ? $request->sort_by : 'employee_name_A';
+        $sortDir = $request->sort_dir === 'desc' ? 'desc' : 'asc';
+        $perPage = in_array((int)$request->per_page,[10,20,50,100]) ? (int)$request->per_page : 20;
+
+        $data = $query->orderBy($sortBy,$sortDir)->paginate($perPage)->appends($request->except('page'));
 
         if ($request->ajax()) {
             return view('admin.employees.ajaxsearch', compact('data'))->render();
         }
 
-        return view('admin.employees.index', compact('data'));
+        $totalSalary = Employee::where('com_code',$comCode)->sum('emp_sal');
+        $totalActive = Employee::where('com_code',$comCode)->where('functional_status',1)->count();
+        $totalAll    = Employee::where('com_code',$comCode)->count();
 
-    
+        return view('admin.employees.index', compact(
+            'data','departments','jobs_categories','branches','shifts',
+            'totalSalary','totalActive','totalAll'
+        ));
     }
     
 
@@ -432,6 +445,9 @@ public function store(Request $request)
             'emp_jobs_id' => $request->emp_jobs_id,
             'shifts_types_id' => $request->shifts_types_id,
             'branches_id' => $request->branches_id,
+            'custom_overtime_multiplier' => $request->custom_overtime_multiplier ?: null,
+            'overtime_enabled'           => $request->overtime_enabled           ?? 1,
+            'late_deduction_enabled'     => $request->late_deduction_enabled     ?? 1,
             'updated_at' => now(),
         ];
 

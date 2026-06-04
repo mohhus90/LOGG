@@ -43,4 +43,18 @@ class Finance_calender extends Model
     {
         return $this->hasMany(Finance_cln_period::class, 'finance_calenders_id');
     }
+
+    public function setting()
+    {
+        return $this->hasOne(Admin_panel_setting::class, 'com_code', 'com_code');
+    }
+
+    /** الشهر الجاري المفتوح لهذه السنة */
+    public function currentPeriod()
+    {
+        return $this->periods()->where('is_open', 0)
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date',   '>=', now())
+            ->first();
+    }
 }

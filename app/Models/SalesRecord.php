@@ -19,6 +19,6 @@ class SalesRecord extends Model
 
     public function branch()
     {
-        return $this->belongsTo(branches::class, 'branch_id');
+        return $this->belongsTo(Branche::class, 'branch_id');
     }
 }

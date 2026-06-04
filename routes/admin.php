@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\auth\AdminRegisterController;
 use App\Http\Controllers\AdminPanelSettingController;
 use App\Http\Controllers\Admin\branchesController;
 use App\Http\Controllers\Admin\Finance_calendersController;
+use App\Http\Controllers\Admin\Finance_cln_periodsController;
 use App\Http\Controllers\Admin\Shifts_typeController;
 use App\Http\Controllers\Admin\DepartmentsController;
 use App\Http\Controllers\Admin\Jobs_categoriesController;
@@ -33,6 +34,8 @@ use App\Http\Controllers\Admin\EmployeeRequestsController;
 use App\Http\Controllers\Admin\CommissionsV2Controller;
 use App\Http\Controllers\Employee\EmployeePortalController;
 use App\Http\Controllers\Admin\VacationsController;
+use App\Http\Controllers\Admin\OrgLevelsController;
+use App\Http\Controllers\Admin\MaintenanceController;
 
 define('paginate_counter', 20);
 
@@ -145,6 +148,20 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         ->name('jobs_categores.delete')->middleware(['auth:admin', 'admin.permission:jobs_categories,can_delete']);
 
     // ─────────────────────────────────────────────
+    //  الهيكل الوظيفي — org_levels
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin'])->group(function () {
+        Route::get('org_levels',                       [OrgLevelsController::class, 'index'])->name('org_levels.index');
+        Route::get('org_levels/create',                [OrgLevelsController::class, 'create'])->name('org_levels.create');
+        Route::post('org_levels/store',                [OrgLevelsController::class, 'store'])->name('org_levels.store');
+        Route::get('org_levels/{id}/edit',             [OrgLevelsController::class, 'edit'])->name('org_levels.edit');
+        Route::post('org_levels/update/{id}',          [OrgLevelsController::class, 'update'])->name('org_levels.update');
+        Route::get('org_levels/delete/{id}',           [OrgLevelsController::class, 'delete'])->name('org_levels.delete');
+        Route::get('org_levels/templates',             [OrgLevelsController::class, 'templates'])->name('org_levels.templates');
+        Route::post('org_levels/load-template',        [OrgLevelsController::class, 'loadTemplate'])->name('org_levels.load_template');
+    });
+
+    // ─────────────────────────────────────────────
     //  الموظفون — employees
     // ─────────────────────────────────────────────
     Route::middleware(['auth:admin', 'admin.permission:employees,can_read'])->group(function () {
@@ -170,7 +187,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ─────────────────────────────────────────────
     Route::middleware(['auth:admin', 'admin.permission:finance_calender,can_read'])->group(function () {
         Route::get('finance_calender',        [Finance_calendersController::class, 'index'])->name('finance_calender.index');
-        Route::get('finance_calender/{id}',   [Finance_calendersController::class, 'show'])->name('finance_calender.show');
+        Route::get('finance_calender/{id}',   [Finance_calendersController::class, 'show'])->name('finance_calender.show')->where('id', '[0-9]+');
         Route::post('finance_calender/show_year_monthes', [Finance_calendersController::class, 'show_year_monthes'])->name('finance_calender.show_year_monthes');
     });
     Route::middleware(['auth:admin', 'admin.permission:finance_calender,can_create'])->group(function () {
@@ -178,12 +195,14 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('finance_calender',        [Finance_calendersController::class, 'store'])->name('finance_calender.store');
     });
     Route::middleware(['auth:admin', 'admin.permission:finance_calender,can_update'])->group(function () {
-        Route::get('finance_calender/{id}/edit',   [Finance_calendersController::class, 'edit'])->name('finance_calender.edit');
-        Route::put('finance_calender/{id}',        [Finance_calendersController::class, 'update'])->name('finance_calender.update');
-        Route::put('finance_calender/updatee/{id}', [Finance_calendersController::class, 'updatee'])->name('finance_calender.updatee');
+        Route::get('finance_calender/{id}/edit',        [Finance_calendersController::class,   'edit'])->name('finance_calender.edit')->where('id', '[0-9]+');
+        Route::put('finance_calender/{id}',             [Finance_calendersController::class,   'update'])->name('finance_calender.update')->where('id', '[0-9]+');
+        Route::put('finance_calender/updatee/{id}',     [Finance_calendersController::class,   'updatee'])->name('finance_calender.updatee')->where('id', '[0-9]+');
+        Route::get('finance_calender/period/{id}/edit', [Finance_cln_periodsController::class, 'edit'])->name('finance_cln_period.edit')->where('id', '[0-9]+');
+        Route::put('finance_calender/period/{id}',      [Finance_cln_periodsController::class, 'update'])->name('finance_cln_period.update')->where('id', '[0-9]+');
     });
     Route::get('finance_calender/delete/{id}', [Finance_calendersController::class, 'delete'])
-        ->name('finance_calender.delete')->middleware(['auth:admin', 'admin.permission:finance_calender,can_delete']);
+        ->name('finance_calender.delete')->middleware(['auth:admin', 'admin.permission:finance_calender,can_delete'])->where('id', '[0-9]+');
 
     // الرصيد السنوي
     Route::middleware(['auth:admin', 'admin.permission:vacations_balance,can_read'])->group(function () {
@@ -220,6 +239,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('attendance/update/{id}',   [AttendanceController::class, 'update'])->name('attendance.update');
         Route::get('fingerprint_devices/{id}/edit', [FingerprintDevicesController::class, 'edit'])->name('fingerprint_devices.edit');
         Route::put('fingerprint_devices/{id}',     [FingerprintDevicesController::class, 'update'])->name('fingerprint_devices.update');
+        Route::post('fingerprint_devices/{id}/generate-token', [FingerprintDevicesController::class, 'generateToken'])->name('fingerprint_devices.generate_token');
     });
     Route::get('attendance/delete/{id}', [AttendanceController::class, 'delete'])
         ->name('attendance.delete')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
@@ -317,10 +337,10 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
 
     // ─────────────────────────────────────────────
     //  مسير الرواتب — payroll
+    //  ⚠️ الـ routes الثابتة يجب أن تكون قبل payroll/{id}
     // ─────────────────────────────────────────────
     Route::middleware(['auth:admin', 'admin.permission:payroll,can_read'])->group(function () {
-        Route::get('payroll',      [PayrollController::class, 'index'])->name('payroll.index');
-        Route::get('payroll/{id}', [PayrollController::class, 'show'])->name('payroll.show');
+        Route::get('payroll', [PayrollController::class, 'index'])->name('payroll.index');
     });
     Route::middleware(['auth:admin', 'admin.permission:payroll,can_create'])->group(function () {
         Route::get('payroll/create',            [PayrollController::class, 'create'])->name('payroll.create');
@@ -331,6 +351,10 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         ->name('payroll.approve')->middleware(['auth:admin', 'admin.permission:payroll,can_update']);
     Route::get('payroll/delete/{id}', [PayrollController::class, 'delete'])
         ->name('payroll.delete')->middleware(['auth:admin', 'admin.permission:payroll,can_delete']);
+    // payroll/{id} يجب أن يكون آخراً لأنه wildcard يلتقط أي نص
+    Route::get('payroll/{id}', [PayrollController::class, 'show'])
+        ->name('payroll.show')->middleware(['auth:admin', 'admin.permission:payroll,can_read'])
+        ->where('id', '[0-9]+');
 
     // ─────────────────────────────────────────────
     //  صلاحيات المستخدمين — سوبر أدمن فقط
@@ -339,6 +363,29 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('permissions',           [AdminPermissionsController::class, 'index'])->name('admin.permissions.index');
         Route::get('permissions/{id}/edit', [AdminPermissionsController::class, 'edit'])->name('admin.permissions.edit');
         Route::put('permissions/{id}',      [AdminPermissionsController::class, 'update'])->name('admin.permissions.update');
+    });
+
+    // ─────────────────────────────────────────────
+    //  التقارير — reports
+    // ─────────────────────────────────────────────
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('reports',            [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports.index');
+        Route::get('reports/attendance', [\App\Http\Controllers\Admin\ReportsController::class, 'attendance'])->name('reports.attendance');
+        Route::get('reports/employees',  [\App\Http\Controllers\Admin\ReportsController::class, 'employees'])->name('reports.employees');
+        Route::get('reports/advances',   [\App\Http\Controllers\Admin\ReportsController::class, 'advances'])->name('reports.advances');
+        Route::get('reports/vacations',  [\App\Http\Controllers\Admin\ReportsController::class, 'vacations'])->name('reports.vacations');
+    });
+
+    // ─────────────────────────────────────────────
+    //  الصيانة والنسخ الاحتياطي — maintenance (سوبر أدمن فقط)
+    // ─────────────────────────────────────────────
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('maintenance',                    [MaintenanceController::class, 'index'])->name('maintenance.index');
+        Route::post('maintenance/backup/now',        [MaintenanceController::class, 'backupNow'])->name('maintenance.backup.now');
+        Route::get('maintenance/backup/download',    [MaintenanceController::class, 'download'])->name('maintenance.backup.download');
+        Route::post('maintenance/backup/restore',    [MaintenanceController::class, 'restore'])->name('maintenance.backup.restore');
+        Route::get('maintenance/backup/delete',      [MaintenanceController::class, 'deleteBackup'])->name('maintenance.backup.delete');
+        Route::post('maintenance/logs/clear',        [MaintenanceController::class, 'clearLogs'])->name('maintenance.logs.clear');
     });
 });
 
@@ -366,4 +413,9 @@ Route::middleware(['auth:admin', 'admin.permission:vacations_balance,can_create'
 Route::middleware(['auth:admin', 'admin.permission:vacations_balance,can_update'])->group(function () {
     Route::get('vacations/{empId}/{year}/edit',    [VacationsController::class, 'edit'])->name('vacations.edit');
     Route::post('vacations/{empId}/{year}/update', [VacationsController::class, 'update'])->name('vacations.update');
+});
+Route::middleware(['auth:admin', 'admin.permission:vacations_balance,can_delete'])->group(function () {
+    Route::delete('vacations/{empId}/{year}', [VacationsController::class, 'deleteBalance'])->name('vacations.delete_balance');
+    // fallback for browsers that don't support DELETE
+    Route::post('vacations/{empId}/{year}/delete', [VacationsController::class, 'deleteBalance'])->name('vacations.delete_balance_post');
 });

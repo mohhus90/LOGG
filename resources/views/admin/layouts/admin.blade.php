@@ -34,7 +34,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
    @yield('css')
 
   <!-- Scripts -->
-  @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <!-- Custom Theme - no npm needed -->
+  <link rel="stylesheet" href="{{ asset('assets/admin/css/logg-theme.css') }}">
   
 </head>
 <body class="hold-transition sidebar-mini">
@@ -47,10 +48,20 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="index3.html" class="brand-link">
-      <img src="{{ asset('/assets/admin/dist/img/AdminLTELogo.png') }}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
-           style="opacity: .8">
-      <span class="brand-text font-weight-light">AdminLTE 3</span>
+    <a href="{{ route('admin.dashboard.home.page') }}" class="brand-link">
+      @php
+        $__setting = \App\Models\Admin_panel_setting::where('com_code', (int)auth()->guard('admin')->user()->com_code)->first();
+      @endphp
+      @if($__setting && $__setting->image)
+        <img src="{{ asset('storage/' . $__setting->image) }}"
+          alt="Logo" class="brand-image elevation-3" style="opacity:.9;object-fit:contain;height:33px">
+      @else
+        <img src="{{ asset('/assets/admin/dist/img/AdminLTELogo.png') }}"
+          alt="Logo" class="brand-image img-circle elevation-3" style="opacity:.8">
+      @endif
+      <span class="brand-text font-weight-bold">
+        {{ $__setting->com_name ?? 'NEXA ERP' }}
+      </span>
     </a>
 
     <!-- Sidebar -->

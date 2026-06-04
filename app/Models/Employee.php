@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\EmployeeVacationBalance;
 
 
 class Employee extends Model
@@ -39,4 +40,10 @@ class Employee extends Model
     {
         return $this->belongsTo(Branche::class, 'branches_id');
     }
+
+    public function vacationBalance()
+    {
+        return $this->hasMany(EmployeeVacationBalance::class, 'employee_id');
+    }
+
 }

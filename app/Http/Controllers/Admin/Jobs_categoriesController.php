@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\jobs_categories;
+use App\Models\Jobs_categories;
+use App\Models\OrgLevel;
 
 class Jobs_categoriesController extends Controller
 {
@@ -14,17 +15,15 @@ class Jobs_categoriesController extends Controller
      */
     public function index()
     {
-        $data= Jobs_categories::select('*')->orderby('id','DESC')->paginate(paginate_counter);
-
-        return view('admin.jobs_categories.index',['data'=>$data]);
+        $data = Jobs_categories::select('*')->orderby('id', 'DESC')->paginate(paginate_counter);
+        return view('admin.jobs_categories.index', ['data' => $data]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return view('admin.jobs_categories.create');
+        $comCode = auth()->guard('admin')->user()->com_code;
+        $orgLevels = OrgLevel::where('com_code', $comCode)->orderBy('level_order')->get();
+        return view('admin.jobs_categories.create', compact('orgLevels'));
     }
 
     /**
@@ -60,43 +59,39 @@ class Jobs_categoriesController extends Controller
     //     }
     // }
 
-public function store(Request $request, Jobs_categories $jobs_categories)
+public function store(Request $request)
 {
     $request->validate([
-        "job_name" => "required",
-    ],[
-        "job_name.required" => "يجب ادخال اسم الادارة",
+        'job_name' => 'required',
+    ], [
+        'job_name.required' => 'يجب إدخال اسم الوظيفة',
     ]);
-   
-    DB::beginTransaction(); 
+
+    DB::beginTransaction();
     try {
         $admin = auth()->guard('admin')->user();
-        
-        // تحقق من وجود com_code للمستخدم
-        if(empty($admin->com_code)) {
-            throw new \Exception("كود الشركة غير موجود في بيانات المستخدم");
-        }
-        
-        $checkexist = Jobs_categories::select('id')
-                      ->where(["com_code" => $admin->com_code, "job_name" => $request->job_name])
-                      ->first();
-                      
-        if(!empty($checkexist)){
-            return redirect()->back()->with(['error'=>'عفوا اسم الوظيفة مسجل من قبل'])->withInput();
-        }
-        
-        $createdData = [
-            'added_by' => auth()->guard('admin')->user()->id,
-            'com_code' => auth()->guard('admin')->user()->com_code,
+
+        $checkexist = Jobs_categories::where([
+            'com_code' => $admin->com_code,
             'job_name' => $request->job_name,
-        ];
-        
-        $jobs_categories->create($createdData);
+        ])->first();
+
+        if (!empty($checkexist)) {
+            return redirect()->back()->with(['error' => 'اسم الوظيفة مسجل من قبل'])->withInput();
+        }
+
+        Jobs_categories::create([
+            'added_by'     => $admin->id,
+            'com_code'     => $admin->com_code,
+            'job_name'     => $request->job_name,
+            'org_level_id' => $request->org_level_id ?: null,
+        ]);
+
         DB::commit();
-        return redirect()->route('jobs_categores.index')->with(['success' => 'تم اضافة الادارة بنجاح'])->withInput();
-    } catch(\Exception $ex){
-            DB::rollBack();
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '. $ex->getMessage()])->withInput();
+        return redirect()->route('jobs_categories.index')->with(['success' => 'تم إضافة الوظيفة بنجاح']);
+    } catch (\Exception $ex) {
+        DB::rollBack();
+        return redirect()->back()->with(['error' => 'حدث خطأ: ' . $ex->getMessage()])->withInput();
     }
 }
 
@@ -114,12 +109,13 @@ public function store(Request $request, Jobs_categories $jobs_categories)
      */
     public function edit($id)
     {
-        $data=Jobs_categories::select('*')->where(['id'=>$id])->first();
-        if(empty($data)){
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
-        }else{
-            return view('admin.jobs_categories.update',['data'=>$data]);
+        $data = Jobs_categories::where(['id' => $id])->first();
+        if (empty($data)) {
+            return redirect()->back()->with(['error' => 'عفوا حدث خطأ'])->withInput();
         }
+        $comCode = auth()->guard('admin')->user()->com_code;
+        $orgLevels = OrgLevel::where('com_code', $comCode)->orderBy('level_order')->get();
+        return view('admin.jobs_categories.update', compact('data', 'orgLevels'));
     }
 
     /**
@@ -140,15 +136,13 @@ public function store(Request $request, Jobs_categories $jobs_categories)
             if(empty($data)){
                 return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
             }
-            $dataupdate['com_code']=auth()->guard('admin')->user()->com_code;
-            $dataupdate['job_name']=$request->job_name;
-            $checkIfExist=get_cols_where_row(new Jobs_categories(),array("id"),$dataupdate);
-            if(!empty($checkIfExist)){
-                return redirect()->back()->with(['error'=>'هذه الوظيفة تم تسجيلها من قبل'])->withInput();
-            }
-            $dataupdate['updated_by'] = auth()->guard('admin')->user()->id;
-            $dataupdate['updated_at']=date('Y-m-d H:i:s');
-            Jobs_categories::where(['id'=>$id])->update($dataupdate);
+            $admin = auth()->guard('admin')->user();
+            Jobs_categories::where(['id' => $id])->update([
+                'job_name'     => $request->job_name,
+                'org_level_id' => $request->org_level_id ?: null,
+                'updated_by'   => $admin->id,
+                'updated_at'   => date('Y-m-d H:i:s'),
+            ]);
             DB::commit();
             return redirect()->route('jobs_categories.index')->with(['success'=>'تم التحديث بنجاح']);
         }catch(\Exception $ex){

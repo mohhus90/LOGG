@@ -1,20 +1,10 @@
 {{--
   FILE: resources/views/admin/includes/sidebar.blade.php
-  النسخة الكاملة النهائية
 --}}
 
 <div class="sidebar">
-  <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-    <div class="image">
-      @php $settings = \App\Models\Admin_panel_setting::where('com_code', Auth::guard('admin')->user()->com_code)->first(); @endphp
-      @if($settings && $settings->image)
-        <img src="{{ asset('storage/'.$settings->image) }}" class="img-circle elevation-2"
-          alt="Logo" style="object-fit:cover">
-      @else
-        <img src="{{ asset('/assets/admin/dist/img/user2-160x160.jpg') }}"
-          class="img-circle elevation-2" alt="User Image">
-      @endif
-    </div>
+  {{-- معلومات المستخدم بدون صورة --}}
+  <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
     <div class="info">
       <a href="#" class="d-block">{{ Auth::guard('admin')->user()->name }}</a>
       @if(Auth::guard('admin')->user()->is_super_admin)
@@ -27,10 +17,18 @@
   {{-- طلبات الموظفين المعلقة --}}
   @php
     $pendingReqs = \App\Models\EmployeeRequest::where('com_code', Auth::guard('admin')->user()->com_code)->where('status',0)->count();
+
+    // تحديد الصفحة الحالية بالـ route name لحل مشكلة menu-open
+    $onEmployees     = request()->is('admin/dashboard/employees*');
+    $onVacations     = request()->routeIs('vacations*');
+    $onMainVacations = request()->is('admin/dashboard/Main_vacations*');
+    $onEmpRequests   = request()->is('admin/dashboard/employee_requests*');
+    $hrMenuOpen      = $onEmployees || $onVacations || $onMainVacations || $onEmpRequests;
   @endphp
 
   <nav class="mt-2">
-    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+    <ul class="nav nav-pills nav-sidebar flex-column nav-sidebar-rtl"
+        data-widget="treeview" role="menu" data-accordion="false">
 
       {{-- الصفحة الرئيسية --}}
       <li class="nav-item">
@@ -41,8 +39,16 @@
       </li>
 
       {{-- ══════ قائمة الضبط ══════ --}}
-      <li class="nav-item has-treeview {{ request()->is('admin/dashboard/generalsetting*','admin/dashboard/branches*','admin/dashboard/shifts*','admin/dashboard/departs*','admin/dashboard/jobs*','admin/dashboard/finance*') ? 'menu-open' : '' }}">
-        <a href="#" class="nav-link {{ request()->is('admin/dashboard/generalsetting*','admin/dashboard/branches*','admin/dashboard/shifts*','admin/dashboard/departs*','admin/dashboard/jobs*','admin/dashboard/finance*') ? 'active' : '' }}">
+      @php
+        $settingsOpen = request()->is(
+          'admin/dashboard/generalsetting*','admin/dashboard/branches*',
+          'admin/dashboard/shifts*','admin/dashboard/departs*',
+          'admin/dashboard/jobs*','admin/dashboard/finance*',
+          'admin/dashboard/org_levels*'
+        );
+      @endphp
+      <li class="nav-item has-treeview {{ $settingsOpen ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ $settingsOpen ? 'active' : '' }}">
           <i class="nav-icon fas fa-cog"></i>
           <p>قائمة الضبط <i class="right fas fa-angle-left"></i></p>
         </a>
@@ -77,12 +83,17 @@
               <i class="far fa-circle nav-icon"></i><p>الوظائف</p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="{{ route('org_levels.index') }}" class="nav-link {{ request()->is('admin/dashboard/org_levels*')?'active':'' }}">
+              <i class="fas fa-sitemap nav-icon" style="font-size:.9em"></i><p>الهيكل الوظيفي</p>
+            </a>
+          </li>
         </ul>
       </li>
 
       {{-- ══════ شئون الموظفين ══════ --}}
-      <li class="nav-item has-treeview {{ request()->is('admin/dashboard/employees*','admin/dashboard/Main_vacations*','admin/dashboard/employee_requests*') ? 'menu-open' : '' }}">
-        <a href="#" class="nav-link {{ request()->is('admin/dashboard/employees*','admin/dashboard/Main_vacations*','admin/dashboard/employee_requests*') ? 'active' : '' }}">
+      <li class="nav-item has-treeview {{ $hrMenuOpen ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ $hrMenuOpen ? 'active' : '' }}">
           <i class="nav-icon fas fa-users"></i>
           <p>شئون الموظفين
             @if($pendingReqs > 0)
@@ -93,18 +104,18 @@
         </a>
         <ul class="nav nav-treeview">
           <li class="nav-item">
-            <a href="{{ route('employees.index') }}" class="nav-link {{ request()->is('admin/dashboard/employees*')?'active':'' }}">
+            <a href="{{ route('employees.index') }}" class="nav-link {{ $onEmployees?'active':'' }}">
               <i class="far fa-circle nav-icon"></i><p>الموظفين</p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="{{ route('Main_vacations_balance.index') }}" class="nav-link {{ request()->is('admin/dashboard/Main_vacations_balance*')?'active':'' }}">
-              <i class="far fa-circle nav-icon"></i><p>الرصيد السنوي للإجازات</p>
+            <a href="{{ route('vacations.index') }}" class="nav-link {{ $onVacations?'active':'' }}">
+              <i class="far fa-circle nav-icon"></i><p>أرصدة الإجازات</p>
             </a>
           </li>
           <li class="nav-item">
             <a href="{{ route('employee_requests.index') }}"
-               class="nav-link {{ request()->is('admin/dashboard/employee_requests*')?'active':'' }}">
+               class="nav-link {{ $onEmpRequests?'active':'' }}">
               <i class="nav-icon fas fa-inbox"></i>
               <p>طلبات الموظفين
                 @if($pendingReqs > 0)
@@ -117,8 +128,11 @@
       </li>
 
       {{-- ══════ الحضور والانصراف ══════ --}}
-      <li class="nav-item has-treeview {{ request()->is('admin/dashboard/attendance*','admin/dashboard/fingerprint*') ? 'menu-open' : '' }}">
-        <a href="#" class="nav-link {{ request()->is('admin/dashboard/attendance*','admin/dashboard/fingerprint*') ? 'active' : '' }}">
+      @php
+        $attendOpen = request()->is('admin/dashboard/attendance*','admin/dashboard/fingerprint*');
+      @endphp
+      <li class="nav-item has-treeview {{ $attendOpen ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ $attendOpen ? 'active' : '' }}">
           <i class="nav-icon fas fa-fingerprint"></i>
           <p>الحضور والانصراف <i class="right fas fa-angle-left"></i></p>
         </a>
@@ -153,8 +167,9 @@
       </li>
 
       {{-- ══════ مؤشرات الأداء KPIs ══════ --}}
-      <li class="nav-item has-treeview {{ request()->is('admin/dashboard/kpi*') ? 'menu-open' : '' }}">
-        <a href="#" class="nav-link {{ request()->is('admin/dashboard/kpi*') ? 'active' : '' }}">
+      @php $kpiOpen = request()->is('admin/dashboard/kpi*'); @endphp
+      <li class="nav-item has-treeview {{ $kpiOpen ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ $kpiOpen ? 'active' : '' }}">
           <i class="nav-icon fas fa-chart-line"></i>
           <p>مؤشرات الأداء (KPIs) <i class="right fas fa-angle-left"></i></p>
         </a>
@@ -178,8 +193,11 @@
       </li>
 
       {{-- ══════ الرواتب والمؤثرات ══════ --}}
-      <li class="nav-item has-treeview {{ request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*') ? 'menu-open' : '' }}">
-        <a href="#" class="nav-link {{ request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*') ? 'active' : '' }}">
+      @php
+        $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*');
+      @endphp
+      <li class="nav-item has-treeview {{ $payrollOpen ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ $payrollOpen ? 'active' : '' }}">
           <i class="nav-icon fas fa-money-bill-wave"></i>
           <p>الرواتب والمؤثرات <i class="right fas fa-angle-left"></i></p>
         </a>
@@ -190,9 +208,10 @@
             </a>
           </li>
 
-          {{-- العمولات (مع قائمة فرعية) --}}
-          <li class="nav-item has-treeview {{ request()->is('admin/dashboard/commissions*') ? 'menu-open' : '' }}">
-            <a href="#" class="nav-link {{ request()->is('admin/dashboard/commissions*')?'active':'' }}">
+          {{-- العمولات --}}
+          @php $commOpen = request()->is('admin/dashboard/commissions*'); @endphp
+          <li class="nav-item has-treeview {{ $commOpen ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ $commOpen?'active':'' }}">
               <i class="nav-icon fas fa-percentage text-success"></i>
               <p>العمولات <i class="right fas fa-angle-left"></i></p>
             </a>
@@ -232,6 +251,26 @@
           </li>
         </ul>
       </li>
+
+      {{-- ══════ التقارير ══════ --}}
+      <li class="nav-item {{ request()->is('admin/dashboard/reports*') ? 'active' : '' }}">
+        <a href="{{ route('reports.index') }}"
+           class="nav-link {{ request()->is('admin/dashboard/reports*') ? 'active' : '' }}">
+          <i class="nav-icon fas fa-chart-bar text-info"></i>
+          <p>التقارير والتصدير</p>
+        </a>
+      </li>
+
+      {{-- ══════ الصيانة والنسخ الاحتياطي ══════ --}}
+      @if(Auth::guard('admin')->user()->is_super_admin)
+      <li class="nav-item {{ request()->is('admin/dashboard/maintenance*') ? 'active' : '' }}">
+        <a href="{{ route('maintenance.index') }}"
+           class="nav-link {{ request()->is('admin/dashboard/maintenance*') ? 'active' : '' }}">
+          <i class="nav-icon fas fa-tools text-warning"></i>
+          <p>الصيانة والنسخ الاحتياطي</p>
+        </a>
+      </li>
+      @endif
 
       {{-- ══════ الإدارة (سوبر أدمن) ══════ --}}
       @if(Auth::guard('admin')->user()->is_super_admin)

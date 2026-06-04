@@ -12,7 +12,7 @@
     <div class="login-logo text-center mb-4">
       <div style="background:rgba(255,255,255,.1);border-radius:16px;padding:20px 30px;display:inline-block">
         <i class="fas fa-building fa-3x text-white mb-2 d-block"></i>
-        <h3 class="text-white mb-0" style="font-weight:700;letter-spacing:2px">LOGG HR</h3>
+        <h3 class="text-white mb-0" style="font-weight:700;letter-spacing:2px">NEXA ERP</h3>
         <small class="text-white-50">نظام إدارة الموارد البشرية</small>
       </div>
     </div>

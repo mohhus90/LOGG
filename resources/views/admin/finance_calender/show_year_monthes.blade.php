@@ -42,12 +42,9 @@
             @endif
           </td>
           <td>
-            @if ($info->is_open==0)
-            <a href="{{ route('finance_calender.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
-            <a href="{{ route('finance_calender.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
-            @else
-              سنة مالية مغلقة
-            @endif
+            <a href="{{ route('finance_cln_period.edit', $info->id) }}" class="btn btn-sm btn-success">
+              <i class="fas fa-edit"></i> تعديل
+            </a>
           </td>                   
         </tr> 
       @endforeach

@@ -9,6 +9,7 @@ use App\Models\SalesRecord;
 use App\Models\Commission;
 use App\Models\Employee;
 use App\Models\Branche;
+use App\Models\OrgLevel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -27,21 +28,30 @@ class CommissionsV2Controller extends Controller
 
     public function createRule()
     {
-        $branches = Branche::where('com_code', $this->comCode())->get();
-        return view('admin.commissions_v2.create_rule', compact('branches'));
+        $branches  = Branche::where('com_code', $this->comCode())->get();
+        $orgLevels = OrgLevel::where('com_code', $this->comCode())->orderBy('level_order')->get();
+        return view('admin.commissions_v2.create_rule', compact('branches', 'orgLevels'));
     }
 
     public function storeRule(Request $request)
     {
         $request->validate([
-            'name'           => 'required|string|max:150',
-            'code'           => 'required|string|max:50|unique:commission_rules,code',
-            'basis'          => 'required|string',
-            'recipient_type' => 'required|string',
-            'calc_type'      => 'required|string',
+            'name'      => 'required|string|max:150',
+            'basis'     => 'required|string',
+            'calc_type' => 'required|string',
         ]);
 
-        // تحويل الـ tiers من الجدول إلى JSON
+        // توليد كود تلقائي إن لم يُدخل
+        $code = $request->code
+            ?: 'COM-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $request->name), 0, 6))
+               . '-' . now()->format('ymd') . rand(10, 99);
+
+        // التأكد من فرادة الكود
+        $exists = CommissionRule::where('code', $code)->exists();
+        if ($exists) {
+            $code .= rand(10, 99);
+        }
+
         $tiers = null;
         if ($request->calc_type === 'tiered') {
             $tiers = collect($request->tier_from ?? [])
@@ -53,9 +63,10 @@ class CommissionsV2Controller extends Controller
 
         CommissionRule::create([
             'name'           => $request->name,
-            'code'           => $request->code,
+            'code'           => $code,
             'basis'          => $request->basis,
-            'recipient_type' => $request->recipient_type,
+            'recipient_type' => $request->recipient_type ?? 'employee',
+            'org_level_id'   => $request->org_level_id ?: null,
             'calc_type'      => $request->calc_type,
             'percentage'     => $request->percentage ?? 0,
             'fixed_amount'   => $request->fixed_amount ?? 0,
@@ -119,16 +130,28 @@ class CommissionsV2Controller extends Controller
         $month    = $request->month ?? now()->month;
         $year     = $request->year  ?? now()->year;
         $rules    = CommissionRule::where('com_code', $this->comCode())
-            ->where('is_active', 1)->get();
-        $employees = Employee::where('com_code', $this->comCode())->get();
+            ->where('is_active', 1)->with('orgLevel')->get();
+
+        $employees = Employee::where('com_code', $this->comCode())
+            ->with(['jobs_categories.orgLevel'])->get();
+
         $salesData = SalesRecord::where('com_code', $this->comCode())
             ->where('month', $month)->where('year', $year)->get();
 
-        // احتساب عمولة كل موظف
         $preview = [];
         foreach ($employees as $emp) {
+            // المستوى الوظيفي للموظف عبر وظيفته
+            $empOrgLevel = $emp->jobs_categories?->orgLevel ?? null;
+
             $empCommissions = [];
             foreach ($rules as $rule) {
+                // ── فلتر المستوى الوظيفي ──
+                // إذا حددت القاعدة مستوى معين، فقط الموظفون في هذا المستوى يحصلون عليها
+                if ($rule->org_level_id && $empOrgLevel?->id !== $rule->org_level_id) {
+                    continue;
+                }
+
+                // إذا لم تحدد القاعدة مستوى، فقط الموظفون الذين لديهم مبيعات
                 $salesAmount = $this->getSalesForRule($rule, $emp, $salesData);
                 if ($salesAmount <= 0 && $rule->calc_type !== 'fixed_amount') continue;
 
@@ -136,7 +159,10 @@ class CommissionsV2Controller extends Controller
                 if ($amount > 0) {
                     $empCommissions[] = [
                         'rule'         => $rule->name,
+                        'rule_code'    => $rule->code,
                         'basis'        => $rule->basis_label,
+                        'target_level' => $rule->orgLevel?->name ?? 'جميع المستويات',
+                        'emp_level'    => $empOrgLevel?->name ?? '—',
                         'sales_amount' => $salesAmount,
                         'commission'   => $amount,
                     ];
@@ -145,6 +171,7 @@ class CommissionsV2Controller extends Controller
             if (!empty($empCommissions)) {
                 $preview[$emp->id] = [
                     'employee'    => $emp,
+                    'emp_level'   => $empOrgLevel?->name ?? '—',
                     'commissions' => $empCommissions,
                     'total'       => array_sum(array_column($empCommissions, 'commission')),
                 ];

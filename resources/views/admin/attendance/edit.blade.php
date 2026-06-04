@@ -50,12 +50,12 @@
                     <div class="col-md-4 form-group">
                         <label>وقت الحضور</label>
                         <input type="time" name="check_in_time" class="form-control"
-                            value="{{ old('check_in_time', $attendance->check_in_time) }}">
+                            value="{{ old('check_in_time', $attendance->check_in_time ? \Carbon\Carbon::parse($attendance->check_in_time)->format('H:i') : '') }}">
                     </div>
                     <div class="col-md-4 form-group">
                         <label>وقت الانصراف</label>
                         <input type="time" name="check_out_time" class="form-control"
-                            value="{{ old('check_out_time', $attendance->check_out_time) }}">
+                            value="{{ old('check_out_time', $attendance->check_out_time ? \Carbon\Carbon::parse($attendance->check_out_time)->format('H:i') : '') }}">
                     </div>
                     <div class="col-md-4 form-group">
                         <label>الحالة <span class="text-danger">*</span></label>

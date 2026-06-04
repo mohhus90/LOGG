@@ -182,8 +182,13 @@ class PayrollController extends Controller
             ->where('status', 1)->where('remaining_amount', '>', 0)->first();
         $advanceInstallment = $advance ? (float)$advance->monthly_installment : 0;
 
-        // ── التأمينات ──
-        $insurance = (float)($employee->emp_sal_insurance ?? 0);
+        // ── التأمينات الاجتماعية (نسبة الموظف + نسبة الشركة) ──
+        $insuranceBase       = (float)($employee->emp_sal_insurance ?? 0);
+        $empInsuranceRate    = (float)($settings->employee_insurance_rate ?? 11.00);
+        $comInsuranceRate    = (float)($settings->company_insurance_rate  ?? 18.75);
+        $insurance           = $insuranceBase > 0 ? round($insuranceBase * $empInsuranceRate / 100, 2) : 0;
+        $companyInsurance    = $insuranceBase > 0 ? round($insuranceBase * $comInsuranceRate  / 100, 2) : 0;
+        $totalInsurance      = round($insurance + $companyInsurance, 2);
 
         // ── الإضافات الثابتة ──
         $fixedAllowances = (float)($employee->emp_fixed_allowances ?? 0);
@@ -201,7 +206,7 @@ class PayrollController extends Controller
             - $deductionsAmount - $kpiDeduction - $advanceInstallment - $insurance, 2
         ));
 
-        return (object)[
+        $result = [
             'employee_id'         => $employee->id,
             'month'               => $month,
             'year'                => $year,
@@ -221,13 +226,22 @@ class PayrollController extends Controller
             'absence_deductions'  => $absenceDeductions,
             'deductions_amount'   => $deductionsAmount,
             'advance_installment' => round($advanceInstallment, 2),
-            'insurance_deduction' => round($insurance, 2),
+            'insurance_deduction' => $insurance,
             'gross_salary'        => round($grossSalary, 2),
             'net_salary'          => $netSalary,
             'status'              => 1,
             'com_code'            => (int)$admin->com_code,
             'added_by'            => $admin->id,
         ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('monthly_payrolls', 'company_insurance_contribution')) {
+            $result['company_insurance_contribution'] = $companyInsurance;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('monthly_payrolls', 'total_insurance')) {
+            $result['total_insurance'] = $totalInsurance;
+        }
+
+        return (object)$result;
     }
 
     // ─────────────────────────────────────────────

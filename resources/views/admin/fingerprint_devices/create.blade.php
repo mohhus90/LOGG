@@ -11,6 +11,7 @@
 .protocol-card .protocol-name { font-weight:600; font-size:.9em; }
 .protocol-card .protocol-desc { font-size:.78em; color:#666; }
 .protocol-icon { font-size:1.6em; margin-bottom:4px; }
+#agentSection code { direction:ltr; unicode-bidi:embed; display:inline-block; }
 </style>
 @endsection
 
@@ -47,6 +48,7 @@
                             ['hikvision', 'fas fa-video',       'Hikvision',      'HTTP REST API — كاميرات وأجهزة Hikvision', '#dc3545'],
                             ['dahua',     'fas fa-camera',      'Dahua',          'HTTP REST API — أجهزة Dahua', '#fd7e14'],
                             ['generic',   'fas fa-plug',        'Generic Webhook','الجهاز يرسل بيانات إلى السيرفر', '#6c757d'],
+                            ['agent',     'fas fa-cloud-upload-alt', 'Agent — فرع بعيد', 'فرع على شبكة مختلفة — يرسل عبر الإنترنت', '#6f42c1'],
                         ] as [$val, $icon, $name, $desc, $color])
                         <div class="col-md-4 mb-2">
                             <div class="protocol-card {{ (old('protocol', $device->protocol ?? 'zkteco')) == $val ? 'selected' : '' }}"
@@ -84,6 +86,8 @@
                     </div>
                 </div>
 
+                {{-- ── قسم الشبكة (مخفي لبروتوكول Agent) ── --}}
+                <div id="networkSection">
                 <div class="row">
                     <div class="col-md-5 form-group">
                         <label>عنوان IP <span class="text-danger">*</span></label>
@@ -91,7 +95,7 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-network-wired"></i></span>
                             </div>
-                            <input type="text" name="ip_address" class="form-control" required
+                            <input type="text" name="ip_address" id="ipAddressInput" class="form-control"
                                 placeholder="192.168.1.100"
                                 value="{{ old('ip_address', $device->ip_address ?? '') }}">
                         </div>
@@ -99,7 +103,7 @@
                     </div>
                     <div class="col-md-3 form-group">
                         <label>البورت <span class="text-danger">*</span></label>
-                        <input type="number" name="port" class="form-control" required
+                        <input type="number" name="port" class="form-control"
                             id="portInput"
                             value="{{ old('port', $device->port ?? 4370) }}">
                         <small class="text-muted" id="portHint">ZKTeco افتراضي: 4370</small>
@@ -110,6 +114,21 @@
                             placeholder="اتركه فارغاً إن لم توجد"
                             value="{{ old('device_password') }}">
                         <small class="text-muted">كلمة مرور الجهاز (إن وُجدت)</small>
+                    </div>
+                </div>
+                </div>{{-- end networkSection --}}
+
+                {{-- ── قسم Agent (ظاهر فقط لبروتوكول Agent) ── --}}
+                <div id="agentSection" class="d-none">
+                    <div class="alert alert-purple" style="background:#f3e8ff;border:1px solid #c084fc;border-radius:8px;padding:16px">
+                        <h6><i class="fas fa-cloud-upload-alt ml-1" style="color:#6f42c1"></i>إعداد Agent للفرع البعيد</h6>
+                        <p class="mb-2">بعد الحفظ ستحصل على <strong>API Token</strong> خاص بهذا الفرع. ثم:</p>
+                        <ol class="mb-0" style="font-size:.9em">
+                            <li>حمّل مجلد <strong>branch-agent</strong> على كمبيوتر الفرع</li>
+                            <li>انسخ التوكن في ملف <code>config.php</code></li>
+                            <li>شغّل الأمر <code>composer install</code> مرة واحدة</li>
+                            <li>جدوِل تشغيل <code>php agent.php</code> بشكل دوري (كل 30 دقيقة مثلاً)</li>
+                        </ol>
                     </div>
                 </div>
 
@@ -182,7 +201,7 @@
 <script>
 /* ── إصلاح اختيار بروتوكول جهاز البصمة ── */
 
-var portDefaults  = { zkteco:4370, suprema:4370, anviz:5010, hikvision:80, dahua:80, generic:8080 };
+var portDefaults  = { zkteco:4370, suprema:4370, anviz:5010, hikvision:80, dahua:80, generic:8080, agent:0 };
 var portHintTexts = {
   zkteco:    'ZKTeco / ZKLib — البورت الافتراضي: 4370',
   suprema:   'Suprema BioStation — البورت الافتراضي: 4370',
@@ -190,39 +209,45 @@ var portHintTexts = {
   hikvision: 'Hikvision HTTP REST — البورت الافتراضي: 80',
   dahua:     'Dahua HTTP REST — البورت الافتراضي: 80',
   generic:   'Generic HTTP Webhook — البورت الافتراضي: 8080',
+  agent:     'Agent — لا يحتاج IP/Port',
 };
 
+function applyProtocolUI(val) {
+  document.getElementById('protocolInput').value = val;
+
+  var portInp     = document.getElementById('portInput');
+  var portHint    = document.getElementById('portHint');
+  var networkSec  = document.getElementById('networkSection');
+  var agentSec    = document.getElementById('agentSection');
+  var zkTip       = document.getElementById('zktecoTip');
+  var httpTip     = document.getElementById('httpTip');
+
+  var isAgent = val === 'agent';
+  var isHttp  = ['hikvision','dahua','generic'].indexOf(val) !== -1;
+
+  if (networkSec) networkSec.classList.toggle('d-none', isAgent);
+  if (agentSec)   agentSec.classList.toggle('d-none',  !isAgent);
+  if (zkTip)      zkTip.classList.toggle('d-none',  isHttp || isAgent);
+  if (httpTip)    httpTip.classList.toggle('d-none', !isHttp || isAgent);
+
+  if (!isAgent) {
+    if (portInp)  portInp.value       = portDefaults[val]  || 4370;
+    if (portHint) portHint.textContent = portHintTexts[val] || '';
+  }
+}
+
 function selectProtocol(val, el) {
-  // إلغاء تحديد الكل
   document.querySelectorAll('.protocol-card').forEach(function(card) {
     card.classList.remove('selected');
     card.style.borderColor = '#dee2e6';
     card.style.background  = '';
   });
-
-  // تحديد المختار
   el.classList.add('selected');
   el.style.borderColor = '#007bff';
   el.style.background  = '#f0f7ff';
-
-  // تحديث الـ input المخفي
-  document.getElementById('protocolInput').value = val;
-
-  // تحديث البورت والتلميح
-  var portInp  = document.getElementById('portInput');
-  var portHint = document.getElementById('portHint');
-  if (portInp)  portInp.value       = portDefaults[val]  || 4370;
-  if (portHint) portHint.textContent = portHintTexts[val] || '';
-
-  // عرض/إخفاء التلميح المناسب
-  var isHttp = ['hikvision','dahua','generic'].indexOf(val) !== -1;
-  var zkTip   = document.getElementById('zktecoTip');
-  var httpTip = document.getElementById('httpTip');
-  if (zkTip)  zkTip.classList.toggle('d-none',  isHttp);
-  if (httpTip) httpTip.classList.toggle('d-none', !isHttp);
+  applyProtocolUI(val);
 }
 
-// تفعيل عند التحميل
 document.addEventListener('DOMContentLoaded', function() {
   var currentProtocol = document.getElementById('protocolInput').value || 'zkteco';
   var activeCard = document.querySelector('.protocol-card[onclick*="' + currentProtocol + '"]');
@@ -231,12 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
     activeCard.style.borderColor = '#007bff';
     activeCard.style.background  = '#f0f7ff';
   }
-  // تطبيق التلميح الأولي
-  var isHttp = ['hikvision','dahua','generic'].indexOf(currentProtocol) !== -1;
-  var zkTip  = document.getElementById('zktecoTip');
-  var httpTip= document.getElementById('httpTip');
-  if (zkTip)  zkTip.classList.toggle('d-none',  isHttp);
-  if (httpTip)httpTip.classList.toggle('d-none', !isHttp);
+  applyProtocolUI(currentProtocol);
 });
 
 // اختبار الاتصال في صفحة التعديل

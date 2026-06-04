@@ -1,0 +1,260 @@
+/*
+ * LOGG HR — Custom Theme CSS
+ * يستبدل npm run dev ويُحمَّل مباشرة كملف static
+ * الألوان: أزرق داكن + ذهبي + أبيض
+ */
+
+/* ── المتغيرات ── */
+:root {
+  --primary:      #1e3a5f;   /* أزرق داكن */
+  --primary-light:#2d5a9e;
+  --accent:       #c9a227;   /* ذهبي */
+  --accent-light: #f0c842;
+  --success:      #198754;
+  --danger:       #dc3545;
+  --warning:      #ffc107;
+  --info:         #0dcaf0;
+  --text-dark:    #1a1a2e;
+  --text-muted:   #6c757d;
+  --bg-light:     #f4f6fb;
+  --sidebar-bg:   #1e3a5f;
+  --sidebar-text: #cdd6e8;
+  --card-shadow:  0 2px 12px rgba(30,58,95,.10);
+  --radius:       10px;
+}
+
+/* ── Font ── */
+body {
+  font-family: 'Source Sans Pro', 'Segoe UI', Arial, sans-serif !important;
+  background: var(--bg-light) !important;
+  color: var(--text-dark);
+}
+
+/* ── Sidebar ── */
+.main-sidebar, .main-sidebar::before {
+  background: var(--sidebar-bg) !important;
+}
+.sidebar .nav-sidebar .nav-link {
+  color: var(--sidebar-text) !important;
+  border-radius: 6px;
+  margin: 2px 6px;
+  transition: .2s;
+}
+.sidebar .nav-sidebar .nav-link:hover,
+.sidebar .nav-sidebar .nav-link.active {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+.sidebar .nav-sidebar .nav-link.active .nav-icon {
+  color: #fff !important;
+}
+.sidebar .nav-treeview .nav-link {
+  padding-right: 2.5rem;
+  font-size: .88em;
+}
+.brand-link {
+  background: var(--primary) !important;
+  border-bottom: 1px solid rgba(255,255,255,.1) !important;
+}
+.brand-text { color: var(--accent) !important; font-weight: 700 !important; }
+
+/* ── Navbar ── */
+.main-header.navbar {
+  background: var(--primary) !important;
+  border-bottom: 2px solid var(--accent) !important;
+}
+.main-header.navbar .nav-link,
+.main-header.navbar .navbar-nav .nav-link { color: #fff !important; }
+
+/* ── Cards ── */
+.card {
+  border: none !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--card-shadow) !important;
+  margin-bottom: 1.2rem;
+}
+.card-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
+  color: #fff !important;
+  border-radius: var(--radius) var(--radius) 0 0 !important;
+  border-bottom: 2px solid var(--accent) !important;
+  padding: .75rem 1.25rem;
+}
+.card-header .card-title { color: #fff !important; font-weight: 700; }
+.card-header .btn-success { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
+
+.card-primary > .card-header   { background: var(--primary) !important; }
+.card-success > .card-header   { background: var(--success) !important; }
+.card-warning > .card-header   { background: #856404 !important; }
+.card-danger  > .card-header   { background: #842029 !important; }
+.card-info    > .card-header   { background: #055160 !important; }
+
+/* ── Buttons ── */
+.btn-primary   { background: var(--primary) !important;       border-color: var(--primary) !important; }
+.btn-primary:hover { background: var(--primary-light) !important; }
+.btn-accent    { background: var(--accent) !important;        border-color: var(--accent) !important; color: #fff !important; }
+.btn-success   { background: var(--success) !important;       border-color: var(--success) !important; }
+.btn-warning   { background: var(--warning) !important;       border-color: var(--warning) !important; color: #1a1a2e !important; }
+.btn-danger    { background: var(--danger) !important;        border-color: var(--danger) !important; }
+
+/* ── Tables ── */
+.table thead th,
+.thead-dark th {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border-color: var(--primary-light) !important;
+  font-weight: 600;
+}
+.table-hover tbody tr:hover { background: rgba(30,58,95,.06) !important; }
+.table-bordered td, .table-bordered th { border-color: #dde3ef !important; }
+
+/* ── Forms ── */
+.form-control {
+  border-radius: 6px !important;
+  border: 1px solid #c5cee0 !important;
+  font-size: .92em;
+  transition: border .2s, box-shadow .2s;
+}
+.form-control:focus {
+  border-color: var(--primary-light) !important;
+  box-shadow: 0 0 0 3px rgba(45,90,158,.15) !important;
+}
+label { font-weight: 600; font-size: .88em; color: #34495e; }
+
+/* ── Badges ── */
+.badge-primary { background: var(--primary) !important; }
+.badge-success { background: var(--success) !important; }
+.badge-warning { background: var(--warning) !important; color: #1a1a2e !important; }
+.badge-danger  { background: var(--danger) !important; }
+.badge-info    { background: var(--info) !important; color: #1a1a2e !important; }
+
+/* ── Content Header ── */
+.content-header { padding: .75rem 1.5rem; }
+.content-header h1 { font-size: 1.3rem; font-weight: 700; color: var(--primary); }
+.breadcrumb { background: transparent; }
+.breadcrumb-item.active { color: var(--accent); }
+
+/* ── Small Boxes ── */
+.small-box {
+  border-radius: var(--radius) !important;
+  overflow: hidden;
+}
+.small-box h3 { font-size: 2.2rem; }
+.small-box-footer { opacity: .9; }
+
+/* ── Info Boxes ── */
+.info-box { border-radius: var(--radius) !important; }
+.info-box-icon { border-radius: var(--radius) 0 0 var(--radius) !important; }
+
+/* ── Alerts ── */
+.alert { border-radius: var(--radius) !important; border: none !important; }
+.alert-success { background: #d1e7dd !important; color: #0a3622 !important; }
+.alert-danger  { background: #f8d7da !important; color: #58151c !important; }
+.alert-warning { background: #fff3cd !important; color: #664d03 !important; }
+.alert-info    { background: #cff4fc !important; color: #055160 !important; }
+
+/* ── Pagination ── */
+.pagination .page-link { color: var(--primary) !important; border-radius: 6px !important; margin: 0 2px; }
+.pagination .page-item.active .page-link { background: var(--primary) !important; border-color: var(--primary) !important; }
+
+/* ── Progress Bars ── */
+.progress { border-radius: 50px !important; }
+.progress-bar { background: var(--primary) !important; }
+
+/* ── Section Dividers ── */
+.section-title {
+  border-right: 4px solid var(--accent);
+  padding-right: 10px;
+  color: var(--primary);
+  font-weight: 700;
+  margin: 1.5rem 0 1rem;
+}
+
+/* ── Card Title Center (existing class) ── */
+.card_title_center { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+
+/* ── Login / Register Pages ── */
+body.login-page,
+body.register-page { background: var(--primary) !important; }
+
+/* ── Vacation Balance Boxes ── */
+.vacation-stat-box {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+  border-top: 4px solid var(--primary);
+}
+.vacation-stat-box .num  { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
+.vacation-stat-box.warn  { border-top-color: var(--warning); }
+.vacation-stat-box.warn  .num { color: #856404; }
+.vacation-stat-box.good  { border-top-color: var(--success); }
+.vacation-stat-box.good  .num { color: var(--success); }
+.vacation-stat-box.bad   { border-top-color: var(--danger); }
+.vacation-stat-box.bad   .num { color: var(--danger); }
+
+/* ── Employee Card ── */
+.emp-card {
+  border-radius: var(--radius);
+  border-right: 5px solid var(--accent);
+  padding: 10px 14px;
+  background: #fff;
+  box-shadow: var(--card-shadow);
+  margin-bottom: .5rem;
+}
+
+/* ── Search Panel ── */
+.search-panel {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 1rem;
+  border-right: 4px solid var(--primary-light);
+}
+
+/* ── Print ── */
+@media print {
+  .main-sidebar, .main-header, .main-footer,
+  .content-header, .btn, .no-print { display: none !important; }
+  .card { box-shadow: none !important; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 3px; }
+
+/* ── RTL Adjustments ── */
+[dir="rtl"] .sidebar { right: 0; left: auto; }
+
+/* ── Sidebar: ثبات المحاذاة RTL دائماً ── */
+.nav-sidebar .nav-link,
+.nav-sidebar .nav-link p,
+.nav-treeview .nav-link,
+.nav-treeview .nav-link p {
+  text-align: right !important;
+  direction: rtl !important;
+}
+.nav-sidebar .nav-link p { display: flex; align-items: center; gap: 4px; }
+.nav-sidebar .nav-link .right { margin-right: auto; margin-left: 0; }
+
+/* ── Sidebar: حجم لوحة المستخدم بدون صورة ── */
+.user-panel { padding: 8px 12px; }
+.user-panel .info a { color: #c2cfde !important; font-weight: 600; }
+.user-panel .info small { font-size: .78em; }
+
+/* ── Footer: ثبات الحجم وعدم التمدد ── */
+.main-footer {
+  position: relative !important;
+  flex-shrink: 0;
+  padding: 10px 20px;
+  font-size: .88em;
+  color: #555;
+  background: #fff;
+  border-top: 1px solid #dee2e6;
+  z-index: 1000;
+}
+.wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+.content-wrapper { flex: 1 0 auto; }

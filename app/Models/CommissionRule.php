@@ -15,7 +15,12 @@ class CommissionRule extends Model
 
     public function branch()
     {
-        return $this->belongsTo(branches::class, 'branch_id');
+        return $this->belongsTo(Branche::class, 'branch_id');
+    }
+
+    public function orgLevel()
+    {
+        return $this->belongsTo(OrgLevel::class, 'org_level_id');
     }
 
     public function getBasisLabelAttribute(): string

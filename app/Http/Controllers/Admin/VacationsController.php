@@ -22,16 +22,37 @@ class VacationsController extends Controller
     // =========================================================
     public function index(Request $request)
     {
-        $year      = $request->year ?? now()->year;
-        $employees = Employee::where('com_code', $this->comCode())
-            ->orderBy('employee_name_A')->get();
+        $year     = (int)($request->year ?? now()->year);
+        $comCode  = $this->comCode();
+        $settings = Admin_panel_setting::where('com_code', $comCode)->first();
 
-        // جلب الأرصدة مع الموظفين الذين ليس لهم رصيد بعد
-        $balances = EmployeeVacationBalance::where('com_code', $this->comCode())
-            ->where('year', $year)
-            ->get()->keyBy('employee_id');
+        // بحث متقدم
+        $query = Employee::where('com_code', $comCode)
+            ->with(['vacationBalance' => fn($q) => $q->where('year', $year)]);
 
-        return view('admin.vacations.index', compact('employees', 'balances', 'year'));
+        if ($request->filled('search_name'))
+            $query->where('employee_name_A','like','%'.$request->search_name.'%');
+        if ($request->filled('search_code'))
+            $query->where('employee_id','like','%'.$request->search_code.'%');
+        if ($request->filled('search_national'))
+            $query->where('national_id','like','%'.$request->search_national.'%');
+        if ($request->filled('has_balance')) {
+            if ($request->has_balance == '1')
+                $query->whereHas('vacationBalance', fn($q) => $q->where('year', $year));
+            else
+                $query->whereDoesntHave('vacationBalance', fn($q) => $q->where('year', $year));
+        }
+
+        $employees = $query->orderBy('employee_name_A')->paginate(25)->appends($request->except('page'));
+
+        // إحصائيات
+        $stats = EmployeeVacationBalance::where('com_code', $comCode)->where('year', $year)
+            ->selectRaw('COUNT(*) as total_employees, SUM(annual_remaining) as total_annual_remaining,
+                SUM(annual_used) as total_annual_used, SUM(casual_remaining) as total_casual_remaining')
+            ->first();
+
+        return view('admin.vacations.index',
+            compact('employees', 'year', 'settings', 'stats'));
     }
 
     // =========================================================
@@ -80,7 +101,8 @@ class VacationsController extends Controller
             ['employee_id' => $employeeId, 'year' => $year],
             ['com_code' => $this->comCode()]
         );
-        return view('admin.vacations.edit', compact('employee', 'balance', 'year'));
+        $settings = Admin_panel_setting::where('com_code', $this->comCode())->first();
+        return view('admin.vacations.edit', compact('employee', 'balance', 'year', 'settings'));
     }
 
     public function update(Request $request, int $employeeId, int $year)
@@ -143,4 +165,16 @@ class VacationsController extends Controller
             $balance->addMonthlyAccrual();
         }
     }
+
+    public function deleteBalance(int $employeeId, int $year)
+    {
+        EmployeeVacationBalance::where('employee_id', $employeeId)
+            ->where('year', $year)
+            ->where('com_code', $this->comCode())
+            ->delete();
+
+        return redirect()->route('vacations.index', ['year' => $year])
+            ->with('success', 'تم حذف رصيد الإجازة بنجاح');
+    }
+
 }

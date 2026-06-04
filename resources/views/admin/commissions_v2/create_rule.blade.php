@@ -35,14 +35,24 @@
       <div class="row">
         <div class="col-md-7 form-group">
           <label>اسم القاعدة <span class="text-danger">*</span></label>
-          <input type="text" name="name" class="form-control" required
+          <input type="text" name="name" class="form-control" required id="ruleName"
             value="{{ old('name') }}"
             placeholder="مثال: عمولة مبيعات الموظف الفردية 2%">
         </div>
         <div class="col-md-2 form-group">
-          <label>الكود <span class="text-danger">*</span></label>
-          <input type="text" name="code" class="form-control" required
-            value="{{ old('code') }}" placeholder="COM001">
+          <label>
+            الكود
+            <small class="text-muted">(يولَّد تلقائياً إن تُرك فارغاً)</small>
+          </label>
+          <div class="input-group">
+            <input type="text" name="code" class="form-control" id="ruleCode"
+              value="{{ old('code') }}" placeholder="مثال: COM-SALES-01">
+            <div class="input-group-append">
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="autoCode()" title="توليد تلقائي">
+                <i class="fas fa-magic"></i>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="col-md-3 form-group">
           <label>الفرع (اختياري)</label>
@@ -88,29 +98,59 @@
       <input type="hidden" name="basis" id="basisInput" value="{{ old('basis','individual_sales') }}">
 
       <hr>
-      {{-- المستفيد --}}
-      <h6 class="font-weight-bold mb-3 text-primary">② من يستلم هذه العمولة؟</h6>
-      <div class="row mb-3">
-        @foreach([
-          ['employee','👤 موظف فردي'],
-          ['branch_manager','👔 مدير الفرع'],
-          ['area_manager','🗺 مدير المنطقة/الأفرع'],
-          ['sales_manager','🏆 مدير المبيعات'],
-          ['all_branch','👥 كل موظفي الفرع (بالتساوي)'],
-        ] as [$val,$label])
-        <div class="col-md-4 mb-2">
-          <div class="option-card {{ old('recipient_type','employee')==$val?'selected':'' }}"
-               onclick="selectRecipient('{{ $val }}', this)"
-               style="text-align:right;padding:8px 12px">
-            <div class="d-flex align-items-center">
-              <input type="radio" name="recipient_type" value="{{ $val }}"
-                class="ml-2" {{ old('recipient_type','employee')==$val?'checked':'' }}>
-              <label class="mb-0 font-weight-bold" style="cursor:pointer">{{ $label }}</label>
+      {{-- المستفيد: المستوى الوظيفي --}}
+      <h6 class="font-weight-bold mb-3 text-primary">② من يستلم هذه العمولة؟ (المستوى الوظيفي)</h6>
+      @if(($orgLevels ?? collect())->isEmpty())
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle ml-1"></i>
+          لم يتم إنشاء هيكل وظيفي بعد.
+          <a href="{{ route('org_levels.create') }}" class="btn btn-sm btn-warning mr-2">إنشاء الهيكل الوظيفي</a>
+          — بدونه ستُطبَّق العمولة على جميع الموظفين الذين لديهم مبيعات.
+        </div>
+      @else
+        <div class="alert alert-info py-2 mb-3" style="font-size:.88em">
+          <i class="fas fa-info-circle ml-1"></i>
+          اختر المستوى الوظيفي الذي تستحق هذه العمولة. مثلاً: "عمولة البائع" تُحدد لمستوى <strong>بائع/مندوب</strong>،
+          و"عمولة المدير" تُحدد لمستوى <strong>مدير مبيعات</strong>.
+          اتركه فارغاً لتطبيق العمولة على جميع المستويات.
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6 form-group">
+            <label>المستوى الوظيفي المستحق للعمولة</label>
+            <select name="org_level_id" class="form-control">
+              <option value="">— جميع المستويات (بدون تحديد) —</option>
+              @foreach($orgLevels as $lv)
+                <option value="{{ $lv->id }}" {{ old('org_level_id') == $lv->id ? 'selected' : '' }}>
+                  {{ str_repeat('— ', $lv->level_order - 1) }}{{ $lv->name }}
+                  @if($lv->receives_seller_commission) ✓ عمولة بائع @endif
+                  @if($lv->receives_manager_commission) ✓ عمولة مدير @endif
+                </option>
+              @endforeach
+            </select>
+            <small class="text-muted">يحدد من يستحق هذه القاعدة من الموظفين حسب مستواهم الوظيفي</small>
+          </div>
+          <div class="col-md-6">
+            <div class="card border-light bg-light p-2 mt-3" style="font-size:.85em">
+              <strong>المستويات وخصائصها:</strong>
+              <ul class="mb-0 mt-1 pr-3">
+                @foreach($orgLevels as $lv)
+                <li>
+                  <strong>{{ $lv->name }}</strong>
+                  @if($lv->receives_seller_commission)
+                    <span class="badge bg-success text-white ml-1">عمولة بائع</span>
+                  @endif
+                  @if($lv->receives_manager_commission)
+                    <span class="badge bg-primary text-white ml-1">عمولة مدير</span>
+                  @endif
+                </li>
+                @endforeach
+              </ul>
             </div>
           </div>
         </div>
-        @endforeach
-      </div>
+      @endif
+      {{-- حفظ recipient_type للتوافق --}}
+      <input type="hidden" name="recipient_type" value="employee">
 
       <hr>
       {{-- طريقة الحساب --}}
@@ -238,6 +278,18 @@
 
 @section('script')
 <script>
+// ── توليد كود تلقائي ──
+function autoCode() {
+  const name = document.getElementById('ruleName').value.trim();
+  if (!name) { alert('أدخل اسم القاعدة أولاً'); return; }
+  const slug = name.replace(/[؀-ۿ]/g, c => {
+    const m = {'ب':'B','ت':'T','س':'S','م':'M','ع':'A','ل':'L','ن':'N','ر':'R','ف':'F','ك':'K','د':'D','و':'W','ح':'H','ق':'Q','ي':'Y','ج':'J','خ':'KH','غ':'GH','ش':'SH','ص':'S','ض':'D','ط':'T','ز':'Z','ه':'H'};
+    return m[c] || '';
+  }).replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8);
+  const ts = Date.now().toString().slice(-4);
+  document.getElementById('ruleCode').value = 'COM-' + (slug || 'RULE') + '-' + ts;
+}
+
 // ── اختيار الأساس ──
 function selectBasis(val, el) {
   document.querySelectorAll('[onclick^="selectBasis"]').forEach(c => c.classList.remove('selected'));

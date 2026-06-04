@@ -1,73 +1,93 @@
 @extends('admin.layouts.admin')
-@section('title')
-السنوات المالية
-@endsection
-@section('start')
-    الضبط العام
-@endsection
-@section('home')
-<a href="{{ route('finance_calender.index') }}">السنوات المالية</a>
-
-@endsection
-@section('startpage')
-اضافة
-@endsection
+@section('title') السنوات المالية @endsection
+@section('start') الضبط العام @endsection
+@section('home') <a href="{{ route('finance_calender.index') }}">السنوات المالية</a> @endsection
+@section('startpage') إضافة @endsection
 
 @section('content')
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">تكويد سنة مالية جديدة</h3>
+            <h3 class="card-title card_title_center">إضافة سنة مالية جديدة</h3>
         </div>
         <div class="card-body">
-              <form method="POST" action="{{ route('finance_calender.store') }}">
+
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if(session('errorUpdate'))
+                <div class="alert alert-danger alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    {{ session('errorUpdate') }}
+                </div>
+            @endif
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('finance_calender.store') }}">
                 @csrf
+
                 <div class="form-group row">
-                  <label for="finance_yr" class="col-sm-2 col-form-label "> السنة المالية</label>
-                  <div class="col-sm-5">
-                    <input type="text" class="form-control" name="finance_yr" id="finance_yr" value="{{ old('finance_yr') }}" >
-                  </div>
-                  @error('finance_yr')
-                  <span class="text-danger">{{ $message }}</span>
-                  @enderror
+                    <label class="col-sm-3 col-form-label">السنة المالية <span class="text-danger">*</span></label>
+                    <div class="col-sm-5">
+                        <input type="text" class="form-control" name="finance_yr"
+                            value="{{ old('finance_yr') }}" placeholder="مثال: 2025">
+                        @error('finance_yr')<small class="text-danger">{{ $message }}</small>@enderror
+                    </div>
                 </div>
+
                 <div class="form-group row">
-                  <label for="start_date" class="col-sm-2 col-form-label ">بداية السنة المالية</label>
-                  <div class="col-sm-5">
-                    <input type="date" class="form-control" name="start_date" id="start_date" value="{{ old('start_date') }}" >
-                  </div>
-                  @error('start_date')
-                  <span class="text-danger">{{ $message }}</span>
-                  @enderror
+                    <label class="col-sm-3 col-form-label">تاريخ البداية <span class="text-danger">*</span></label>
+                    <div class="col-sm-5">
+                        <input type="date" class="form-control" name="start_date"
+                            value="{{ old('start_date') }}">
+                        @error('start_date')<small class="text-danger">{{ $message }}</small>@enderror
+                    </div>
                 </div>
+
                 <div class="form-group row">
-                  <label for="end_date" class="col-sm-2 col-form-label ">نهاية السنة المالية</label>
-                  <div class="col-sm-5">
-                    <input type="date" class="form-control" name="end_date" id="end_date" value="{{ old('end_date') }}" >
-                  </div>
-                  @error('end_date')
-                  <span class="text-danger">{{ $message }}</span>
-                  @enderror
+                    <label class="col-sm-3 col-form-label">تاريخ النهاية <span class="text-danger">*</span></label>
+                    <div class="col-sm-5">
+                        <input type="date" class="form-control" name="end_date"
+                            value="{{ old('end_date') }}">
+                        @error('end_date')<small class="text-danger">{{ $message }}</small>@enderror
+                    </div>
                 </div>
+
                 <div class="form-group row">
-                <label for="is_open" class="col-sm-2 col-form-label">اغلاق</label>
-                <div class="col-sm-5">
-                  <select class="form-control" name="is_open" id="is_open">
-                      <option value="0" @if (old('is_open')==1)selected @endif>مفتوح</option>
-                      <option value="1" @if (old('is_open')==2)selected @endif>مغلق</option>
-                  </select>
-                
-                  @error('is_open')
-                  <div class="text-danger">{{ $message }}</div>
-                  @enderror
+                    <label class="col-sm-3 col-form-label">الحالة</label>
+                    <div class="col-sm-5">
+                        <select class="form-control" name="is_open">
+                            <option value="0">مفتوح</option>
+                            <option value="1">مغلق</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="text-center">
-                  <button type="submit" class="text-center btn btn-primary btn-lg col-3">اضافة</button>
-                  <a class="btn btn-warning btn-lg col-2" href="{{ route('finance_calender.index') }}">الغاء</a>
+
+                <div class="form-group row">
+                    <div class="col-sm-12 text-center mt-2">
+                        <button type="submit" class="btn btn-primary col-md-3">
+                            <i class="fas fa-save ml-1"></i> حفظ
+                        </button>
+                        <a href="{{ route('finance_calender.index') }}" class="btn btn-warning col-md-2 mr-2">
+                            إلغاء
+                        </a>
+                    </div>
                 </div>
-                
-              </form>
+
+            </form>
+
         </div>
     </div>
-  </div>  
+</div>
 @endsection

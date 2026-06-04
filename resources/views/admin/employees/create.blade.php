@@ -164,8 +164,13 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="employee_name_A">اسم الموظف رباعى<span style="color: red">*</span></label>
-                                        <input type="text" class="form-control" name="employee_name_A" id="employee_name_A" value="{{ old('employee_name_A') }}">
+                                        <label for="employee_name_A">
+                                            اسم الموظف رباعي (عربي)<span style="color:red">*</span>
+                                            <small class="text-muted">(يترجم تلقائياً)</small>
+                                        </label>
+                                        <input type="text" class="form-control" name="employee_name_A" id="employee_name_A"
+                                            value="{{ old('employee_name_A') }}" dir="rtl"
+                                            placeholder="مثال: محمد أحمد علي حسن">
                                         @error('employee_name_A')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
@@ -173,8 +178,13 @@
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="employee_name_E">اسم الموظف انجليزى<span style="color: red">*</span></label>
-                                        <input type="text" class="form-control" name="employee_name_E" id="employee_name_E" value="{{ old('employee_name_E') }}">
+                                        <label for="employee_name_E">
+                                            اسم الموظف (إنجليزي)<span style="color:red">*</span>
+                                            <small class="text-muted">(يترجم تلقائياً)</small>
+                                        </label>
+                                        <input type="text" class="form-control" name="employee_name_E" id="employee_name_E"
+                                            value="{{ old('employee_name_E') }}" dir="ltr"
+                                            placeholder="e.g. Mohamed Ahmed Ali Hassan">
                                         @error('employee_name_E')
                                         <div class="text-danger">{{ $message }}</div>
                                         @enderror
@@ -631,17 +641,156 @@
 @endsection
 
 @section("script")
-    {{-- تأكد أن jQuery و Bootstrap JS يتم تحميلهما قبل Select2 --}}
-    {{-- بما أن jQuery و Bootstrap JS يتم تحميلهما في الـ Layout الرئيسي، فلا حاجة لتحميلهما هنا مرة أخرى --}}
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            // تهيئة جميع عناصر select التي تحتوي على الكلاس 'select2'
-            // باستخدام ثيم Bootstrap 4 لضمان الدمج الصحيح
-            $('.select2').select2({
-                theme: 'bootstrap4' // هذا السطر يخبر Select2 باستخدام ثيم Bootstrap 4
+            $('.select2').select2({ theme: 'bootstrap4' });
+
+            // ─── قاموس الأسماء العربية الشائعة (عربي ↔ إنجليزي) ───
+            // المبدأ: البحث الكلمة كاملة أولاً — لا تحويل حرفاً بحرف
+            const arToEnNames = {
+                // ذكور
+                'محمد':'Mohamed','محمود':'Mahmoud','أحمد':'Ahmed','علي':'Ali','حسن':'Hassan',
+                'حسين':'Hussein','عمر':'Omar','عمرو':'Amr','إبراهيم':'Ibrahim','إسماعيل':'Ismail',
+                'يوسف':'Youssef','يحيى':'Yahya','ياسر':'Yasser','ياسين':'Yassin',
+                'عبدالله':'Abdullah','عبدالرحمن':'Abdelrahman','عبدالرحيم':'Abdelrahim',
+                'عبدالعزيز':'Abdelaziz','عبدالحميد':'Abdelhamid','عبدالفتاح':'Abdelfattah',
+                'عبدالمنعم':'Abdelmoneam','عبدالسلام':'Abdelsalam',
+                'محمد':'Mohamed','مصطفى':'Mustafa','خالد':'Khaled','طارق':'Tarek',
+                'سامي':'Sami','وليد':'Walid','رامي':'Rami','هاني':'Hany','كريم':'Karim',
+                'عماد':'Emad','أسامة':'Osama','شريف':'Sherif','مروان':'Marwan',
+                'جمال':'Gamal','فريد':'Farid','بسام':'Bassam','ناصر':'Nasser',
+                'سعد':'Saad','فتحي':'Fathy','صلاح':'Salah','ماهر':'Maher',
+                'نادر':'Nader','عادل':'Adel','سيد':'Sayed','منصور':'Mansour',
+                'فيصل':'Faisal','زياد':'Ziad','باسم':'Bassem','أيمن':'Ayman',
+                'هشام':'Hisham','مدحت':'Medhat','نبيل':'Nabil','عصام':'Essam',
+                'داود':'Dawood','سليمان':'Soliman','جابر':'Gaber','رضا':'Reda',
+                'صابر':'Saber','فاروق':'Farouk','عزت':'Ezzat','أنور':'Anwar',
+                'منير':'Monir','تامر':'Tamer','بهاء':'Bahaa','إياد':'Eyad',
+                'ثروت':'Tharwat','حامد':'Hamed','حمزة':'Hamza','زكريا':'Zakaria',
+                'رفعت':'Refaat','ربيع':'Rabie','سعيد':'Saeed','سلامة':'Salama',
+                'عطية':'Attia','قدري':'Qadry','مجدي':'Magdy','منتصر':'Montaser',
+                'نصر':'Nasr','هادي':'Hady','وجدي':'Wagdy','يسري':'Yosry',
+                'أمين':'Amin','أنس':'Anas','بدر':'Badr','حازم':'Hazem','حاتم':'Hatem',
+                'خيري':'Khairy','دياب':'Diab','لطفي':'Lotfy','توفيق':'Tawfik',
+                'حمدي':'Hamdy','صبري':'Sobhy','مختار':'Mokhtar','رشاد':'Rashad',
+                'رشيد':'Rashid','سمير':'Samir','شوقي':'Shawky','عادل':'Adel',
+                'علاء':'Alaa','فهمي':'Fahmy','قاسم':'Kassem','كمال':'Kamal',
+                'ممدوح':'Mamdouh','نجيب':'Naguib','هيثم':'Haytham','وائل':'Wael',
+                'حلمي':'Helmy','خليل':'Khalil','درويش':'Darwish','رشاد':'Rashad',
+                'زهير':'Zohair','سالم':'Salem','شحاتة':'Shahata','طه':'Taha',
+                'عبير':'Abeer','فايز':'Fayez','ماجد':'Maged','نصير':'Nassir',
+                'هدى':'Hoda','وسيم':'Wassim','يونس':'Younis','أبوبكر':'Abubakr',
+                'بكر':'Bakr','جاد':'Gad','حمزة':'Hamza','خضر':'Khedr',
+                'ذكريا':'Zakaria','راغب':'Ragheb','زكي':'Zaki','صفوت':'Safwat',
+                'ضياء':'Diaa','طلعت':'Talaat','عفيفي':'Afify','فخري':'Fakhry',
+                'قدري':'Qadry','كرم':'Karam','لبيب':'Labib','مأمون':'Mamoon',
+                'نزار':'Nizar','هاشم':'Hashem','وادي':'Wady',
+                // إناث
+                'فاطمة':'Fatma','عائشة':'Aisha','مريم':'Mariam','سارة':'Sara',
+                'نور':'Nour','هبة':'Heba','رنا':'Rana','آية':'Aya','دينا':'Dina',
+                'سمر':'Samar','إيمان':'Eman','منى':'Mona','نهاد':'Nehad',
+                'هالة':'Hala','ريم':'Reem','لبنى':'Lobna','إنجي':'Engy',
+                'شيماء':'Shimaa','وفاء':'Wafaa','ولاء':'Walaa','سلمى':'Salma',
+                'غادة':'Ghada','لمياء':'Lamia','نيفين':'Neveen','ياسمين':'Yasmine',
+                'أسماء':'Asmaa','بسمة':'Basma','حنان':'Hanan','خديجة':'Khadiga',
+                'رشا':'Rasha','زينب':'Zainab','سناء':'Sanaa','صفاء':'Safaa',
+                'عفاف':'Afaf','مي':'Mai','نادية':'Nadia','يسمين':'Yasmine',
+                'أميرة':'Amira','جيهان':'Gehan','رقية':'Rokaya','شادية':'Shadia',
+                'عزة':'Azza','فريدة':'Farida','كريمة':'Karima','لطيفة':'Latifa',
+                'نادين':'Nadine','هناء':'Hanaa','إلهام':'Elham','أمل':'Amal',
+                'تهاني':'Tahany','حياة':'Hayat','درية':'Doria','عبلة':'Abla',
+                'مي':'Mai','نجلاء':'Naglaa','هويدا':'Howayda','وسام':'Wesam',
+                'ميرنا':'Mirna','نيرة':'Nayra','حنين':'Haneen','رهف':'Rahaf',
+                'سهير':'Sohair','شروق':'Shorouk','صباح':'Sabah','ضحى':'Doha',
+                'عبلة':'Abla','فايزة':'Fayza','قدرية':'Kadria','مها':'Maha',
+                'نوران':'Nouran','هدى':'Hoda','وجدان':'Wagdan','يمنى':'Yomna',
+                // ألقاب شائعة
+                'رمضان':'Ramadan','غانم':'Ghanem','سلامة':'Salama','نجم':'Nagm',
+                'هيكل':'Heikal','مرسي':'Morsy','عوض':'Awad','زيدان':'Zedan',
+                'بدوي':'Badawy','حجازي':'Hegazy','شرف':'Sharaf','منيم':'Moneim',
+                'ديب':'Deeb','قطب':'Qotb','متولي':'Metwaly','شريف':'Sherif',
+                'منجد':'Mongad','حلبي':'Halaby','دسوقي':'Desouky','رفاعي':'Refaay',
+                'زناتي':'Zenaty','سيوطي':'Syouty','شبراوي':'Shebrawy',
+                'عريان':'Aryan','غزالي':'Ghazaly','فقي':'Fiky','قرشي':'Qorashi',
+                'كيلاني':'Kilany','لبابيدي':'Lababidy','ملاك':'Malak',
+                'نعمة':'Neama','هلال':'Helal','وهبة':'Wahba',
+            };
+
+            // بناء الجدول العكسي تلقائياً (إنجليزي → عربي)
+            const enToArNames = {};
+            for (const [ar, en] of Object.entries(arToEnNames)) {
+                enToArNames[en.toUpperCase()] = ar;
+            }
+
+            function normalizeAr(w) {
+                // إزالة التشكيل والتطبيع
+                return w.replace(/[ً-ٰٟ]/g, '')
+                        .replace(/[أإآ]/g, 'ا')
+                        .replace(/ة$/, 'ة');
+            }
+
+            function arToEn(text) {
+                return text.trim().split(/\s+/).map(word => {
+                    const clean = normalizeAr(word);
+                    // بحث مباشر أولاً
+                    if (arToEnNames[word])  return arToEnNames[word];
+                    if (arToEnNames[clean]) return arToEnNames[clean];
+                    // بحث بدون تمييز أ/إ/ا
+                    for (const [ar, en] of Object.entries(arToEnNames)) {
+                        if (normalizeAr(ar) === clean) return en;
+                    }
+                    // لم يُوجد في القاموس — أبقِ الكلمة العربية كما هي مع تنبيه
+                    return '[' + word + ']';
+                }).join(' ');
+            }
+
+            function enToAr(text) {
+                return text.trim().split(/\s+/).map(word => {
+                    const up = word.toUpperCase();
+                    if (enToArNames[up]) return enToArNames[up];
+                    return '[' + word + ']';
+                }).join(' ');
+            }
+
+            function isArabic(text)  { return /[؀-ۿ]/.test(text); }
+            function isEnglish(text) { return /^[A-Za-z\s\[\]]+$/.test(text.trim()); }
+
+            let arTyping = false, enTyping = false;
+
+            $('#employee_name_A').on('input', function() {
+                if (enTyping) return;
+                arTyping = true;
+                const val = $(this).val();
+                if (isArabic(val)) {
+                    const result = arToEn(val);
+                    $('#employee_name_E').val(result);
+                    // تنبيه إذا كانت هناك كلمات غير موجودة في القاموس
+                    const hasUnknown = result.includes('[');
+                    $(this).closest('.row').find('.name-warning').remove();
+                    if (hasUnknown) {
+                        $('#employee_name_E').after('<small class="text-warning name-warning"><i class="fas fa-exclamation-triangle ml-1"></i>بعض الكلمات بين [] غير موجودة في القاموس — عدّلها يدوياً</small>');
+                    }
+                }
+                setTimeout(() => { arTyping = false; }, 100);
+            });
+
+            $('#employee_name_E').on('input', function() {
+                if (arTyping) return;
+                enTyping = true;
+                const val = $(this).val();
+                if (isEnglish(val)) {
+                    const result = enToAr(val);
+                    $('#employee_name_A').val(result);
+                    const hasUnknown = result.includes('[');
+                    $(this).closest('.row').find('.name-warning').remove();
+                    if (hasUnknown) {
+                        $('#employee_name_A').after('<small class="text-warning name-warning"><i class="fas fa-exclamation-triangle ml-1"></i>بعض الكلمات بين [] غير موجودة في القاموس — عدّلها يدوياً</small>');
+                    }
+                }
+                setTimeout(() => { enTyping = false; }, 100);
             });
         });
     </script>

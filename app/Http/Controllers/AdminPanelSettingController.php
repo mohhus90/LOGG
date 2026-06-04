@@ -132,7 +132,6 @@ class AdminPanelSettingController extends Controller
                 return $this->store($request);
             }
 
-            // ✅ FIX 2: معالجة اللوجو
             $logoPath = $setting->image ?? $setting->logo ?? null;
             if ($request->hasFile('logo_file') && $request->file('logo_file')->isValid()) {
                 if ($logoPath && Storage::disk('public')->exists($logoPath)) {
@@ -141,12 +140,9 @@ class AdminPanelSettingController extends Controller
                 $logoPath = $request->file('logo_file')->store('logos', 'public');
             }
 
-            // ✅ FIX 3: com_code من الأدمن — لا من الـ request أبداً
             $updatedData = [
                 'updated_by'                     => Auth::guard('admin')->id(),
                 'com_name'                       => $request->com_name            ?? $setting->com_name,
-                // ❌ مُزال: 'com_code' => $request->com_code,
-                // ✅ مُضاف: com_code ثابت من الأدمن
                 'com_code'                       => $this->getComCode(),
                 'saysem_status'                  => $request->saysem_status       ?? 1,
                 'phone'                          => $request->phone               ?? '',
@@ -167,15 +163,21 @@ class AdminPanelSettingController extends Controller
                 'sanctions_value_forth_abcence'  => $request->sanctions_value_forth_abcence  ?? 1,
             ];
 
-            // الحقول الجديدة — تُضاف فقط إذا وجد العمود في قاعدة البيانات
-            if (Schema::hasColumn('admin_panel_settings', 'delay_calc_mode')) {
-                $updatedData['delay_calc_mode'] = $request->delay_calc_mode ?? 1;
-            }
-            if (Schema::hasColumn('admin_panel_settings', 'sanctions_value_minute_delay')) {
-                $updatedData['sanctions_value_minute_delay'] = $request->sanctions_value_minute_delay ?? 0;
+            $schemaFields = [
+                'delay_calc_mode'           => ['delay_calc_mode',           1],
+                'sanctions_value_minute_delay' => ['sanctions_value_minute_delay', 0],
+                'overtime_multiplier'       => ['overtime_multiplier',        1.5],
+                'employee_insurance_rate'   => ['employee_insurance_rate',    11.00],
+                'company_insurance_rate'    => ['company_insurance_rate',     18.75],
+                'annual_vacation_days'      => ['annual_vacation_days',       21],
+                'casual_vacation_days'      => ['casual_vacation_days',       6],
+            ];
+            foreach ($schemaFields as $column => [$field, $default]) {
+                if (Schema::hasColumn('admin_panel_settings', $column)) {
+                    $updatedData[$column] = $request->input($field, $default);
+                }
             }
 
-            // ✅ FIX 4: البحث بـ com_code لا بـ $request->id الذي قد يكون null
             Admin_panel_setting::where('com_code', $this->getComCode())
                 ->update($updatedData);
 

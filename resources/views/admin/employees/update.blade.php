@@ -551,6 +551,46 @@
                                 </div>
                             </div>
 
+                            {{-- ══ إعدادات الأوفرتايم والتأخير المخصصة ══ --}}
+                            <div class="row mt-3">
+                              <div class="col-12">
+                                <div class="card bg-light">
+                                  <div class="card-header py-2">
+                                    <strong><i class="fas fa-sliders-h ml-1"></i>إعدادات الأوفرتايم والتأخير المخصصة للموظف</strong>
+                                    <small class="text-muted mr-2">تركها فارغة = استخدام إعداد الشركة</small>
+                                  </div>
+                                  <div class="card-body">
+                                    <div class="row">
+                                      <div class="col-md-4 form-group">
+                                        <label>مضاعف الأوفرتايم المخصص</label>
+                                        <div class="input-group">
+                                          <input type="number" class="form-control" name="custom_overtime_multiplier"
+                                            step="0.01" min="0" max="10" placeholder="مثال: 2 أو اتركه فارغاً"
+                                            value="{{ old('custom_overtime_multiplier', $data['custom_overtime_multiplier'] ?? '') }}">
+                                          <div class="input-group-append"><span class="input-group-text">×</span></div>
+                                        </div>
+                                        <small class="text-muted">فارغ = إعداد الشركة | 0 = بدون أوفرتايم</small>
+                                      </div>
+                                      <div class="col-md-4 form-group">
+                                        <label>احتساب الأوفرتايم</label>
+                                        <select class="form-control" name="overtime_enabled">
+                                          <option value="1" {{ ($data['overtime_enabled'] ?? 1) == 1 ? 'selected' : '' }}>يُحتسب (افتراضي)</option>
+                                          <option value="0" {{ ($data['overtime_enabled'] ?? 1) == 0 ? 'selected' : '' }}>لا يُحتسب</option>
+                                        </select>
+                                      </div>
+                                      <div class="col-md-4 form-group">
+                                        <label>احتساب خصم التأخير</label>
+                                        <select class="form-control" name="late_deduction_enabled">
+                                          <option value="1" {{ ($data['late_deduction_enabled'] ?? 1) == 1 ? 'selected' : '' }}>يُخصم (افتراضي)</option>
+                                          <option value="0" {{ ($data['late_deduction_enabled'] ?? 1) == 0 ? 'selected' : '' }}>معفى من خصم التأخير</option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
@@ -648,10 +688,127 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            // تهيئة جميع عناصر select التي تحتوي على الكلاس 'select2'
-            // باستخدام ثيم Bootstrap 4 لضمان الدمج الصحيح
-            $('.select2').select2({
-                theme: 'bootstrap4' // هذا السطر يخبر Select2 باستخدام ثيم Bootstrap 4
+            $('.select2').select2({ theme: 'bootstrap4' });
+
+            // ─── قاموس الأسماء العربية الشائعة (عربي ↔ إنجليزي) ───
+            const arToEnNames = {
+                'محمد':'Mohamed','محمود':'Mahmoud','أحمد':'Ahmed','علي':'Ali','حسن':'Hassan',
+                'حسين':'Hussein','عمر':'Omar','عمرو':'Amr','إبراهيم':'Ibrahim','إسماعيل':'Ismail',
+                'يوسف':'Youssef','يحيى':'Yahya','ياسر':'Yasser','ياسين':'Yassin',
+                'عبدالله':'Abdullah','عبدالرحمن':'Abdelrahman','عبدالرحيم':'Abdelrahim',
+                'عبدالعزيز':'Abdelaziz','عبدالحميد':'Abdelhamid','عبدالفتاح':'Abdelfattah',
+                'عبدالمنعم':'Abdelmoneam','عبدالسلام':'Abdelsalam',
+                'مصطفى':'Mustafa','خالد':'Khaled','طارق':'Tarek','سامي':'Sami',
+                'وليد':'Walid','رامي':'Rami','هاني':'Hany','كريم':'Karim','عماد':'Emad',
+                'أسامة':'Osama','شريف':'Sherif','مروان':'Marwan','جمال':'Gamal',
+                'فريد':'Farid','بسام':'Bassam','ناصر':'Nasser','سعد':'Saad',
+                'فتحي':'Fathy','صلاح':'Salah','ماهر':'Maher','نادر':'Nader',
+                'عادل':'Adel','سيد':'Sayed','منصور':'Mansour','فيصل':'Faisal',
+                'زياد':'Ziad','باسم':'Bassem','أيمن':'Ayman','هشام':'Hisham',
+                'مدحت':'Medhat','نبيل':'Nabil','عصام':'Essam','داود':'Dawood',
+                'سليمان':'Soliman','جابر':'Gaber','رضا':'Reda','صابر':'Saber',
+                'فاروق':'Farouk','عزت':'Ezzat','أنور':'Anwar','منير':'Monir',
+                'تامر':'Tamer','بهاء':'Bahaa','إياد':'Eyad','ثروت':'Tharwat',
+                'حامد':'Hamed','حمزة':'Hamza','زكريا':'Zakaria','رفعت':'Refaat',
+                'ربيع':'Rabie','سعيد':'Saeed','سلامة':'Salama','عطية':'Attia',
+                'قدري':'Qadry','مجدي':'Magdy','منتصر':'Montaser','نصر':'Nasr',
+                'هادي':'Hady','وجدي':'Wagdy','يسري':'Yosry','أمين':'Amin',
+                'أنس':'Anas','بدر':'Badr','حازم':'Hazem','حاتم':'Hatem',
+                'خيري':'Khairy','دياب':'Diab','لطفي':'Lotfy','توفيق':'Tawfik',
+                'حمدي':'Hamdy','صبري':'Sobhy','مختار':'Mokhtar','رشاد':'Rashad',
+                'رشيد':'Rashid','سمير':'Samir','شوقي':'Shawky','علاء':'Alaa',
+                'فهمي':'Fahmy','قاسم':'Kassem','كمال':'Kamal','ممدوح':'Mamdouh',
+                'نجيب':'Naguib','هيثم':'Haytham','وائل':'Wael','حلمي':'Helmy',
+                'خليل':'Khalil','زهير':'Zohair','سالم':'Salem','شحاتة':'Shahata',
+                'طه':'Taha','فايز':'Fayez','ماجد':'Maged','يونس':'Younis',
+                'أبوبكر':'Abubakr','بكر':'Bakr','جاد':'Gad','خضر':'Khedr',
+                'راغب':'Ragheb','زكي':'Zaki','صفوت':'Safwat','طلعت':'Talaat',
+                'فخري':'Fakhry','كرم':'Karam','لبيب':'Labib','مأمون':'Mamoon',
+                'نزار':'Nizar','هاشم':'Hashem','وسيم':'Wassim',
+                'فاطمة':'Fatma','عائشة':'Aisha','مريم':'Mariam','سارة':'Sara',
+                'نور':'Nour','هبة':'Heba','رنا':'Rana','آية':'Aya','دينا':'Dina',
+                'سمر':'Samar','إيمان':'Eman','منى':'Mona','نهاد':'Nehad',
+                'هالة':'Hala','ريم':'Reem','لبنى':'Lobna','إنجي':'Engy',
+                'شيماء':'Shimaa','وفاء':'Wafaa','ولاء':'Walaa','سلمى':'Salma',
+                'غادة':'Ghada','لمياء':'Lamia','نيفين':'Neveen','ياسمين':'Yasmine',
+                'أسماء':'Asmaa','بسمة':'Basma','حنان':'Hanan','خديجة':'Khadiga',
+                'رشا':'Rasha','زينب':'Zainab','سناء':'Sanaa','صفاء':'Safaa',
+                'عفاف':'Afaf','مي':'Mai','نادية':'Nadia','أميرة':'Amira',
+                'جيهان':'Gehan','رقية':'Rokaya','شادية':'Shadia','عزة':'Azza',
+                'فريدة':'Farida','كريمة':'Karima','لطيفة':'Latifa','نادين':'Nadine',
+                'هناء':'Hanaa','إلهام':'Elham','أمل':'Amal','تهاني':'Tahany',
+                'حياة':'Hayat','درية':'Doria','نجلاء':'Naglaa','هويدا':'Howayda',
+                'وسام':'Wesam','ميرنا':'Mirna','نيرة':'Nayra','سهير':'Sohair',
+                'شروق':'Shorouk','صباح':'Sabah','مها':'Maha','نوران':'Nouran',
+                'هدى':'Hoda','يمنى':'Yomna',
+                'رمضان':'Ramadan','غانم':'Ghanem','نجم':'Nagm','هيكل':'Heikal',
+                'مرسي':'Morsy','عوض':'Awad','زيدان':'Zedan','بدوي':'Badawy',
+                'حجازي':'Hegazy','شرف':'Sharaf','متولي':'Metwaly','دسوقي':'Desouky',
+                'رفاعي':'Refaay','هلال':'Helal','وهبة':'Wahba','ملاك':'Malak',
+                'نعمة':'Neama','طه':'Taha','علي':'Ali','حسن':'Hassan',
+            };
+
+            const enToArNames = {};
+            for (const [ar, en] of Object.entries(arToEnNames)) {
+                enToArNames[en.toUpperCase()] = ar;
+            }
+
+            function normalizeAr(w) {
+                return w.replace(/[ً-ٰٟ]/g, '').replace(/[أإآ]/g, 'ا');
+            }
+
+            function arToEn(text) {
+                return text.trim().split(/\s+/).map(word => {
+                    const clean = normalizeAr(word);
+                    if (arToEnNames[word])  return arToEnNames[word];
+                    if (arToEnNames[clean]) return arToEnNames[clean];
+                    for (const [ar, en] of Object.entries(arToEnNames)) {
+                        if (normalizeAr(ar) === clean) return en;
+                    }
+                    return '[' + word + ']';
+                }).join(' ');
+            }
+
+            function enToAr(text) {
+                return text.trim().split(/\s+/).map(word => {
+                    const up = word.toUpperCase();
+                    return enToArNames[up] || ('[' + word + ']');
+                }).join(' ');
+            }
+
+            function isArabic(t)  { return /[؀-ۿ]/.test(t); }
+            function isEnglish(t) { return /^[A-Za-z\s\[\]]+$/.test(t.trim()); }
+
+            let arTyping = false, enTyping = false;
+
+            $('#employee_name_A').on('input', function() {
+                if (enTyping) return;
+                arTyping = true;
+                const val = $(this).val();
+                if (isArabic(val)) {
+                    const result = arToEn(val);
+                    $('#employee_name_E').val(result);
+                    $('.name-warning').remove();
+                    if (result.includes('[')) {
+                        $('#employee_name_E').after('<small class="text-warning name-warning d-block"><i class="fas fa-exclamation-triangle ml-1"></i>الكلمات بين [] غير موجودة في القاموس — عدّلها يدوياً</small>');
+                    }
+                }
+                setTimeout(() => { arTyping = false; }, 100);
+            });
+
+            $('#employee_name_E').on('input', function() {
+                if (arTyping) return;
+                enTyping = true;
+                const val = $(this).val();
+                if (isEnglish(val)) {
+                    const result = enToAr(val);
+                    $('#employee_name_A').val(result);
+                    $('.name-warning').remove();
+                    if (result.includes('[')) {
+                        $('#employee_name_A').after('<small class="text-warning name-warning d-block"><i class="fas fa-exclamation-triangle ml-1"></i>الكلمات بين [] غير موجودة في القاموس — عدّلها يدوياً</small>');
+                    }
+                }
+                setTimeout(() => { enTyping = false; }, 100);
             });
         });
     </script>

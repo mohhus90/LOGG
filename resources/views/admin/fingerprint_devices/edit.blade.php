@@ -11,6 +11,7 @@
 .protocol-card .protocol-name { font-weight:600; font-size:.9em; }
 .protocol-card .protocol-desc { font-size:.78em; color:#666; }
 .protocol-icon { font-size:1.6em; margin-bottom:4px; }
+#agentSection code { direction:ltr; unicode-bidi:embed; display:inline-block; }
 </style>
 @endsection
 
@@ -47,6 +48,7 @@
                             ['hikvision', 'fas fa-video',       'Hikvision',      'HTTP REST API — كاميرات وأجهزة Hikvision', '#dc3545'],
                             ['dahua',     'fas fa-camera',      'Dahua',          'HTTP REST API — أجهزة Dahua', '#fd7e14'],
                             ['generic',   'fas fa-plug',        'Generic Webhook','الجهاز يرسل بيانات إلى السيرفر', '#6c757d'],
+                            ['agent',     'fas fa-cloud-upload-alt', 'Agent — فرع بعيد', 'فرع على شبكة مختلفة — يرسل عبر الإنترنت', '#6f42c1'],
                         ] as [$val, $icon, $name, $desc, $color])
                         <div class="col-md-4 mb-2">
                             <div class="protocol-card {{ (old('protocol', $device->protocol ?? 'zkteco')) == $val ? 'selected' : '' }}"
@@ -84,6 +86,8 @@
                     </div>
                 </div>
 
+                {{-- ── قسم الشبكة (مخفي لبروتوكول Agent) ── --}}
+                <div id="networkSection">
                 <div class="row">
                     <div class="col-md-5 form-group">
                         <label>عنوان IP <span class="text-danger">*</span></label>
@@ -91,7 +95,7 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-network-wired"></i></span>
                             </div>
-                            <input type="text" name="ip_address" class="form-control" required
+                            <input type="text" name="ip_address" id="ipAddressInput" class="form-control"
                                 placeholder="192.168.1.100"
                                 value="{{ old('ip_address', $device->ip_address ?? '') }}">
                         </div>
@@ -99,7 +103,7 @@
                     </div>
                     <div class="col-md-3 form-group">
                         <label>البورت <span class="text-danger">*</span></label>
-                        <input type="number" name="port" class="form-control" required
+                        <input type="number" name="port" class="form-control"
                             id="portInput"
                             value="{{ old('port', $device->port ?? 4370) }}">
                         <small class="text-muted" id="portHint">ZKTeco افتراضي: 4370</small>
@@ -111,6 +115,55 @@
                             value="{{ old('device_password') }}">
                         <small class="text-muted">كلمة مرور الجهاز (إن وُجدت)</small>
                     </div>
+                </div>
+                </div>{{-- end networkSection --}}
+
+                {{-- ── قسم Agent: التوكن والتعليمات ── --}}
+                <div id="agentSection" class="d-none">
+                    @if(isset($device) && $device->api_token)
+                    <div class="form-group">
+                        <label class="font-weight-bold">
+                            <i class="fas fa-key ml-1" style="color:#6f42c1"></i>API Token الخاص بهذا الفرع
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="agentTokenField" class="form-control font-monospace"
+                                   value="{{ $device->api_token }}" readonly
+                                   style="font-size:.82em;letter-spacing:.5px">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary"
+                                        onclick="copyToken()" title="نسخ التوكن">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="text-danger"><i class="fas fa-exclamation-triangle ml-1"></i>احتفظ بهذا التوكن في مكان آمن — لا تشاركه مع أحد</small>
+                    </div>
+                    <div class="alert alert-info" style="font-size:.9em">
+                        <strong>رابط API للفرع:</strong><br>
+                        <code>{{ url('/api/fingerprint-agent/push') }}</code>
+                    </div>
+                    @endif
+
+                    <div class="alert" style="background:#f3e8ff;border:1px solid #c084fc;border-radius:8px">
+                        <h6><i class="fas fa-cloud-upload-alt ml-1" style="color:#6f42c1"></i>طريقة الإعداد في الفرع</h6>
+                        <ol class="mb-0" style="font-size:.88em">
+                            <li>انسخ مجلد <code>branch-agent/</code> على كمبيوتر الفرع</li>
+                            <li>انسخ <code>config.example.php</code> باسم <code>config.php</code></li>
+                            <li>ضع التوكن أعلاه في <code>config.php</code> وعنوان جهاز البصمة المحلي</li>
+                            <li>شغّل <code>composer install</code> مرة واحدة</li>
+                            <li>جدوِل تشغيل <code>run.bat</code> كل 30 دقيقة عبر Windows Task Scheduler</li>
+                        </ol>
+                    </div>
+
+                    @if(isset($device))
+                    <form action="{{ route('fingerprint_devices.generate_token', $device->id) }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-danger btn-sm"
+                                onclick="return confirm('تجديد التوكن سيُبطل التوكن القديم — هل أنت متأكد؟')">
+                            <i class="fas fa-sync ml-1"></i> تجديد التوكن
+                        </button>
+                    </form>
+                    @endif
                 </div>
 
                 <div class="row">
@@ -180,7 +233,7 @@
 
 @section('script')
 <script>
-const portDefaults = { zkteco:4370, suprema:4370, anviz:5010, hikvision:80, dahua:80, generic:8080 };
+const portDefaults = { zkteco:4370, suprema:4370, anviz:5010, hikvision:80, dahua:80, generic:8080, agent:0 };
 const portHints    = {
     zkteco:    'ZKTeco افتراضي: 4370',
     suprema:   'Suprema افتراضي: 4370',
@@ -188,20 +241,53 @@ const portHints    = {
     hikvision: 'Hikvision HTTP افتراضي: 80',
     dahua:     'Dahua HTTP افتراضي: 80',
     generic:   'HTTP Webhook افتراضي: 8080',
+    agent:     'Agent — لا يحتاج IP/Port',
 };
+
+function applyProtocolUI(val) {
+    document.getElementById('protocolInput').value = val;
+
+    const isAgent = val === 'agent';
+    const isHttp  = ['hikvision','dahua','generic'].includes(val);
+
+    const networkSec = document.getElementById('networkSection');
+    const agentSec   = document.getElementById('agentSection');
+    const zkTip      = document.getElementById('zktecoTip');
+    const httpTip    = document.getElementById('httpTip');
+
+    if (networkSec) networkSec.classList.toggle('d-none', isAgent);
+    if (agentSec)   agentSec.classList.toggle('d-none',  !isAgent);
+    if (zkTip)      zkTip.classList.toggle('d-none',  isHttp || isAgent);
+    if (httpTip)    httpTip.classList.toggle('d-none', !isHttp || isAgent);
+
+    if (!isAgent) {
+        document.getElementById('portInput').value      = portDefaults[val] || 4370;
+        document.getElementById('portHint').textContent = portHints[val] || '';
+    }
+}
 
 function selectProtocol(val, el) {
     document.querySelectorAll('.protocol-card').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
-    document.getElementById('protocolInput').value = val;
-    document.getElementById('portInput').value      = portDefaults[val] || 4370;
-    document.getElementById('portHint').textContent = portHints[val] || '';
-
-    // عرض التلميح المناسب
-    const isHttp = ['hikvision','dahua','generic'].includes(val);
-    document.getElementById('zktecoTip').classList.toggle('d-none', isHttp);
-    document.getElementById('httpTip').classList.toggle('d-none', !isHttp);
+    applyProtocolUI(val);
 }
+
+function copyToken() {
+    const field = document.getElementById('agentTokenField');
+    if (!field) return;
+    navigator.clipboard.writeText(field.value).then(() => {
+        const btn = field.nextElementSibling.querySelector('button');
+        btn.innerHTML = '<i class="fas fa-check text-success"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const proto = document.getElementById('protocolInput').value || 'zkteco';
+    const activeCard = document.querySelector('.protocol-card[onclick*="' + proto + '"]');
+    if (activeCard) { activeCard.classList.add('selected'); }
+    applyProtocolUI(proto);
+});
 
 @if(isset($device))
 function testConnectionInline(id, btn) {

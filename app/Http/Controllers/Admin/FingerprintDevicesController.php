@@ -11,6 +11,7 @@ use App\Services\FingerprintService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class FingerprintDevicesController extends Controller
 {
@@ -50,15 +51,21 @@ class FingerprintDevicesController extends Controller
     // =========================================================
     public function store(Request $request)
     {
-        $request->validate([
+        $isAgent = $request->protocol === 'agent';
+
+        $rules = [
             'device_name' => 'required|string|max:100',
             'device_code' => 'required|string|max:50|unique:fingerprint_devices,device_code',
-            'ip_address'  => 'required|ip',
-            'port'        => 'required|integer|between:1,65535',
             'protocol'    => 'required|string',
             'location'    => 'nullable|string|max:100',
             'model'       => 'nullable|string|max:100',
-        ], [
+        ];
+        if (!$isAgent) {
+            $rules['ip_address'] = 'required|ip';
+            $rules['port']       = 'required|integer|between:1,65535';
+        }
+
+        $request->validate($rules, [
             'device_code.unique' => 'كود الجهاز مستخدم من قبل',
             'ip_address.ip'      => 'عنوان IP غير صحيح',
         ]);
@@ -66,13 +73,14 @@ class FingerprintDevicesController extends Controller
         FingerprintDevice::create([
             'device_name'    => $request->device_name,
             'device_code'    => $request->device_code,
-            'ip_address'     => $request->ip_address,
-            'port'           => $request->port,
+            'ip_address'     => $isAgent ? '0.0.0.0' : $request->ip_address,
+            'port'           => $isAgent ? 0           : $request->port,
             'protocol'       => $request->protocol,
             'location'       => $request->location,
             'model'          => $request->model,
             'serial_number'  => $request->serial_number,
             'password'       => $request->device_password,
+            'api_token'      => $isAgent ? Str::random(64) : null,
             'status'         => 1,
             'com_code'       => $this->comCode(),
             'added_by'       => Auth::guard('admin')->id(),
@@ -96,19 +104,25 @@ class FingerprintDevicesController extends Controller
     {
         $device = FingerprintDevice::where('com_code', $this->comCode())->findOrFail($id);
 
-        $request->validate([
+        $isAgent = $request->protocol === 'agent';
+
+        $rules = [
             'device_name' => 'required|string|max:100',
             'device_code' => 'required|string|max:50|unique:fingerprint_devices,device_code,' . $id,
-            'ip_address'  => 'required|ip',
-            'port'        => 'required|integer|between:1,65535',
             'protocol'    => 'required|string',
-        ]);
+        ];
+        if (!$isAgent) {
+            $rules['ip_address'] = 'required|ip';
+            $rules['port']       = 'required|integer|between:1,65535';
+        }
+
+        $request->validate($rules);
 
         $device->update([
             'device_name'   => $request->device_name,
             'device_code'   => $request->device_code,
-            'ip_address'    => $request->ip_address,
-            'port'          => $request->port,
+            'ip_address'    => $isAgent ? ($device->ip_address ?: '0.0.0.0') : $request->ip_address,
+            'port'          => $isAgent ? ($device->port ?: 0)               : $request->port,
             'protocol'      => $request->protocol,
             'location'      => $request->location,
             'model'         => $request->model,
@@ -271,6 +285,18 @@ class FingerprintDevicesController extends Controller
         return redirect()->route('fingerprint_devices.index')->with('success', $msg);
     }
 
+    // =========================================================
+    //  GENERATE TOKEN — تجديد توكن Agent الفرع
+    // =========================================================
+    public function generateToken(int $id)
+    {
+        $device = FingerprintDevice::where('com_code', $this->comCode())->findOrFail($id);
+        $device->update(['api_token' => Str::random(64)]);
+
+        return redirect()->route('fingerprint_devices.edit', $id)
+            ->with('success', '✅ تم تجديد التوكن بنجاح — انسخه وحدّث ملف config.php في الفرع');
+    }
+
     // ─────────────────────────────────────────────
     private function protocolsList(): array
     {
@@ -281,6 +307,7 @@ class FingerprintDevicesController extends Controller
             'hikvision' => 'Hikvision (HTTP REST API)',
             'dahua'     => 'Dahua (HTTP REST API)',
             'generic'   => 'Generic HTTP Webhook',
+            'agent'     => 'Agent — فرع بعيد عبر الإنترنت',
         ];
     }
 }

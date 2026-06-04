@@ -33,17 +33,17 @@ class Attendance extends Model
     }
 
     /**
-     * احتساب التأخير والأوفرتايم تلقائيًا بالمقارنة مع الشيفت
+     * احتساب التأخير والأوفرتايم بالمقارنة مع الشيفت
+     * @param float $graceMinutes دقائق السماح قبل احتساب التأخير (من الضبط العام)
      */
-    public function calculateDelayAndOvertime(): void
+    public function calculateDelayAndOvertime(float $graceMinutes = 0): void
     {
         $shift = $this->shift;
         if (!$shift || !$this->check_in_time || !$this->check_out_time) return;
 
-        $shiftFrom  = Carbon::parse($this->attendance_date->format('Y-m-d') . ' ' . $shift->from_time);
-        $shiftTo    = Carbon::parse($this->attendance_date->format('Y-m-d') . ' ' . $shift->to_time);
+        $shiftFrom = Carbon::parse($this->attendance_date->format('Y-m-d') . ' ' . $shift->from_time);
+        $shiftTo   = Carbon::parse($this->attendance_date->format('Y-m-d') . ' ' . $shift->to_time);
 
-        // الشيفت يمتد لليوم التالي (مثلاً الليل)
         if ($shiftTo->lt($shiftFrom)) {
             $shiftTo->addDay();
         }
@@ -55,35 +55,47 @@ class Attendance extends Model
             $actualOut->addDay();
         }
 
-        // --- احتساب التأخير ---
+        // احتساب التأخير مع مراعاة دقائق السماح
         $lateMinutes = 0;
         if ($actualIn->gt($shiftFrom)) {
-            $lateMinutes = $actualIn->diffInMinutes($shiftFrom);
+            $raw = $actualIn->diffInMinutes($shiftFrom);
+            $lateMinutes = $raw > $graceMinutes ? $raw : 0;
         }
         $this->late_minutes = $lateMinutes;
 
-        // --- احتساب الأوفرتايم ---
+        // احتساب الأوفرتايم
         $overtimeHours = 0;
         if ($actualOut->gt($shiftTo)) {
-            $overtimeMinutes = $actualOut->diffInMinutes($shiftTo);
-            $overtimeHours   = round($overtimeMinutes / 60, 2);
+            $overtimeHours = round($actualOut->diffInMinutes($shiftTo) / 60, 2);
         }
         $this->overtime_hours = $overtimeHours;
     }
 
     /**
-     * احتساب قيمة التأخير والأوفرتايم بناءً على الراتب اليومي
+     * احتساب قيمة التأخير والأوفرتايم
+     * @param float      $dailyRate         سعر اليوم
+     * @param float      $overtimeMultiplier مضاعف الأوفرتايم (من الضبط أو مخصص للموظف)
+     * @param float|null $minuteRate        سعر الدقيقة الثابت (null = يُحتسب من الراتب)
+     * @param bool       $overtimeEnabled   هل يُحتسب الأوفرتايم لهذا الموظف
+     * @param bool       $lateDeductEnabled هل يُحتسب خصم التأخير لهذا الموظف
      */
-    public function calculateAmounts(float $dailyRate): void
-    {
-        $hourlyRate = $dailyRate / 8; // افتراض 8 ساعات يوم عمل
+    public function calculateAmounts(
+        float $dailyRate,
+        float $overtimeMultiplier = 1.5,
+        ?float $minuteRate = null,
+        bool $overtimeEnabled = true,
+        bool $lateDeductEnabled = true
+    ): void {
+        $hourlyRate = $dailyRate / 8;
 
-        // قيمة الأوفرتايم = 1.5 ضعف سعر الساعة
-        $this->overtime_amount = round($this->overtime_hours * $hourlyRate * 1.5, 2);
+        $this->overtime_amount = $overtimeEnabled
+            ? round($this->overtime_hours * $hourlyRate * $overtimeMultiplier, 2)
+            : 0.0;
 
-        // خصم التأخير = سعر الدقيقة × عدد دقائق التأخير
-        $minuteRate = $hourlyRate / 60;
-        $this->late_deduction = round($this->late_minutes * $minuteRate, 2);
+        $rate = $minuteRate ?? ($hourlyRate / 60);
+        $this->late_deduction = $lateDeductEnabled
+            ? round($this->late_minutes * $rate, 2)
+            : 0.0;
     }
 
     public function getStatusLabelAttribute(): string

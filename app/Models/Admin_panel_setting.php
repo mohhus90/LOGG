@@ -18,22 +18,25 @@ class Admin_panel_setting extends Model
         'com_name',
         'saysem_status',
         'image',
-        'logo',           // بعض التنسيقات تستخدم logo
+        'logo',
         'phone',
         'address',
         'email',
         'added_by',
-        'updated_by',     // ✅ FIX: كان 'upated_by' (خطأ إملائي)
+        'updated_by',
         'com_code',
-        'company_id',     // ✅ مضاف للـ companies migration
-        'delay_calc_mode', // ✅ مضاف
+        'company_id',
+        'delay_calc_mode',
         'after_minute_calc_delay',
         'after_minute_calc_early',
         'after_minute_quarterday',
         'after_time_half_daycut',
         'after_time_allday_daycut',
-        'sanctions_value_minute_delay', // ✅ مضاف
-        'sanctions_value_hour_delay',   // ✅ مضاف
+        'sanctions_value_minute_delay',
+        // sanctions_value_hour_delay محذوف — غير مستخدم، تم استبداله بالدقيقة
+        'overtime_multiplier',
+        'employee_insurance_rate',
+        'company_insurance_rate',
         'monthly_vacation_balance',
         'first_balance_begain_vacation',
         'after_days_begain_vacation',
@@ -41,8 +44,8 @@ class Admin_panel_setting extends Model
         'sanctions_value_second_abcence',
         'sanctions_value_third_abcence',
         'sanctions_value_forth_abcence',
-        'annual_vacation_days',   // ✅ مضاف
-        'casual_vacation_days',   // ✅ مضاف
+        'annual_vacation_days',
+        'casual_vacation_days',
         'created_at',
         'updated_at',
     ];
