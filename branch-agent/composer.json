@@ -1,0 +1,12 @@
+{
+    "name": "logg/branch-fingerprint-agent",
+    "description": "Agent يسحب بيانات البصمة من الجهاز المحلي ويرسلها للسيرفر الرئيسي",
+    "require": {
+        "php": "^8.0",
+        "rats/zkteco": "^002.0",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}
