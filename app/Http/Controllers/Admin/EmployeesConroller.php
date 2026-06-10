@@ -11,6 +11,7 @@ use App\Models\Department;
 use App\Models\Jobs_categories;
 use App\Models\Shifts_type;
 use App\Models\Branche;
+use App\Models\NameDictionary;
 use App\Imports\EmployeeImport;
 use App\Exports\EmployeeExport;
 use Illuminate\Support\Facades\DB;
@@ -22,10 +23,33 @@ use Illuminate\Validation\Rule;
 class EmployeesConroller extends Controller
 
 {
-      public function export() 
+      public function export()
     {
         return Excel::download(new EmployeeExport, 'Employee.xlsx');
-        
+    }
+
+    public function getDictionary()
+    {
+        $comCode = (int) Auth::guard('admin')->user()->com_code;
+        $entries = NameDictionary::where('com_code', $comCode)
+            ->get(['ar_name', 'en_name']);
+        return response()->json($entries);
+    }
+
+    public function saveDictionary(Request $request)
+    {
+        $comCode = (int) Auth::guard('admin')->user()->com_code;
+        $entries = $request->validate(['entries' => 'required|array']);
+
+        foreach ($request->entries as $entry) {
+            if (empty($entry['ar']) || empty($entry['en'])) continue;
+            NameDictionary::updateOrCreate(
+                ['ar_name' => trim($entry['ar']), 'com_code' => $comCode],
+                ['en_name' => trim($entry['en'])]
+            );
+        }
+
+        return response()->json(['success' => true]);
     }
     
 
@@ -125,7 +149,7 @@ class EmployeesConroller extends Controller
     $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
                         ->get(['id', 'job_name']);
     $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'type']);
+                        ->get(['id', 'type', 'from_time', 'to_time', 'total_hour']);
     $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
                         ->get(['id', 'branch_name']);
     return view('admin.employees.create', compact('shifts_types','departments','jobs_categories','branches'));
@@ -143,6 +167,7 @@ public function store(Request $request)
         'employee_name_E' => 'nullable|string',
         'employee_id' => 'required|unique:employees,employee_id',
         'national_id' => 'required|unique:employees,national_id',
+        'insurance_no' => 'nullable|unique:employees,insurance_no',
         'bank_account' => 'nullable|unique:employees,bank_account',
         'emp_departments_id' => 'required|exists:departments,id',
         'shifts_types_id' => 'required|exists:shifts_types,id',
@@ -323,7 +348,7 @@ public function store(Request $request)
     }
 
     $validator3 = Validator::make($request->all(), [
-        'insurance_no' => ['required', Rule::unique('employees')->ignore($id)],
+        'insurance_no' => ['nullable', Rule::unique('employees')->ignore($id)],
     ]);
     if ($validator3->fails()) {
         return redirect()->back()->with(['error' => 'قد تم إدخال الرقم التأميني هذا لموظف آخر'])->withInput();
@@ -445,9 +470,11 @@ public function store(Request $request)
             'emp_jobs_id' => $request->emp_jobs_id,
             'shifts_types_id' => $request->shifts_types_id,
             'branches_id' => $request->branches_id,
-            'custom_overtime_multiplier' => $request->custom_overtime_multiplier ?: null,
-            'overtime_enabled'           => $request->overtime_enabled           ?? 1,
-            'late_deduction_enabled'     => $request->late_deduction_enabled     ?? 1,
+            'custom_overtime_multiplier'  => $request->custom_overtime_multiplier ?: null,
+            'overtime_fixed_daily_amount' => $request->overtime_fixed_daily_amount ? (float)$request->overtime_fixed_daily_amount : null,
+            'overtime_enabled'            => $request->overtime_enabled           ?? 1,
+            'late_deduction_enabled'      => $request->late_deduction_enabled     ?? 1,
+            'weekly_off_day'              => $request->weekly_off_day !== '' && $request->filled('weekly_off_day') ? (int)$request->weekly_off_day : null,
             'updated_at' => now(),
         ];
 

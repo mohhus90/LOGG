@@ -15,7 +15,7 @@
     <li class="nav-item dropdown">
       {{-- ✅ FIX: data-toggle (Bootstrap 4) بدلاً من data-bs-toggle (Bootstrap 5) --}}
       <a class="nav-link dropdown-toggle" href="#"
-         data-toggle="dropdown" role="button"
+         data-toggle="dropdown" data-display="static" role="button"
          aria-haspopup="true" aria-expanded="false">
         <i class="fas fa-user-circle ml-1"></i>
         {{ Auth::guard('admin')->user()->name }}

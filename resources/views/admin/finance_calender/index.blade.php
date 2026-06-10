@@ -80,7 +80,7 @@
               </tbody>
             </table>
             <br>
-              {{ $data->links('pagination::bootstrap-5') }}
+              {{ $data->links() }}
           @else
           <h2>لا توجد بيانات للعرض</h2>
           @endif

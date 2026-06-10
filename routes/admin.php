@@ -65,9 +65,8 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // Route::middleware(['auth:admin','admin.permission:general_settings,can_update'])->group(function () {
     //     Route::get('generalsetting/update',  [AdminPanelSettingController::class,'update'])->name('generalsetting.update');
     // });
-    // التعديل هنا: تم تغيير GET إلى PUT ليتوافق مع معايير Laravel ومع الفورم في الـ Blade
     Route::middleware(['auth:admin', 'admin.permission:general_settings,can_update'])->group(function () {
-        Route::put('generalsetting/update',  [AdminPanelSettingController::class, 'update'])->name('generalsetting.update');
+        Route::post('generalsetting/update', [AdminPanelSettingController::class, 'update'])->name('generalsetting.update');
     });
     // ─────────────────────────────────────────────
     //  الفروع — branches
@@ -181,6 +180,10 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     });
     Route::get('employees/delete/{id}', [EmployeesConroller::class, 'delete'])
         ->name('employees.delete')->middleware(['auth:admin', 'admin.permission:employees,can_delete']);
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('employees/dictionary',       [EmployeesConroller::class, 'getDictionary'])->name('employees.dictionary.get');
+        Route::post('employees/dictionary/save', [EmployeesConroller::class, 'saveDictionary'])->name('employees.dictionary.save');
+    });
 
     // ─────────────────────────────────────────────
     //  السنوات المالية — finance_calender
@@ -228,6 +231,8 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('attendance/excel-import',    [AttendanceController::class, 'excelImportForm'])->name('attendance.excel_import_form');
         Route::post('attendance/excel-import',   [AttendanceController::class, 'excelImport'])->name('attendance.excel_import');
         Route::get('attendance/excel-template',  [AttendanceController::class, 'excelTemplate'])->name('attendance.excel_template');
+        Route::get('attendance/generate-weekly-leaves',  [AttendanceController::class, 'generateWeeklyLeavesForm'])->name('attendance.generate_weekly_leaves_form');
+        Route::post('attendance/generate-weekly-leaves', [AttendanceController::class, 'generateWeeklyLeaves'])->name('attendance.generate_weekly_leaves');
         Route::get('fingerprint_devices/create',        [FingerprintDevicesController::class, 'create'])->name('fingerprint_devices.create');
         Route::post('fingerprint_devices/store',        [FingerprintDevicesController::class, 'store'])->name('fingerprint_devices.store');
         Route::post('fingerprint_devices/{id}/sync',    [FingerprintDevicesController::class, 'sync'])->name('fingerprint_devices.sync');
@@ -235,14 +240,18 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('fingerprint_devices/process-logs', [FingerprintDevicesController::class, 'processLogs'])->name('fingerprint_devices.process_logs');
     });
     Route::middleware(['auth:admin', 'admin.permission:attendance,can_update'])->group(function () {
-        Route::get('attendance/{id}/edit',      [AttendanceController::class, 'edit'])->name('attendance.edit');
-        Route::post('attendance/update/{id}',   [AttendanceController::class, 'update'])->name('attendance.update');
-        Route::get('fingerprint_devices/{id}/edit', [FingerprintDevicesController::class, 'edit'])->name('fingerprint_devices.edit');
-        Route::put('fingerprint_devices/{id}',     [FingerprintDevicesController::class, 'update'])->name('fingerprint_devices.update');
+        Route::get('attendance/{id}/edit',               [AttendanceController::class, 'edit'])->name('attendance.edit');
+        Route::post('attendance/update/{id}',            [AttendanceController::class, 'update'])->name('attendance.update');
+        Route::post('attendance/{id}/resolve-missing',   [AttendanceController::class, 'resolveMissingPunch'])->name('attendance.resolve_missing');
+        Route::post('attendance/{id}/update-shift',      [AttendanceController::class, 'updateShift'])->name('attendance.update_shift');
+        Route::get('fingerprint_devices/{id}/edit',      [FingerprintDevicesController::class, 'edit'])->name('fingerprint_devices.edit');
+        Route::put('fingerprint_devices/{id}',           [FingerprintDevicesController::class, 'update'])->name('fingerprint_devices.update');
         Route::post('fingerprint_devices/{id}/generate-token', [FingerprintDevicesController::class, 'generateToken'])->name('fingerprint_devices.generate_token');
     });
     Route::get('attendance/delete/{id}', [AttendanceController::class, 'delete'])
         ->name('attendance.delete')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
+    Route::post('attendance/bulk-delete', [AttendanceController::class, 'bulkDelete'])
+        ->name('attendance.bulk_delete')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
     Route::get('fingerprint_devices/{id}/delete', [FingerprintDevicesController::class, 'delete'])
         ->name('fingerprint_devices.delete')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
 
@@ -355,6 +364,27 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     Route::get('payroll/{id}', [PayrollController::class, 'show'])
         ->name('payroll.show')->middleware(['auth:admin', 'admin.permission:payroll,can_read'])
         ->where('id', '[0-9]+');
+
+    // ─────────────────────────────────────────────
+    //  بدل الإجازة — leave_compensation
+    // ─────────────────────────────────────────────
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('leave-compensation',       [\App\Http\Controllers\Admin\LeaveCompensationController::class, 'index'])->name('leave_compensation.index');
+        Route::post('leave-compensation/save', [\App\Http\Controllers\Admin\LeaveCompensationController::class, 'update'])->name('leave_compensation.update');
+    });
+
+    // ─────────────────────────────────────────────
+    //  الجزاءات — sanctions
+    // ─────────────────────────────────────────────
+    Route::middleware('auth:admin')->group(function () {
+        Route::get('sanctions',              [\App\Http\Controllers\Admin\SanctionController::class, 'index'])->name('sanctions.index');
+        Route::get('sanctions/create',       [\App\Http\Controllers\Admin\SanctionController::class, 'create'])->name('sanctions.create');
+        Route::post('sanctions/store',       [\App\Http\Controllers\Admin\SanctionController::class, 'store'])->name('sanctions.store');
+        Route::get('sanctions/{id}/edit',    [\App\Http\Controllers\Admin\SanctionController::class, 'edit'])->name('sanctions.edit');
+        Route::post('sanctions/update/{id}', [\App\Http\Controllers\Admin\SanctionController::class, 'update'])->name('sanctions.update');
+        Route::post('sanctions/cancel/{id}', [\App\Http\Controllers\Admin\SanctionController::class, 'cancel'])->name('sanctions.cancel');
+        Route::post('sanctions/delete/{id}', [\App\Http\Controllers\Admin\SanctionController::class, 'delete'])->name('sanctions.delete');
+    });
 
     // ─────────────────────────────────────────────
     //  صلاحيات المستخدمين — سوبر أدمن فقط

@@ -13,12 +13,18 @@ class FingerprintDevice extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'last_sync_at' => 'datetime',
+        'last_sync_at'    => 'datetime',
+        'extra_branch_ids' => 'array',
     ];
 
     public function logs()
     {
         return $this->hasMany(FingerprintLog::class, 'device_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(\App\Models\Branche::class, 'branches_id');
     }
 
     public function getStatusLabelAttribute(): string

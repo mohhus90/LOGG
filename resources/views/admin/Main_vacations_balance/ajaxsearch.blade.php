@@ -37,11 +37,8 @@
             </table>
               <br>
               <div id="ajax_pagination_in_search">
-                  {{ $data->appends(request()->query())->links('pagination::bootstrap-5') }}
+                  {{ $data->appends(request()->query())->links() }}
               </div>
-              {{-- <div id="ajax_pagination_in_search">
-                  {{ $data->links('pagination::bootstrap-5') }}
-              </div> --}}
             @else
             <h1>لا توجد بيانات للعرض</h1>
             @endif

@@ -155,6 +155,8 @@ body {
   border-bottom: 2px solid var(--accent) !important;
   box-shadow: 0 2px 12px rgba(0,0,0,.18);
   min-height: 52px;
+  z-index: 9998 !important;
+  position: relative !important;
 }
 .main-header.navbar .nav-link,
 .main-header.navbar .navbar-nav .nav-link {
@@ -164,6 +166,40 @@ body {
 }
 .main-header.navbar .nav-link:hover { color: var(--accent-light) !important; }
 .main-header.navbar .dropdown-item  { font-size: .88rem; font-weight: 600; }
+
+/* ── Navbar dropdown menu ── */
+.main-header.navbar .dropdown-menu {
+  background-color: #fff !important;
+  border: 1px solid rgba(0,0,0,.12) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18) !important;
+  border-radius: 8px !important;
+  padding: 6px 0 !important;
+  min-width: 180px;
+  right: 0 !important;
+  left: auto !important;
+  top: 100% !important;
+  position: absolute !important;
+  z-index: 9999 !important;
+}
+.main-header.navbar .dropdown-menu .dropdown-item {
+  color: var(--text-dark) !important;
+  padding: 8px 18px !important;
+  transition: background .15s;
+}
+.main-header.navbar .dropdown-menu .dropdown-item:hover {
+  background: var(--bg-light) !important;
+  color: var(--primary) !important;
+}
+.main-header.navbar .dropdown-menu .dropdown-item.text-danger {
+  color: var(--danger) !important;
+}
+.main-header.navbar .dropdown-menu .dropdown-item.text-danger:hover {
+  background: #fee2e2 !important;
+}
+.main-header.navbar .dropdown-menu .dropdown-divider {
+  border-color: #e8eef5 !important;
+  margin: 4px 0 !important;
+}
 
 /* ══════════════════════════════
    CONTENT HEADER
@@ -258,6 +294,12 @@ body {
   transition: border .2s, box-shadow .2s;
   color: var(--text-dark);
 }
+select.form-control {
+  height: auto !important;
+  line-height: 1.5 !important;
+  padding-top: 0.45rem !important;
+  padding-bottom: 0.45rem !important;
+}
 .form-control:focus {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 3px rgba(0,180,216,.15) !important;
@@ -301,8 +343,46 @@ label { font-weight: 700; font-size: .87rem; color: #1a3a5c; margin-bottom: .35r
 /* ══════════════════════════════
    PAGINATION
 ══════════════════════════════ */
-.pagination .page-link { color: var(--primary-mid) !important; border-radius: 6px !important; margin: 0 2px; font-weight: 600; font-size: .87rem; }
-.pagination .page-item.active .page-link { background: var(--primary-mid) !important; border-color: var(--primary-mid) !important; color: #fff !important; }
+.pagination .page-link {
+  color: var(--primary-mid) !important;
+  border-radius: 6px !important;
+  margin: 0 2px;
+  font-weight: 600;
+  font-size: .83rem;
+  padding: 4px 10px;
+  border: 1px solid #cdd9e8;
+  transition: background .18s, color .18s;
+}
+.pagination .page-link:hover {
+  background: var(--accent) !important;
+  color: #fff !important;
+  border-color: var(--accent) !important;
+}
+.pagination .page-item.active .page-link {
+  background: var(--primary-mid) !important;
+  border-color: var(--primary-mid) !important;
+  color: #fff !important;
+}
+.pagination .page-item.disabled .page-link {
+  color: #b0bec5 !important;
+  background: #f5f8fc !important;
+  border-color: #e3eaf2 !important;
+}
+/* wrapper صف الـ pagination */
+.attendance-pagination {
+  background: #f7fafd;
+  border: 1px solid #dde8f3;
+  border-radius: 8px;
+  padding: 8px 14px;
+  direction: rtl;
+}
+.attendance-pagination .pagination-info {
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.attendance-pagination .pagination-info strong {
+  color: var(--primary-mid);
+}
 
 /* ══════════════════════════════
    SECTION TITLE
@@ -351,6 +431,101 @@ label { font-weight: 700; font-size: .87rem; color: #1a3a5c; margin-bottom: .35r
 ::-webkit-scrollbar-track { background: #e8f0f8; }
 ::-webkit-scrollbar-thumb { background: #7aaec8; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-dark); }
+
+/* ══════════════════════════════
+   SELECT2 — تناسق مع Bootstrap RTL
+══════════════════════════════ */
+.select2-container {
+  font-family: 'Cairo','Source Sans Pro',Arial,sans-serif !important;
+  font-size: .875rem;
+}
+
+/* الحاوية: نفس شكل form-control */
+.select2-container--default .select2-selection--single {
+  height: auto !important;
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
+  background-color: #fff;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* النص المختار */
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  display: block;
+  padding: 0;
+  line-height: 1.5;
+  color: #495057;
+  font-size: .875rem;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* السهم */
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  position: static;
+  height: auto;
+  width: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+  border-color: #888 transparent transparent;
+}
+
+/* إخفاء زر X نهائياً */
+.select2-container--default .select2-selection--single .select2-selection__clear {
+  display: none !important;
+}
+
+/* Focus / Open */
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open  .select2-selection--single {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 .15rem rgba(0,123,255,.2);
+  outline: none;
+}
+
+/* الـ Dropdown */
+.select2-dropdown {
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
+  z-index: 9999 !important;
+  font-size: .875rem;
+  font-family: 'Cairo',Arial,sans-serif;
+}
+.select2-container--default .select2-results__option {
+  padding: 5px 10px;
+  direction: rtl;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+  background-color: var(--primary-light, #1565a0);
+}
+
+/* خانة البحث */
+.select2-search--dropdown .select2-search__field {
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
+  padding: 4px 8px;
+  font-family: 'Cairo',Arial,sans-serif;
+  font-size: .875rem;
+  direction: rtl;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* placeholder */
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: #6c757d;
+}
 
 /* ══════════════════════════════
    PRINT

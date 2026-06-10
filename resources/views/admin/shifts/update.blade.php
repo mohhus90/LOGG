@@ -23,20 +23,6 @@
               <form method="POST" action="{{ route('shifts.update',$data['id']) }}">
                 @csrf
                 
-                <div class="form-group form-inline">
-                  
-                  <label for="type" class="col-sm-2 col-form-label text-center"> نوع الشيفت</label>
-                  <select type="text" class="col-sm-5 form-select" aria-label="Disabled select example" name="type" id="type" >
-                    <option selected value="" > اختر النوع</option>
-                    <option @if ($data['type']==1)selected @endif value="1" > صباحى</option>
-                    <option @if ($data['type']==2)selected @endif  value="2" > مسائى</option>
-                  </select>
-                </div>
-                @error('type')
-                <div class="text-danger text-center">{{ $message }}</div>
-                @enderror
-                
-                
                 <!-- Add the oninput events to from_time and to_time inputs -->
                 <div class="form-group row">
                   <label for="from_time" class="col-sm-2 col-form-label text-center">بداية الشيفت</label>

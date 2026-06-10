@@ -9,99 +9,13 @@
 @endsection
 
 @section('css')
-{{-- تأكد من تحميل Bootstrap أولاً --}}
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-{{-- ثم Select2 CSS --}}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
-{{-- وأخيرًا Select2 Bootstrap Theme CSS لضمان التنسيق مع Bootstrap --}}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap4-theme/1.0.0/select2-bootstrap4.min.css"> {{-- Changed to select2-bootstrap4-theme for better Bootstrap 4 integration --}}
 <style>
-    /* لتنسيق Select2 وجعله يبدو مثل حقول الإدخال الأخرى */
-    .select2-container--bootstrap4 .select2-selection--single {
-        height: calc(2.25rem + 2px); /* لتطابق ارتفاع input.form-control */
-        padding: 0.375rem 0.75rem; /* لتطابق padding input.form-control */
-        display: flex; /* لجعل المحتوى يتوسط عمودياً */
-        align-items: center; /* لجعل المحتوى يتوسط عمودياً */
-        border: 1px solid #ced4da; /* لون الحدود الافتراضي في Bootstrap forms */
-        border-radius: .25rem; /* نصف قطر الحدود الافتراضي في Bootstrap forms */
-        background-color: #F9FAFA; /* لون الخلفية الافتراضي */
-        /* Important: Ensure the text content is vertically aligned */
-        line-height: 1.5; /* Match Bootstrap's default line-height for form controls */
-    }
-
-    .select2-container--bootstrap4.select2-container--focus .select2-selection--single,
-    .select2-container--bootstrap4.select2-container--open .select2-selection--single {
-        border-color: #80bdff; /* لون الحدود عند التركيز (Focus) */
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25); /* الظل عند التركيز */
-    }
-
-    .select2-container--bootstrap4 .select2-selection__arrow {
-        height: calc(2.25rem + 2px); /* لتطابق ارتفاع input.form-control */
-        display: flex;
-        align-items: center;
-        top: 0; /* إعادة ضبط الموضع ليتناسب مع الارتفاع الجديد */
-    }
-    .select2-container--bootstrap4 .select2-selection__rendered {
-        color: #495057; /* Bootstrap's default text color for form controls */
-        padding-right: 0; /* Remove default padding that might misalign text in RTL */
-        padding-left: 0; /* Remove default padding that might misalign text in RTL */
-    }
-
-    /* لتحسين المحاذاة في النموذج، خاصة مع RTL */
-    ..row .col-form-label {
-        text-align: right; /* محاذاة النص لليمين */
-    }
-
-    /* مسافات بين الحقول داخل الـ tab-pane */
-    .tab-pane . {
-        margin-bottom: 1rem; /* مسافة افتراضية أفضل بين الحقول */
-    }
-    /* تحسين تنسيق Select2 */
-    .select2-container {
-        width: 100% !important; /* لجعل Select2 يأخذ العرض الكامل */
-        margin-bottom: 15px; /* مسافة مناسبة أسفل الحقل */
-    }
-
-    /* تحسين محاذاة العناصر في النموذج */
-    . {
-        margin-bottom: 1.5rem; /* زيادة المسافة بين الحقول */
-    }
-
-    /* تحسين محاذاة الـ labels */
-    .col-form-label {
-        padding-top: calc(0.375rem + 1px);
-        padding-bottom: calc(0.375rem + 1px);
-        margin-bottom: 0;
-        font-size: inherit;
-        line-height: 1.5;
-        text-align: right; /* لمحاذاة النص لليمين في RTL */
-    }
-
-    /* تحسين عرض حقول الإدخال */
-    .form-control, .select2-selection {
-        height: calc(2.25rem + 2px);
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.25rem;
-    }
-
-    /* تحسين التباعد في الـ tabs */
     .tab-content {
         padding: 15px;
         border-left: 1px solid #dee2e6;
         border-right: 1px solid #dee2e6;
         border-bottom: 1px solid #dee2e6;
         border-radius: 0 0 0.25rem 0.25rem;
-    }
-
-    /* تحسين عرض العناصر في الصفوف */
-    .row {
-        margin-right: -7.5px;
-        margin-left: -7.5px;
-    }
-
-    .row > div {
-        padding-right: 7.5px;
-        padding-left: 7.5px;
     }
 </style>
 @endsection
@@ -244,10 +158,10 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="emp_gender">نوع الجنس</label>
-                                        <select disabled  class="form-control select2" name="emp_gender" id="emp_gender">
+                                        <select disabled  class="form-control" name="emp_gender" id="emp_gender">
                                             <option value=""> النوع</option>
-                                            <option value="1" @if ( old('birth_date',$data['birth_date'])==1)selected @endif>ذكر</option>
-                                            <option value="2" @if ( old('birth_date',$data['birth_date'])==2)selected @endif>انثى</option>
+                                            <option value="1" @if ( old('emp_gender',$data['emp_gender'])==1)selected @endif>ذكر</option>
+                                            <option value="2" @if ( old('emp_gender',$data['emp_gender'])==2)selected @endif>انثى</option>
                                         </select>
                                         @error('emp_gender')
                                         <div class="text-danger">{{ $message }}</div>
@@ -257,7 +171,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="emp_social_status">الحالة الاجتماعية</label>
-                                        <select disabled  class="form-control select2" name="emp_social_status" id="emp_social_status">
+                                        <select disabled  class="form-control" name="emp_social_status" id="emp_social_status">
                                             <option value=""> الحالة</option>
                                             <option value="1" @if ( old('emp_social_status',$data['emp_social_status'])==1)selected @endif>اعزب</option>
                                             <option value="2" @if ( old('emp_social_status',$data['emp_social_status'])==2)selected @endif>متزوج</option>
@@ -312,7 +226,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="functional_status">الحالة الوظيفية</label>
-                                        <select disabled  class="form-control select2" name="functional_status" id="functional_status">
+                                        <select disabled  class="form-control" name="functional_status" id="functional_status">
                                             <option value="1" @if ( old('functional_status',$data['functional_status'])==1)selected @endif>يعمل</option>
                                             <option value="2" @if ( old('functional_status',$data['functional_status'])==2)selected @endif>لا يعمل</option>
                                         </select>
@@ -324,7 +238,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="insurance_status">الحالة التامينية</label>
-                                        <select disabled  class="form-control select2" name="insurance_status" id="insurance_status">
+                                        <select disabled  class="form-control" name="insurance_status" id="insurance_status">
                                             <option value="1" @if ( old('insurance_status',$data['insurance_status'])==1)selected @endif>مؤمن</option>
                                             <option value="2" @if ( old('insurance_status',$data['insurance_status'])==2)selected @endif>غير مؤمن</option>
                                             <option value="3" @if ( old('insurance_status',$data['insurance_status'])==3)selected @endif>تدريب</option>
@@ -338,7 +252,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="emp_jobs_id">الوظيفة</label>
-                                        <select disabled  name="emp_jobs_id" id="emp_jobs_id" class="form-control select2">
+                                        <select disabled  name="emp_jobs_id" id="emp_jobs_id" class="form-control">
                                             <option value=""> الوظيفة</option>
                                             @foreach($jobs_categories as $job)
                                                 <option value="{{ $job->id }}" {{  old('emp_jobs_id',$data['emp_jobs_id']) == $job->id ? 'selected' : '' }}>
@@ -357,7 +271,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="emp_departments_id">الادارة</label>
-                                        <select disabled  name="emp_departments_id" id="emp_departments_id" class="form-control select2">
+                                        <select disabled  name="emp_departments_id" id="emp_departments_id" class="form-control">
                                             <option value=""> الادارة</option>
                                             @foreach($departments as $department)
                                                 <option value="{{ $department->id }}" {{  old('emp_departments_id',$data['emp_departments_id']) == $department->id ? 'selected' : '' }}>
@@ -373,7 +287,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="shifts_types_id">الشيفت</label>
-                                        <select disabled  name="shifts_types_id" id="shifts_types_id" class="form-control select2">
+                                        <select disabled  name="shifts_types_id" id="shifts_types_id" class="form-control">
                                             <option value=""> الشيفت</option>
                                             @foreach($shifts_types as $shifts_type)
                                                 <option value="{{ $shifts_type->id }}" {{  old('shifts_types_id',$data['shifts_types_id']) == $shifts_type->id ? 'selected' : '' }}>
@@ -389,7 +303,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="branches_id">الفرع</label>
-                                        <select disabled  name="branches_id" id="branches_id" class="form-control select2">
+                                        <select disabled  name="branches_id" id="branches_id" class="form-control">
                                             <option value=""> الفرع</option>
                                             @foreach($branches as $branche)
                                                 <option value="{{ $branche->id }}" {{  old('branches_id',$data['branches_id']) == $branche->id ? 'selected' : '' }}>
@@ -417,7 +331,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="resignation_status">حالة ترك العمل</label>
-                                        <select disabled  class="form-control select2" name="resignation_status" id="resignation_status">
+                                        <select disabled  class="form-control" name="resignation_status" id="resignation_status">
                                             <option value=""> الحالة</option>
                                             <option value="1" @if ( old('resignation_status',$data['resignation_status'])==1)selected @endif>استقالة</option>
                                             <option value="2" @if ( old('resignation_status',$data['resignation_status'])==2)selected @endif>فصل</option>
@@ -461,7 +375,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="emp_military_status">الخدمة العسكرية</label>
-                                        <select disabled  class="form-control select2" name="emp_military_status" id="emp_military_status">
+                                        <select disabled  class="form-control" name="emp_military_status" id="emp_military_status">
                                             <option value=""> الحالة</option>
                                             <option value="1" @if ( old('emp_military_status',$data['emp_military_status'])==1)selected @endif>أدى الخدمة</option>
                                             <option value="2" @if ( old('emp_military_status',$data['emp_military_status'])==2)selected @endif>إعفاء</option>
@@ -496,7 +410,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="qualification_grade">تقدير المؤهل</label>
-                                        <select disabled  class="form-control select2" name="qualification_grade" id="qualification_grade">
+                                        <select disabled  class="form-control" name="qualification_grade" id="qualification_grade">
                                             <option value=""> التقدير</option>
                                             <option value="1" @if ( old('qualification_grade',$data['qualification_grade'])==1)selected @endif>امتياز</option>
                                             <option value="2" @if ( old('qualification_grade',$data['qualification_grade'])==2)selected @endif>جيد جداً</option>
@@ -567,7 +481,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="sal_cash_visa">طريقة الدفع</label>
-                                        <select disabled  class="form-control select2" name="sal_cash_visa" id="sal_cash_visa">
+                                        <select disabled  class="form-control" name="sal_cash_visa" id="sal_cash_visa">
                                             <option value=""> طريقة الدفع</option>
                                             <option value="1" @if ( old('sal_cash_visa',$data['sal_cash_visa'])==1)selected @endif>كاش</option>
                                             <option value="2" @if ( old('sal_cash_visa',$data['sal_cash_visa'])==2)selected @endif>فيزا</option>

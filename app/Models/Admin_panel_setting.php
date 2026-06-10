@@ -46,8 +46,31 @@ class Admin_panel_setting extends Model
         'sanctions_value_forth_abcence',
         'annual_vacation_days',
         'casual_vacation_days',
+        'day_rate_divisor_type',
+        'day_rate_divisor_custom',
+        'hour_rate_divisor_type',
+        'hour_rate_divisor_custom',
+        'max_permissions_per_day',
+        'max_permission_minutes_per_day',
+        // وضع التأخير الهرمي
+        'delay_tier1_minutes',
+        'delay_halfday_minutes',
+        'delay_fullday_minutes',
+        // حدود الانصراف المبكر
+        'early_departure_halfday_minutes',
+        'early_departure_fullday_minutes',
+        'early_departure_fullplushalf_minutes',
+        // أوفرتايم ثابت
+        'overtime_calc_type',
+        'max_monthly_overtime_hours',
         'created_at',
         'updated_at',
+    ];
+
+    protected $casts = [
+        'day_rate_divisor_type'  => 'integer',
+        'hour_rate_divisor_type' => 'integer',
+        'delay_calc_mode'        => 'integer',
     ];
 
     // ─────────────────────────────────────────────

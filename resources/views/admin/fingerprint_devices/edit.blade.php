@@ -156,17 +156,57 @@
                     </div>
 
                     @if(isset($device))
-                    <form action="{{ route('fingerprint_devices.generate_token', $device->id) }}" method="POST" class="d-inline">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-danger btn-sm"
-                                onclick="return confirm('تجديد التوكن سيُبطل التوكن القديم — هل أنت متأكد؟')">
-                            <i class="fas fa-sync ml-1"></i> تجديد التوكن
-                        </button>
-                    </form>
+                    {{-- استخدام form attribute بدلاً من form متداخل --}}
+                    <button type="submit" form="tokenRegenForm" class="btn btn-outline-danger btn-sm"
+                            onclick="return confirm('تجديد التوكن سيُبطل التوكن القديم — هل أنت متأكد؟')">
+                        <i class="fas fa-sync ml-1"></i> تجديد التوكن
+                    </button>
                     @endif
                 </div>
 
                 <div class="row">
+                    <div class="col-md-4 form-group">
+                        <label class="font-weight-bold">الفرع الأساسي للجهاز <span class="text-danger">*</span></label>
+                        <select name="branches_id" class="form-control">
+                            <option value="">— اختر الفرع —</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ old('branches_id', $device->branches_id ?? '') == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->branch_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">الفرع الذي يقع فيه الجهاز فعلياً</small>
+                    </div>
+                    <div class="col-md-8 form-group">
+                        <label class="font-weight-bold">
+                            <i class="fas fa-code-branch ml-1 text-info"></i>
+                            فروع إضافية يخدمها هذا الجهاز
+                        </label>
+                        <div class="border rounded p-2" style="max-height:120px;overflow-y:auto;background:#fafbfc">
+                            @php
+                                $selectedExtra = old('extra_branch_ids', $device->extra_branch_ids ?? []);
+                                $selectedExtra = is_array($selectedExtra) ? $selectedExtra : json_decode($selectedExtra, true) ?? [];
+                            @endphp
+                            @foreach($branches as $branch)
+                                @if($branch->id != ($device->branches_id ?? null))
+                                <div class="form-check form-check-inline mb-1">
+                                    <input class="form-check-input" type="checkbox"
+                                           name="extra_branch_ids[]"
+                                           value="{{ $branch->id }}"
+                                           id="extra_branch_{{ $branch->id }}"
+                                           {{ in_array($branch->id, array_map('intval', $selectedExtra)) ? 'checked' : '' }}>
+                                    <label class="form-check-label small" for="extra_branch_{{ $branch->id }}">
+                                        {{ $branch->branch_name }}
+                                    </label>
+                                </div>
+                                @endif
+                            @endforeach
+                        </div>
+                        <small class="text-info">
+                            <i class="fas fa-info-circle ml-1"></i>
+                            اختر الفروع التي يبصم فيها موظفوها على هذا الجهاز (مثال: فرع المنصورة شوز يبصم على جهاز المنصورة)
+                        </small>
+                    </div>
                     <div class="col-md-4 form-group">
                         <label>موقع الجهاز</label>
                         <input type="text" name="location" class="form-control"
@@ -227,6 +267,15 @@
                 @endif
             </div>
         </form>
+
+        {{-- فورم مستقل لتجديد التوكن (خارج الفورم الرئيسي لتجنب التداخل) --}}
+        @if(isset($device))
+        <form id="tokenRegenForm"
+              action="{{ route('fingerprint_devices.generate_token', $device->id) }}"
+              method="POST" class="d-none">
+            @csrf
+        </form>
+        @endif
     </div>
 </div>
 @endsection
