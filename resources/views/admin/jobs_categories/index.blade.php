@@ -74,7 +74,7 @@
             </table>
               <br>
               <div class="" id="#ajax_pagination_in_search">
-                {{ $data->links('pagination::bootstrap-5') }}
+                {{ $data->links() }}
               </div>
             @else
             <h1>لا توجد بيانات للعرض</h1>

@@ -190,13 +190,27 @@
                 <form action="{{ route('fingerprint_devices.sync', $device->id) }}" method="POST">
                     @csrf
                     <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>من تاريخ</label>
+                                <input type="date" name="sync_date_from" class="form-control"
+                                    value="{{ today()->format('Y-m-d') }}" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>إلى تاريخ</label>
+                                <input type="date" name="sync_date_to" class="form-control"
+                                    value="{{ today()->format('Y-m-d') }}" required>
+                            </div>
+                        </div>
                         <div class="form-group">
-                            <label>تاريخ المعالجة</label>
-                            <input type="date" name="sync_date" class="form-control"
-                                value="{{ today()->format('Y-m-d') }}">
-                            <small class="text-muted">
-                                سيتم جلب السجلات من الجهاز ثم معالجة سجلات هذا التاريخ وتحويلها إلى حضور/انصراف
-                            </small>
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="forceSync{{ $device->id }}"
+                                    name="force_reprocess" value="1">
+                                <label class="custom-control-label" for="forceSync{{ $device->id }}">
+                                    إعادة معالجة السجلات المعالجة مسبقاً
+                                </label>
+                            </div>
+                            <small class="text-muted">تفعيل هذا الخيار يُعيد معالجة سجلات البصمة حتى لو سبق معالجتها</small>
                         </div>
                         <div class="alert alert-info mb-0">
                             <i class="fas fa-info-circle ml-1"></i>
@@ -239,9 +253,26 @@
             <form action="{{ route('fingerprint_devices.sync_all') }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>من تاريخ</label>
+                            <input type="date" name="sync_date_from" class="form-control"
+                                value="{{ today()->format('Y-m-d') }}" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>إلى تاريخ</label>
+                            <input type="date" name="sync_date_to" class="form-control"
+                                value="{{ today()->format('Y-m-d') }}" required>
+                        </div>
+                    </div>
                     <div class="form-group">
-                        <label>تاريخ المعالجة</label>
-                        <input type="date" name="sync_date" class="form-control" value="{{ today()->format('Y-m-d') }}">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="forceSyncAll"
+                                name="force_reprocess" value="1">
+                            <label class="custom-control-label" for="forceSyncAll">
+                                إعادة معالجة السجلات المعالجة مسبقاً
+                            </label>
+                        </div>
                     </div>
                     <p class="text-muted">سيتم الاتصال بجميع الأجهزة النشطة ({{ $devices->where('status',1)->count() }} جهاز) ومعالجة سجلاتها.</p>
                 </div>
@@ -267,12 +298,30 @@
             <form action="{{ route('fingerprint_devices.process_logs') }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>من تاريخ</label>
+                            <input type="date" name="process_date_from" class="form-control"
+                                value="{{ today()->format('Y-m-d') }}" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>إلى تاريخ</label>
+                            <input type="date" name="process_date_to" class="form-control"
+                                value="{{ today()->format('Y-m-d') }}" required>
+                        </div>
+                    </div>
                     <div class="form-group">
-                        <label>تاريخ المعالجة</label>
-                        <input type="date" name="process_date" class="form-control" value="{{ today()->format('Y-m-d') }}">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="forceProcess"
+                                name="force_reprocess" value="1">
+                            <label class="custom-control-label" for="forceProcess">
+                                إعادة معالجة السجلات المعالجة مسبقاً
+                            </label>
+                        </div>
+                        <small class="text-muted">يُعيد ضبط البصمات المعالجة مسبقاً في النطاق المحدد ثم يُعالجها من جديد</small>
                     </div>
                     <p class="text-muted">
-                        يعالج السجلات الخام الموجودة في قاعدة البيانات (<strong>{{ number_format($pendingLogs) }}</strong> سجل غير معالَج) ويحوّلها إلى حضور وانصراف.
+                        السجلات غير المعالجة حالياً: <strong>{{ number_format($pendingLogs) }}</strong> سجل
                     </p>
                 </div>
                 <div class="modal-footer">

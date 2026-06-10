@@ -36,7 +36,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
   <!-- Scripts -->
     <!-- Custom Theme - no npm needed -->
   <link rel="stylesheet" href="{{ asset('assets/admin/css/logg-theme.css') }}">
-  
+  <!-- Select2 -->
+  <link rel="stylesheet" href="{{ asset('assets/admin/plugins/select2/css/select2.min.css') }}">
 </head>
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
@@ -101,6 +102,17 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <!-- AdminLTE App -->
 <script src="{{ asset('assets/admin/dist/js/adminlte.min.js')}}"></script>
 <script src="{{ asset('assets/admin/js/general.js')}}"></script>
+<!-- Select2 -->
+<script src="{{ asset('assets/admin/plugins/select2/js/select2.full.min.js') }}"></script>
+<script src="{{ asset('assets/admin/plugins/select2/js/i18n/ar.js') }}"></script>
+<script>
+$(document).ready(function () {
+  $('select.select2').select2({
+    language: 'ar',
+    width: '100%'
+  });
+});
+</script>
 @yield('script')
 </body>
 </html>

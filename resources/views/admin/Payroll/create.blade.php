@@ -82,7 +82,7 @@
                 <div class="row">
                     <div class="col-md-3 form-group">
                         <label>الموظف <span class="text-danger">*</span></label>
-                        <select name="employee_id" class="form-control" required>
+                        <select name="employee_id" class="form-control select2" required>
                             <option value="">-- اختر الموظف --</option>
                             @foreach($employees as $emp)
                             <option value="{{ $emp->id }}">{{ $emp->employee_name_A }}</option>

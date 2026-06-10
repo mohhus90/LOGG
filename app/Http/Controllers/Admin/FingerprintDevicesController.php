@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\FingerprintDevice;
 use App\Models\FingerprintLog;
 use App\Models\Employee;
+use App\Models\Branche;
 use App\Services\FingerprintService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -43,7 +44,8 @@ class FingerprintDevicesController extends Controller
     public function create()
     {
         $protocols = $this->protocolsList();
-        return view('admin.fingerprint_devices.create', compact('protocols'));
+        $branches  = Branche::where('com_code', $this->comCode())->where('active', 1)->get();
+        return view('admin.fingerprint_devices.create', compact('protocols', 'branches'));
     }
 
     // =========================================================
@@ -71,19 +73,21 @@ class FingerprintDevicesController extends Controller
         ]);
 
         FingerprintDevice::create([
-            'device_name'    => $request->device_name,
-            'device_code'    => $request->device_code,
-            'ip_address'     => $isAgent ? '0.0.0.0' : $request->ip_address,
-            'port'           => $isAgent ? 0           : $request->port,
-            'protocol'       => $request->protocol,
-            'location'       => $request->location,
-            'model'          => $request->model,
-            'serial_number'  => $request->serial_number,
-            'password'       => $request->device_password,
-            'api_token'      => $isAgent ? Str::random(64) : null,
-            'status'         => 1,
-            'com_code'       => $this->comCode(),
-            'added_by'       => Auth::guard('admin')->id(),
+            'device_name'      => $request->device_name,
+            'device_code'      => $request->device_code,
+            'ip_address'       => $isAgent ? '0.0.0.0' : $request->ip_address,
+            'port'             => $isAgent ? 0           : $request->port,
+            'protocol'         => $request->protocol,
+            'location'         => $request->location,
+            'branches_id'      => $request->branches_id ?: null,
+            'extra_branch_ids' => $request->extra_branch_ids ? array_map('intval', $request->extra_branch_ids) : null,
+            'model'            => $request->model,
+            'serial_number'    => $request->serial_number,
+            'password'         => $request->device_password,
+            'api_token'        => $isAgent ? Str::random(64) : null,
+            'status'           => 1,
+            'com_code'         => $this->comCode(),
+            'added_by'         => Auth::guard('admin')->id(),
         ]);
 
         return redirect()->route('fingerprint_devices.index')
@@ -97,7 +101,8 @@ class FingerprintDevicesController extends Controller
     {
         $device    = FingerprintDevice::where('com_code', $this->comCode())->findOrFail($id);
         $protocols = $this->protocolsList();
-        return view('admin.fingerprint_devices.edit', compact('device', 'protocols'));
+        $branches  = Branche::where('com_code', $this->comCode())->where('active', 1)->get();
+        return view('admin.fingerprint_devices.edit', compact('device', 'protocols', 'branches'));
     }
 
     public function update(Request $request, int $id)
@@ -119,17 +124,19 @@ class FingerprintDevicesController extends Controller
         $request->validate($rules);
 
         $device->update([
-            'device_name'   => $request->device_name,
-            'device_code'   => $request->device_code,
-            'ip_address'    => $isAgent ? ($device->ip_address ?: '0.0.0.0') : $request->ip_address,
-            'port'          => $isAgent ? ($device->port ?: 0)               : $request->port,
-            'protocol'      => $request->protocol,
-            'location'      => $request->location,
-            'model'         => $request->model,
-            'serial_number' => $request->serial_number,
-            'password'      => $request->device_password ?: $device->password,
-            'status'        => $request->status ?? $device->status,
-            'updated_by'    => Auth::guard('admin')->id(),
+            'device_name'      => $request->device_name,
+            'device_code'      => $request->device_code,
+            'ip_address'       => $isAgent ? ($device->ip_address ?: '0.0.0.0') : $request->ip_address,
+            'port'             => $isAgent ? ($device->port ?: 0)               : $request->port,
+            'protocol'         => $request->protocol,
+            'location'         => $request->location,
+            'branches_id'      => $request->branches_id ?: null,
+            'extra_branch_ids' => $request->extra_branch_ids ? array_map('intval', $request->extra_branch_ids) : null,
+            'model'            => $request->model,
+            'serial_number'    => $request->serial_number,
+            'password'         => $request->device_password ?: $device->password,
+            'status'           => $request->status ?? $device->status,
+            'updated_by'       => Auth::guard('admin')->id(),
         ]);
 
         return redirect()->route('fingerprint_devices.index')
@@ -167,6 +174,11 @@ class FingerprintDevicesController extends Controller
     // =========================================================
     public function sync(Request $request, int $id)
     {
+        $request->validate([
+            'sync_date_from' => 'required|date',
+            'sync_date_to'   => 'required|date|after_or_equal:sync_date_from',
+        ]);
+
         $device  = FingerprintDevice::where('com_code', $this->comCode())->findOrFail($id);
         $service = new FingerprintService();
 
@@ -179,8 +191,13 @@ class FingerprintDevicesController extends Controller
         }
 
         // 2. معالجة السجلات الخام → attendance
-        $date          = $request->sync_date ?? today()->format('Y-m-d');
-        $processResult = $service->processLogs($this->comCode(), $date);
+        $forceReprocess = $request->boolean('force_reprocess');
+        $processResult  = $service->processLogs(
+            $this->comCode(),
+            $request->sync_date_from,
+            $request->sync_date_to,
+            $forceReprocess
+        );
 
         if (!$processResult['success']) {
             return redirect()->route('fingerprint_devices.index')
@@ -188,7 +205,7 @@ class FingerprintDevicesController extends Controller
         }
 
         $msg = "✅ {$device->device_name}: جُلب {$syncResult['count']} سجل. "
-             . "حضور: {$processResult['imported']}، غياب: {$processResult['absent']}.";
+             . "حضور: {$processResult['imported']}، بصمة ناقصة: {$processResult['missing']}، غياب: {$processResult['absent']}.";
 
         if (!empty($processResult['notFound'])) {
             $msg .= " ⚠️ Finger IDs غير معروفة: " . implode('، ', $processResult['notFound']);
@@ -203,17 +220,26 @@ class FingerprintDevicesController extends Controller
     // =========================================================
     public function processLogs(Request $request)
     {
-        $request->validate(['process_date' => 'required|date']);
+        $request->validate([
+            'process_date_from' => 'required|date',
+            'process_date_to'   => 'required|date|after_or_equal:process_date_from',
+        ]);
 
-        $service = new FingerprintService();
-        $result  = $service->processLogs($this->comCode(), $request->process_date);
+        $forceReprocess = $request->boolean('force_reprocess');
+        $service        = new FingerprintService();
+        $result         = $service->processLogs(
+            $this->comCode(),
+            $request->process_date_from,
+            $request->process_date_to,
+            $forceReprocess
+        );
 
         if (!$result['success']) {
             return redirect()->route('fingerprint_devices.index')
                 ->with('error', 'خطأ: ' . $result['error']);
         }
 
-        $msg = "✅ تمت المعالجة: حضور {$result['imported']}، غياب {$result['absent']}.";
+        $msg = "✅ تمت المعالجة: حضور {$result['imported']}، بصمة ناقصة {$result['missing']}، غياب {$result['absent']}.";
         if (!empty($result['notFound'])) {
             $msg .= " ⚠️ IDs غير معروفة: " . implode('، ', $result['notFound']);
         }
@@ -230,8 +256,11 @@ class FingerprintDevicesController extends Controller
 
         $query = FingerprintLog::where('device_id', $id);
 
-        if ($request->filled('log_date')) {
-            $query->whereDate('punch_time', $request->log_date);
+        if ($request->filled('log_date_from')) {
+            $query->whereDate('punch_time', '>=', $request->log_date_from);
+        }
+        if ($request->filled('log_date_to')) {
+            $query->whereDate('punch_time', '<=', $request->log_date_to);
         }
         if ($request->filled('processed')) {
             $query->where('is_processed', $request->processed);
@@ -239,8 +268,16 @@ class FingerprintDevicesController extends Controller
 
         $logs = $query->orderByDesc('punch_time')->paginate(50);
 
-        // finger_id → اسم الموظف map
-        $employees  = Employee::where('com_code', $this->comCode())->get()->keyBy('finger_id');
+        // finger_id → اسم الموظف: يشمل الفرع الأساسي والفروع الإضافية للجهاز
+        $empQuery = Employee::where('com_code', $this->comCode());
+        if ($device->branches_id) {
+            $branchIds = array_values(array_unique(array_filter(array_merge(
+                [$device->branches_id],
+                is_array($device->extra_branch_ids) ? $device->extra_branch_ids : []
+            ))));
+            $empQuery->whereIn('branches_id', $branchIds);
+        }
+        $employees = $empQuery->get()->keyBy('finger_id');
 
         return view('admin.fingerprint_devices.logs', compact('device', 'logs', 'employees'));
     }
@@ -250,6 +287,11 @@ class FingerprintDevicesController extends Controller
     // =========================================================
     public function syncAll(Request $request)
     {
+        $request->validate([
+            'sync_date_from' => 'required|date',
+            'sync_date_to'   => 'required|date|after_or_equal:sync_date_from',
+        ]);
+
         $devices = FingerprintDevice::where('com_code', $this->comCode())
             ->where('status', 1)->get();
 
@@ -258,10 +300,10 @@ class FingerprintDevicesController extends Controller
                 ->with('error', 'لا توجد أجهزة نشطة للمزامنة');
         }
 
-        $service   = new FingerprintService();
-        $date      = $request->sync_date ?? today()->format('Y-m-d');
-        $totalLogs = 0;
-        $errors    = [];
+        $service        = new FingerprintService();
+        $forceReprocess = $request->boolean('force_reprocess');
+        $totalLogs      = 0;
+        $errors         = [];
 
         foreach ($devices as $device) {
             $result = $service->syncDevice($device);
@@ -272,11 +314,15 @@ class FingerprintDevicesController extends Controller
             }
         }
 
-        // معالجة جميع السجلات
-        $processResult = $service->processLogs($this->comCode(), $date);
+        $processResult = $service->processLogs(
+            $this->comCode(),
+            $request->sync_date_from,
+            $request->sync_date_to,
+            $forceReprocess
+        );
 
         $msg = "✅ تمت مزامنة {$devices->count()} جهاز. إجمالي السجلات: $totalLogs. "
-             . "حضور: {$processResult['imported']}، غياب: {$processResult['absent']}.";
+             . "حضور: {$processResult['imported']}، بصمة ناقصة: {$processResult['missing']}، غياب: {$processResult['absent']}.";
 
         if (!empty($errors)) {
             $msg .= " ⚠️ أخطاء: " . implode(' | ', $errors);

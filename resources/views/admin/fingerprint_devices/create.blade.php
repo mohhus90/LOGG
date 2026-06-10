@@ -134,6 +134,42 @@
 
                 <div class="row">
                     <div class="col-md-4 form-group">
+                        <label class="font-weight-bold">الفرع الأساسي للجهاز <span class="text-danger">*</span></label>
+                        <select name="branches_id" class="form-control">
+                            <option value="">— اختر الفرع —</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ old('branches_id', $device->branches_id ?? '') == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->branch_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">الفرع الذي يقع فيه الجهاز فعلياً</small>
+                    </div>
+                    <div class="col-md-8 form-group">
+                        <label class="font-weight-bold">
+                            <i class="fas fa-code-branch ml-1 text-info"></i>
+                            فروع إضافية يخدمها هذا الجهاز
+                        </label>
+                        <div class="border rounded p-2" style="max-height:120px;overflow-y:auto;background:#fafbfc">
+                            @foreach($branches as $branch)
+                            <div class="form-check form-check-inline mb-1">
+                                <input class="form-check-input" type="checkbox"
+                                       name="extra_branch_ids[]"
+                                       value="{{ $branch->id }}"
+                                       id="extra_branch_c{{ $branch->id }}"
+                                       {{ in_array($branch->id, array_map('intval', old('extra_branch_ids', []))) ? 'checked' : '' }}>
+                                <label class="form-check-label small" for="extra_branch_c{{ $branch->id }}">
+                                    {{ $branch->branch_name }}
+                                </label>
+                            </div>
+                            @endforeach
+                        </div>
+                        <small class="text-info">
+                            <i class="fas fa-info-circle ml-1"></i>
+                            اختر الفروع التي يبصم فيها موظفوها على هذا الجهاز
+                        </small>
+                    </div>
+                    <div class="col-md-4 form-group">
                         <label>موقع الجهاز</label>
                         <input type="text" name="location" class="form-control"
                             placeholder="مثال: الطابق الأول — مدخل A"

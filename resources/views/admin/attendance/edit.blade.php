@@ -5,13 +5,27 @@
 @section('startpage') تعديل @endsection
 
 @section('content')
-<div class="col-md-8 mx-auto">
+<div class="col-md-9 mx-auto">
+
+    {{-- ─── تنبيه البصمة الناقصة ─── --}}
+    @if($attendance->missing_punch && !$attendance->missing_punch_resolution)
+    <div class="alert alert-warning alert-dismissible">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <h5><i class="fas fa-exclamation-triangle ml-1"></i>
+            تحذير: {{ $attendance->missing_punch === 'out' ? 'انصراف مفقود' : 'حضور مفقود' }}
+        </h5>
+        هذا السجل يحتوي على بصمة ناقصة — يرجى تحديد طريقة المعالجة أدناه أو تعديل الوقت المفقود يدوياً.
+    </div>
+    @endif
+
+    {{-- ─── بطاقة التعديل الرئيسية ─── --}}
     <div class="card card-warning">
         <div class="card-header">
             <h3 class="card-title">
                 <i class="fas fa-edit ml-2"></i>
                 تعديل سجل الحضور — {{ $attendance->employee->employee_name_A ?? '' }}
                 <span class="badge badge-light mr-2">{{ $attendance->attendance_date->format('Y-m-d') }}</span>
+                {!! $attendance->status_label !!}
             </h3>
         </div>
         <form action="{{ route('attendance.update', $attendance->id) }}" method="POST">
@@ -22,14 +36,25 @@
                         <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
                     </div>
                 @endif
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
 
-                {{-- معلومات الشيفت --}}
-                @if($attendance->shift)
-                <div class="alert alert-info">
+                {{-- الشيفت الفعلي --}}
+                @php $effectiveShift = $attendance->effective_shift; @endphp
+                @if($effectiveShift)
+                <div class="alert alert-info mb-3">
                     <i class="fas fa-clock ml-1"></i>
-                    <strong>الشيفت المحدد:</strong>
-                    {{ $attendance->shift->type }} —
-                    من {{ $attendance->shift->from_time }} إلى {{ $attendance->shift->to_time }}
+                    <strong>الشيفت المستخدم في الاحتساب:</strong>
+                    {{ $effectiveShift->type }} —
+                    من <strong>{{ $effectiveShift->from_time }}</strong>
+                    إلى <strong>{{ $effectiveShift->to_time }}</strong>
+                    @if($attendance->shift_override_id)
+                        <span class="badge badge-warning mr-2">شيفت مخصص</span>
+                    @endif
                 </div>
                 @endif
 
@@ -48,24 +73,110 @@
 
                 <div class="row">
                     <div class="col-md-4 form-group">
-                        <label>وقت الحضور</label>
-                        <input type="time" name="check_in_time" class="form-control"
+                        <label>
+                            وقت الحضور
+                            @if($attendance->missing_punch === 'in')
+                                <span class="badge badge-danger">مفقود</span>
+                            @endif
+                        </label>
+                        <input type="time" name="check_in_time" id="checkInTime" class="form-control
+                            {{ $attendance->missing_punch === 'in' ? 'border-danger' : '' }}"
                             value="{{ old('check_in_time', $attendance->check_in_time ? \Carbon\Carbon::parse($attendance->check_in_time)->format('H:i') : '') }}">
                     </div>
                     <div class="col-md-4 form-group">
-                        <label>وقت الانصراف</label>
-                        <input type="time" name="check_out_time" class="form-control"
+                        <label>
+                            وقت الانصراف
+                            @if($attendance->missing_punch === 'out')
+                                <span class="badge badge-danger">مفقود</span>
+                            @endif
+                        </label>
+                        <input type="time" name="check_out_time" id="checkOutTime" class="form-control
+                            {{ $attendance->missing_punch === 'out' ? 'border-danger' : '' }}"
                             value="{{ old('check_out_time', $attendance->check_out_time ? \Carbon\Carbon::parse($attendance->check_out_time)->format('H:i') : '') }}">
                     </div>
                     <div class="col-md-4 form-group">
                         <label>الحالة <span class="text-danger">*</span></label>
-                        <select name="status" class="form-control" required>
+                        <select name="status" id="statusSelect" class="form-control" required
+                                onchange="handleStatusChange(this.value)">
                             <option value="1" {{ $attendance->status==1?'selected':'' }}>حضر</option>
                             <option value="2" {{ $attendance->status==2?'selected':'' }}>غياب</option>
                             <option value="3" {{ $attendance->status==3?'selected':'' }}>إجازة</option>
                             <option value="4" {{ $attendance->status==4?'selected':'' }}>إجازة رسمية</option>
                             <option value="5" {{ $attendance->status==5?'selected':'' }}>مأمورية</option>
+                            <option value="6" {{ $attendance->status==6?'selected':'' }}>إجازة أسبوعية</option>
                         </select>
+                    </div>
+                </div>
+
+                {{-- ─── قسم الإجازة الأسبوعية ─── --}}
+                <div id="weeklyLeaveSection" style="display:{{ $attendance->status==6 ? 'block' : 'none' }}">
+                    <div class="alert" style="background:#f3eeff;border:1px solid #6f42c1;border-radius:6px">
+                        <i class="fas fa-calendar-week ml-1" style="color:#6f42c1"></i>
+                        <strong>إجازة أسبوعية بحتة</strong> — لم يبصم الموظف في هذا اليوم.
+                        لا تأخير ولا خصومات ولا بدل إجازة.
+                    </div>
+                </div>
+
+                {{-- ─── بدل الإجازة (يوم راحة عمل فيه) ─── --}}
+                @if($attendance->status == 1)
+                <div id="weeklyOffWorkedSection" style="display:{{ $attendance->is_weekly_off_worked ? 'block' : 'none' }}">
+                    <div class="alert alert-success" style="border-radius:6px">
+                        <i class="fas fa-umbrella-beach ml-1"></i>
+                        <strong>يوم راحة عمل فيه</strong> —
+                        يستحق الموظف بدل إجازة.
+                        يمكن إلغاؤه بإلغاء التحديد أدناه.
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5 form-group">
+                            <label>
+                                <input type="checkbox" name="is_weekly_off_worked" value="1"
+                                    id="weeklyOffWorkedChk"
+                                    {{ $attendance->is_weekly_off_worked ? 'checked' : '' }}>
+                                احتساب بدل الإجازة لهذا اليوم
+                            </label>
+                            <div class="mt-1">
+                                <span class="badge badge-success" style="font-size:1em">
+                                    بدل الإجازة: {{ number_format($attendance->leave_compensation_amount ?? 0, 2) }} ج.م
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                المبلغ يُحتسب تلقائياً من إعدادات بدل الإجازة عند الحفظ
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- ─── قسم الإذن ─── --}}
+                <div id="permissionSection" style="display:{{ $attendance->status==1 ? 'block' : 'none' }}">
+                    <hr>
+                    <h6 class="text-info"><i class="fas fa-id-card ml-1"></i>الإذونات (تُخصم من التأخير/الانصراف المبكر)</h6>
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label>دقائق إذن التأخير</label>
+                            <div class="input-group">
+                                <input type="number" name="permission_minutes" class="form-control"
+                                    min="0" step="1"
+                                    value="{{ old('permission_minutes', $attendance->permission_minutes ?? 0) }}">
+                                <div class="input-group-append"><span class="input-group-text">د</span></div>
+                            </div>
+                            <small class="text-muted">
+                                يُطرح من دقائق التأخير قبل الاحتساب
+                                @if(isset($settings) && $settings->max_permission_minutes_per_day > 0)
+                                    — الحد الأقصى: {{ $settings->max_permission_minutes_per_day }} د/يوم
+                                @endif
+                            </small>
+                        </div>
+                        <div class="col-md-4 form-group">
+                            <label>دقائق إذن الانصراف المبكر</label>
+                            <div class="input-group">
+                                <input type="number" name="permission_early_minutes" class="form-control"
+                                    min="0" step="1"
+                                    value="{{ old('permission_early_minutes', $attendance->permission_early_minutes ?? 0) }}">
+                                <div class="input-group-append"><span class="input-group-text">د</span></div>
+                            </div>
+                            <small class="text-muted">يُطرح من دقائق الانصراف المبكر</small>
+                        </div>
                     </div>
                 </div>
 
@@ -75,14 +186,23 @@
                         value="{{ old('notes', $attendance->notes) }}">
                 </div>
 
-                {{-- القيم المحتسبة الحالية --}}
+                {{-- ─── القيم المحتسبة الحالية ─── --}}
                 <div class="row mt-2">
                     <div class="col-md-3">
                         <div class="info-box bg-warning">
                             <span class="info-box-icon"><i class="fas fa-clock"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">تأخير</span>
-                                <span class="info-box-number">{{ $attendance->late_minutes }} د</span>
+                                <span class="info-box-number">{{ $attendance->late_display }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="info-box bg-orange">
+                            <span class="info-box-icon"><i class="fas fa-sign-out-alt"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">انصراف مبكر</span>
+                                <span class="info-box-number">{{ $attendance->early_departure_display }}</span>
                             </div>
                         </div>
                     </div>
@@ -99,11 +219,15 @@
                         <div class="info-box bg-danger">
                             <span class="info-box-icon"><i class="fas fa-minus"></i></span>
                             <div class="info-box-content">
-                                <span class="info-box-text">خصم تأخير</span>
-                                <span class="info-box-number">{{ number_format($attendance->late_deduction, 2) }}</span>
+                                <span class="info-box-text">خصم تأخير + مبكر</span>
+                                <span class="info-box-number">
+                                    {{ number_format(($attendance->late_deduction ?? 0) + ($attendance->early_departure_deduction ?? 0), 2) }}
+                                </span>
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-3">
                         <div class="info-box bg-info">
                             <span class="info-box-icon"><i class="fas fa-coins"></i></span>
@@ -113,8 +237,21 @@
                             </div>
                         </div>
                     </div>
+                    @if(($attendance->permission_minutes ?? 0) > 0 || ($attendance->permission_early_minutes ?? 0) > 0)
+                    <div class="col-md-3">
+                        <div class="info-box bg-teal">
+                            <span class="info-box-icon"><i class="fas fa-id-card"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">إذن مُعتمد</span>
+                                <span class="info-box-number">
+                                    {{ ($attendance->permission_minutes ?? 0) + ($attendance->permission_early_minutes ?? 0) }} د
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
-                <small class="text-muted">* سيتم إعادة احتساب التأخير والأوفرتايم تلقائياً بعد الحفظ</small>
+                <small class="text-muted">* سيتم إعادة احتساب التأخير والأوفرتايم والانصراف المبكر تلقائياً بعد الحفظ</small>
             </div>
             <div class="card-footer">
                 <button type="submit" class="btn btn-warning">
@@ -124,5 +261,114 @@
             </div>
         </form>
     </div>
+
+    {{-- ─── بطاقة تغيير الشيفت المخصص ─── --}}
+    <div class="card card-info mt-3">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-exchange-alt ml-2"></i>تغيير الشيفت لهذا السجل فقط
+            </h3>
+        </div>
+        <form action="{{ route('attendance.update_shift', $attendance->id) }}" method="POST">
+            @csrf
+            <div class="card-body">
+                <p class="text-muted small">
+                    الشيفت الأصلي للموظف: <strong>{{ $attendance->shift->type ?? '—' }}</strong>.
+                    يمكنك تعيين شيفت مختلف لهذا اليوم فقط — يؤثر على حساب التأخير والأوفرتايم فوراً.
+                </p>
+                <div class="form-group">
+                    <label>الشيفت المخصص لهذا اليوم</label>
+                    <select name="shift_override_id" class="form-control">
+                        <option value="">-- استخدام الشيفت الأصلي ({{ $attendance->shift->type ?? 'غير محدد' }}) --</option>
+                        @foreach($shifts_types as $shift)
+                            <option value="{{ $shift->id }}"
+                                {{ $attendance->shift_override_id == $shift->id ? 'selected' : '' }}>
+                                {{ $shift->type }}
+                                ({{ $shift->from_time }} → {{ $shift->to_time }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-sync ml-1"></i> تطبيق الشيفت وإعادة الاحتساب
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {{-- ─── بطاقة معالجة البصمة الناقصة ─── --}}
+    @if($attendance->missing_punch)
+    <div class="card card-danger mt-3">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-fingerprint ml-2"></i>
+                معالجة البصمة الناقصة
+                ({{ $attendance->missing_punch === 'out' ? 'انصراف مفقود' : 'حضور مفقود' }})
+            </h3>
+        </div>
+        <div class="card-body">
+            @if($attendance->missing_punch_resolution)
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle ml-1"></i>
+                تم الحل مسبقاً: <strong>{{ $attendance->missing_punch_resolution_label }}</strong>
+            </div>
+            @endif
+
+            <form action="{{ route('attendance.resolve_missing', $attendance->id) }}" method="POST">
+                @csrf
+                <div class="row">
+                    <div class="col-md-5 form-group">
+                        <label>طريقة المعالجة <span class="text-danger">*</span></label>
+                        <select name="missing_punch_resolution" id="resolutionSelect" class="form-control" required>
+                            <option value="">-- اختر --</option>
+                            <option value="1" {{ $attendance->missing_punch_resolution==1?'selected':'' }}>خصم ربع يوم</option>
+                            <option value="2" {{ $attendance->missing_punch_resolution==2?'selected':'' }}>خصم نصف يوم</option>
+                            <option value="3" {{ $attendance->missing_punch_resolution==3?'selected':'' }}>خصم يوم كامل</option>
+                            <option value="4" {{ $attendance->missing_punch_resolution==4?'selected':'' }}>نسيان (بدون خصم)</option>
+                            <option value="5" {{ $attendance->missing_punch_resolution==5?'selected':'' }}>إذن (تحديد عدد الساعات)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 form-group" id="hoursField" style="display:none;">
+                        <label>عدد ساعات الإذن <span class="text-danger">*</span></label>
+                        <input type="number" name="missing_punch_hours" class="form-control"
+                            min="0.25" max="24" step="0.25"
+                            value="{{ $attendance->missing_punch_hours }}">
+                    </div>
+                    <div class="col-md-4 form-group d-flex align-items-end">
+                        <button type="submit" class="btn btn-danger btn-block">
+                            <i class="fas fa-check ml-1"></i> تطبيق القرار
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
+
 </div>
+@endsection
+
+@section('script')
+<script>
+function handleStatusChange(val) {
+    var weeklySection    = document.getElementById('weeklyLeaveSection');
+    var permissionSection = document.getElementById('permissionSection');
+
+    weeklySection.style.display    = (val == '6') ? 'block' : 'none';
+    permissionSection.style.display = (val == '1') ? 'block' : 'none';
+}
+
+document.getElementById('resolutionSelect')?.addEventListener('change', function () {
+    document.getElementById('hoursField').style.display = this.value === '5' ? 'flex' : 'none';
+});
+
+if (document.getElementById('resolutionSelect')?.value === '5') {
+    document.getElementById('hoursField').style.display = 'flex';
+}
+
+// تهيئة أولية
+handleStatusChange(document.getElementById('statusSelect').value);
+</script>
 @endsection

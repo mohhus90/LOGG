@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
+
 use Illuminate\Support\Facades\Storage;
 
 class AdminPanelSettingController extends Controller
@@ -161,22 +161,31 @@ class AdminPanelSettingController extends Controller
                 'sanctions_value_second_abcence' => $request->sanctions_value_second_abcence ?? 1,
                 'sanctions_value_third_abcence'  => $request->sanctions_value_third_abcence  ?? 1,
                 'sanctions_value_forth_abcence'  => $request->sanctions_value_forth_abcence  ?? 1,
+                'delay_calc_mode'                => $request->delay_calc_mode                ?? 1,
+                'sanctions_value_minute_delay'   => $request->sanctions_value_minute_delay   ?? 0,
+                'overtime_multiplier'            => $request->overtime_multiplier            ?? 1.5,
+                'employee_insurance_rate'        => $request->employee_insurance_rate        ?? 11,
+                'company_insurance_rate'         => $request->company_insurance_rate         ?? 18.75,
+                'annual_vacation_days'           => $request->annual_vacation_days           ?? 21,
+                'casual_vacation_days'           => $request->casual_vacation_days           ?? 6,
+                'day_rate_divisor_type'          => (int)($request->day_rate_divisor_type    ?? 1),
+                'day_rate_divisor_custom'        => $request->day_rate_divisor_custom        ?? 26,
+                'hour_rate_divisor_type'         => (int)($request->hour_rate_divisor_type   ?? 1),
+                'hour_rate_divisor_custom'       => $request->hour_rate_divisor_custom       ?? 8,
+                'max_permissions_per_day'               => (int)($request->max_permissions_per_day  ?? 1),
+                'max_permission_minutes_per_day'        => (int)($request->max_permission_minutes_per_day ?? 60),
+                // وضع التأخير الهرمي
+                'delay_tier1_minutes'                   => (int)($request->delay_tier1_minutes ?? 0),
+                'delay_halfday_minutes'                 => (int)($request->delay_halfday_minutes ?? 0),
+                'delay_fullday_minutes'                 => (int)($request->delay_fullday_minutes ?? 0),
+                // حدود الانصراف المبكر
+                'early_departure_halfday_minutes'       => (int)($request->early_departure_halfday_minutes ?? 0),
+                'early_departure_fullday_minutes'       => (int)($request->early_departure_fullday_minutes ?? 0),
+                'early_departure_fullplushalf_minutes'  => (int)($request->early_departure_fullplushalf_minutes ?? 0),
+                // أوفرتايم ثابت
+                'overtime_calc_type'                    => (int)($request->overtime_calc_type ?? 1),
+                'max_monthly_overtime_hours'            => (float)($request->max_monthly_overtime_hours ?? 0),
             ];
-
-            $schemaFields = [
-                'delay_calc_mode'           => ['delay_calc_mode',           1],
-                'sanctions_value_minute_delay' => ['sanctions_value_minute_delay', 0],
-                'overtime_multiplier'       => ['overtime_multiplier',        1.5],
-                'employee_insurance_rate'   => ['employee_insurance_rate',    11.00],
-                'company_insurance_rate'    => ['company_insurance_rate',     18.75],
-                'annual_vacation_days'      => ['annual_vacation_days',       21],
-                'casual_vacation_days'      => ['casual_vacation_days',       6],
-            ];
-            foreach ($schemaFields as $column => [$field, $default]) {
-                if (Schema::hasColumn('admin_panel_settings', $column)) {
-                    $updatedData[$column] = $request->input($field, $default);
-                }
-            }
 
             Admin_panel_setting::where('com_code', $this->getComCode())
                 ->update($updatedData);

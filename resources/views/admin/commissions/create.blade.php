@@ -21,7 +21,7 @@
 
                 <div class="form-group">
                     <label>الموظف <span class="text-danger">*</span></label>
-                    <select name="employee_id" class="form-control" required>
+                    <select name="employee_id" class="form-control select2" required>
                         <option value="">-- اختر الموظف --</option>
                         @foreach($employees as $emp)
                         <option value="{{ $emp->id }}" {{ old('employee_id')==$emp->id?'selected':'' }}>

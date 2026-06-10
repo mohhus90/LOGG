@@ -17,17 +17,33 @@
 
         {{-- فلاتر --}}
         <div class="card-body pb-0">
-            <form method="GET" class="form-inline mb-3">
-                <label class="ml-2">التاريخ:</label>
-                <input type="date" name="log_date" class="form-control ml-2"
-                    value="{{ request('log_date', today()->format('Y-m-d')) }}">
-                <select name="processed" class="form-control ml-2">
-                    <option value="">-- كل السجلات --</option>
-                    <option value="0" {{ request('processed')==='0'?'selected':'' }}>غير معالَجة</option>
-                    <option value="1" {{ request('processed')==='1'?'selected':'' }}>معالَجة</option>
-                </select>
-                <button type="submit" class="btn btn-primary ml-2"><i class="fas fa-search"></i> بحث</button>
-                <a href="{{ route('fingerprint_devices.index') }}" class="btn btn-secondary">رجوع</a>
+            <form method="GET" class="row align-items-end mb-3">
+                <div class="col-md-3">
+                    <label class="small">من تاريخ</label>
+                    <input type="date" name="log_date_from" class="form-control"
+                        value="{{ request('log_date_from', today()->format('Y-m-d')) }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="small">إلى تاريخ</label>
+                    <input type="date" name="log_date_to" class="form-control"
+                        value="{{ request('log_date_to', today()->format('Y-m-d')) }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="small">الحالة</label>
+                    <select name="processed" class="form-control">
+                        <option value="">كل السجلات</option>
+                        <option value="0" {{ request('processed')==='0'?'selected':'' }}>غير معالَجة</option>
+                        <option value="1" {{ request('processed')==='1'?'selected':'' }}>معالَجة</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-search"></i> بحث
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ route('fingerprint_devices.index') }}" class="btn btn-secondary btn-block">رجوع</a>
+                </div>
             </form>
         </div>
 

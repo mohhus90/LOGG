@@ -27,7 +27,7 @@
                 <div class="row">
                     <div class="col-md-8 form-group">
                         <label>الموظف <span class="text-danger">*</span></label>
-                        <select name="employee_id" class="form-control" required id="employeeSelect">
+                        <select name="employee_id" class="form-control select2" required id="employeeSelect">
                             <option value="">
                                 -- اختر الموظف
                                 @if($employees->count())

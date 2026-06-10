@@ -66,14 +66,14 @@
           <label class="small">الإدارة</label>
           <select name="search_dept" class="form-control form-control-sm">
             <option value="">الكل</option>
-            @foreach($departments as $d)<option value="{{ $d->id }}" {{ request('search_dept')==$d->id?'selected':'' }}>{{ $d->dep_name_A }}</option>@endforeach
+            @foreach($departments as $d)<option value="{{ $d->id }}" {{ request('search_dept')==$d->id?'selected':'' }}>{{ $d->dep_name }}</option>@endforeach
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
           <label class="small">الوظيفة</label>
           <select name="search_job" class="form-control form-control-sm">
             <option value="">الكل</option>
-            @foreach($jobs_categories as $j)<option value="{{ $j->id }}" {{ request('search_job')==$j->id?'selected':'' }}>{{ $j->cat_name_A }}</option>@endforeach
+            @foreach($jobs_categories as $j)<option value="{{ $j->id }}" {{ request('search_job')==$j->id?'selected':'' }}>{{ $j->job_name }}</option>@endforeach
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
@@ -211,8 +211,8 @@
           @else<span class="text-muted">—</span>@endif
         </td>
         <td>
-          <small class="d-block">{{ $emp->department->dep_name_A ?? '—' }}</small>
-          <small class="text-muted">{{ $emp->jobs_categories->cat_name_A ?? '—' }}</small>
+          <small class="d-block">{{ $emp->department->dep_name ?? '—' }}</small>
+          <small class="text-muted">{{ $emp->jobs_categories->job_name ?? '—' }}</small>
         </td>
         <td><small>{{ $emp->branches->branch_name ?? '—' }}</small></td>
         <td class="text-center">

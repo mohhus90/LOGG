@@ -184,6 +184,24 @@
         </ul>
       </li>
 
+      {{-- بدل الإجازة --}}
+      <li class="nav-item">
+        <a href="{{ route('leave_compensation.index') }}"
+           class="nav-link {{ request()->is('admin/dashboard/leave-compensation*') ? 'active' : '' }}">
+          <i class="nav-icon fas fa-umbrella-beach" style="color:#28a745"></i>
+          <p>بدل الإجازة</p>
+        </a>
+      </li>
+
+      {{-- الجزاءات --}}
+      <li class="nav-item">
+        <a href="{{ route('sanctions.index') }}"
+           class="nav-link {{ request()->is('admin/dashboard/sanctions*') ? 'active' : '' }}">
+          <i class="nav-icon fas fa-gavel" style="color:#dc3545"></i>
+          <p>الجزاءات</p>
+        </a>
+      </li>
+
       {{-- الرواتب والمؤثرات --}}
       @php
         $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*');

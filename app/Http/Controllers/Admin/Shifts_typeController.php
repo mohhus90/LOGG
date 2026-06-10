@@ -34,21 +34,16 @@ class Shifts_typeController extends Controller
     {
         DB::beginTransaction();
         $request->validate([
-            'type'=>'required',
             'from_time'=>'required',
             'to_time'=>'required',
-          
-
         ],[
-            'type.required'=>'يجب ادخال نوع الشيفت',
             'from_time.required'=>'يجب ادخال بداية الشيفت',
-            'to_time.required'=>'يجب ادخال نهاية الشيفت'
-            
+            'to_time.required'=>'يجب ادخال نهاية الشيفت',
         ]);
 
         try{
             $datainsert['com_code']=auth()->guard('admin')->user()->com_code;
-            $datainsert['type']=$request->type;
+            $datainsert['type']=$request->from_time . ' - ' . $request->to_time;
             $datainsert['from_time']=$request->from_time;
             $datainsert['to_time']=$request->to_time;
             $checkIfExist=get_cols_where_row(new shifts_type(),array("id"),$datainsert);
@@ -96,25 +91,20 @@ class Shifts_typeController extends Controller
         
         DB::beginTransaction();
         $request->validate([
-            'type'=>'required',
             'from_time'=>'required',
             'to_time'=>'required',
-          
-
         ],[
-            'type.required'=>'يجب ادخال نوع الشيفت',
             'from_time.required'=>'يجب ادخال بداية الشيفت',
-            'to_time.required'=>'يجب ادخال نهاية الشيفت'
-            
+            'to_time.required'=>'يجب ادخال نهاية الشيفت',
         ]);
 
         try{
             $data=Shifts_type::select('*')->where(['id'=>$id])->first();
             if(empty($data)){
-                return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
+                return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput();
             }
             $dataupdate['com_code']=auth()->guard('admin')->user()->com_code;
-            $dataupdate['type']=$request->type;
+            $dataupdate['type']=$request->from_time . ' - ' . $request->to_time;
             $dataupdate['from_time']=$request->from_time;
             $dataupdate['to_time']=$request->to_time;
             $checkIfExist=get_cols_where_row(new shifts_type(),array("id"),$dataupdate);
