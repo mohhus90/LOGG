@@ -36,6 +36,7 @@ use App\Http\Controllers\Employee\EmployeePortalController;
 use App\Http\Controllers\Admin\VacationsController;
 use App\Http\Controllers\Admin\OrgLevelsController;
 use App\Http\Controllers\Admin\MaintenanceController;
+use App\Http\Controllers\Admin\TaxController;
 
 define('paginate_counter', 20);
 
@@ -418,4 +419,27 @@ Route::middleware(['auth:admin', 'admin.permission:vacations_balance,can_delete'
     Route::delete('vacations/{empId}/{year}', [VacationsController::class, 'deleteBalance'])->name('vacations.delete_balance');
     // fallback for browsers that don't support DELETE
     Route::post('vacations/{empId}/{year}/delete', [VacationsController::class, 'deleteBalance'])->name('vacations.delete_balance_post');
+});
+
+// ─────────────────────────────────────────────
+//  الضرائب والفواتير الإلكترونية (ETA)
+// ─────────────────────────────────────────────
+Route::middleware(['auth:admin', 'admin.permission:tax,can_read'])->group(function () {
+    Route::get('tax',                        [TaxController::class, 'index'])->name('tax.index');
+    Route::get('tax/invoices',               [TaxController::class, 'invoices'])->name('tax.invoices');
+    Route::get('tax/invoices/{id}',          [TaxController::class, 'show'])->name('tax.show');
+    Route::get('tax/vat-report',             [TaxController::class, 'vatReport'])->name('tax.vat_report');
+    Route::get('tax/export',                 [TaxController::class, 'export'])->name('tax.export');
+    Route::get('tax/sync',                   [TaxController::class, 'syncForm'])->name('tax.sync.form');
+});
+Route::middleware(['auth:admin', 'admin.permission:tax,can_create'])->group(function () {
+    Route::post('tax/sync',                  [TaxController::class, 'sync'])->name('tax.sync');
+});
+Route::middleware(['auth:admin', 'admin.permission:tax,can_update'])->group(function () {
+    Route::get('tax/credentials',            [TaxController::class, 'credentials'])->name('tax.credentials');
+    Route::post('tax/credentials',           [TaxController::class, 'saveCredentials'])->name('tax.credentials.save');
+    Route::post('tax/credentials/test',      [TaxController::class, 'testConnection'])->name('tax.test_connection');
+    Route::post('tax/invoices/{id}/post',    [TaxController::class, 'postInvoice'])->name('tax.post');
+    Route::post('tax/invoices/{id}/unpost',  [TaxController::class, 'unpostInvoice'])->name('tax.unpost');
+    Route::post('tax/invoices/post-bulk',    [TaxController::class, 'postBulk'])->name('tax.post_bulk');
 });
