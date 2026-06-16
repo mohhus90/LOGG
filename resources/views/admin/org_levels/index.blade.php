@@ -1,22 +1,22 @@
 @extends('admin.layouts.admin')
-@section('title') الهيكل الوظيفي @endsection
-@section('start') الإعدادات @endsection
+@section('title') {{ __('admin.org_title') }} @endsection
+@section('start') {{ __('admin.settings_menu') }} @endsection
 @section('home')
-    <a href="{{ route('org_levels.index') }}">الهيكل الوظيفي</a>
+    <a href="{{ route('org_levels.index') }}">{{ __('admin.org_title') }}</a>
 @endsection
-@section('startpage') عرض @endsection
+@section('startpage') {{ __('admin.view') }} @endsection
 
 @section('content')
 <div class="col-12">
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title mb-0">الهيكل الوظيفي للشركة</h3>
+            <h3 class="card-title mb-0">{{ __('admin.org_subtitle') }}</h3>
             <div>
                 <a href="{{ route('org_levels.templates') }}" class="btn btn-warning btn-sm">
-                    <i class="fas fa-layer-group"></i> نماذج جاهزة
+                    <i class="fas fa-layer-group"></i> {{ __('admin.org_load_template') }}
                 </a>
                 <a href="{{ route('org_levels.create') }}" class="btn btn-success btn-sm">
-                    <i class="fas fa-plus"></i> إضافة مستوى
+                    <i class="fas fa-plus"></i> {{ __('admin.org_add_level') }}
                 </a>
             </div>
         </div>
@@ -32,38 +32,36 @@
             @if($levels->isEmpty())
                 <div class="text-center py-5">
                     <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
-                    <h4 class="text-muted">لم يتم إنشاء هيكل وظيفي بعد</h4>
-                    <p class="text-muted">يمكنك البدء بتحميل نموذج جاهز أو إنشاء هيكل مخصص</p>
+                    <h4 class="text-muted">{{ __('admin.org_no_structure') }}</h4>
+                    <p class="text-muted">{{ __('admin.org_no_structure_hint') }}</p>
                     <a href="{{ route('org_levels.templates') }}" class="btn btn-warning me-2">
-                        <i class="fas fa-layer-group"></i> اختر نموذجاً جاهزاً
+                        <i class="fas fa-layer-group"></i> {{ __('admin.org_choose_template') }}
                     </a>
                     <a href="{{ route('org_levels.create') }}" class="btn btn-success">
-                        <i class="fas fa-plus"></i> إنشاء هيكل مخصص
+                        <i class="fas fa-plus"></i> {{ __('admin.org_custom_structure') }}
                     </a>
                 </div>
             @else
-                {{-- عرض شجري --}}
                 <div class="org-tree mb-4">
                     @include('admin.org_levels._tree_node', ['nodes' => $tree, 'depth' => 0])
                 </div>
 
-                {{-- جدول تفصيلي --}}
                 <hr>
-                <h5 class="mb-3">جدول تفصيلي بجميع المستويات</h5>
+                <h5 class="mb-3">{{ __('admin.org_level_table') }}</h5>
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover text-center">
                         <thead class="table-dark">
                             <tr>
                                 <th>#</th>
-                                <th>المستوى الوظيفي</th>
-                                <th>الاسم الإنجليزي</th>
-                                <th>الترتيب</th>
-                                <th>يتبع</th>
-                                <th>النوع</th>
-                                <th>عمولة بائع</th>
-                                <th>عمولة مدير</th>
-                                <th>الوظائف المرتبطة</th>
-                                <th>إجراء</th>
+                                <th>{{ __('admin.org_level_name') }}</th>
+                                <th>{{ __('admin.org_level_en_name') }}</th>
+                                <th>{{ __('admin.org_rank') }}</th>
+                                <th>{{ __('admin.org_parent') }}</th>
+                                <th>{{ __('admin.org_type') }}</th>
+                                <th>{{ __('admin.org_vendor_comm') }}</th>
+                                <th>{{ __('admin.org_manager_comm') }}</th>
+                                <th>{{ __('admin.org_linked_jobs') }}</th>
+                                <th>{{ __('admin.action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -98,7 +96,7 @@
                                     </a>
                                     <a href="{{ route('org_levels.delete', $level->id) }}"
                                        class="btn btn-sm btn-danger are_you_sure"
-                                       onclick="return confirm('هل أنت متأكد من الحذف؟')">
+                                       onclick="return confirm('{{ __('admin.confirm_delete') }}')">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                 </td>

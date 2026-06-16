@@ -1,29 +1,28 @@
 @extends('admin.layouts.admin')
 @section('title')
-الفروع
+{{ __('admin.branches_title') }}
 @endsection
 @section('start')
-    الضبط العام
+    {{ __('admin.settings_menu') }}
 @endsection
 @section('home')
-<a href="{{ route('branches.index') }}">الفروع</a>
-
+<a href="{{ route('branches.index') }}">{{ __('admin.branches_title') }}</a>
 @endsection
 @section('startpage')
-تعديل
+{{ __('admin.edit') }}
 @endsection
 
 @section('content')
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">تعديل فرع</h3>
+            <h3 class="card-title card_title_center">{{ __('admin.edit_branch') }}</h3>
         </div>
         <div class="card-body">
               <form method="POST" action="{{ route('branches.update',$data['id']) }}">
                 @csrf
                 <div class="form-group row">
-                  <label for="branch_name" class="col-sm-2 col-form-label "> اسم الفرع</label>
+                  <label for="branch_name" class="col-sm-2 col-form-label ">{{ __('admin.branch_name') }}</label>
                   <div class="col-sm-5">
                     <input type="text" class="form-control" name="branch_name" id="branch_name" value="{{ old('branch_name',$data['branch_name']) }}" >
                   </div>
@@ -32,7 +31,7 @@
                   @enderror
                 </div>
                 <div class="form-group row">
-                  <label for="address" class="col-sm-2 col-form-label ">عنوان الفرع</label>
+                  <label for="address" class="col-sm-2 col-form-label ">{{ __('admin.branch_address') }}</label>
                   <div class="col-sm-5">
                     <input type="text" class="form-control" name="address" id="address" value="{{ old('address',$data['address']) }}" >
                   </div>
@@ -41,31 +40,29 @@
                   @enderror
                 </div>
                 <div class="form-group row">
-                  <label for="phone" class="col-sm-2 col-form-label ">تليفون الفرع</label>
+                  <label for="phone" class="col-sm-2 col-form-label ">{{ __('admin.branch_phone') }}</label>
                   <div class="col-sm-5">
                     <input type="text" class="form-control" name="phone" id="phone" value="{{ old('phone',$data['phone']) }}" >
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="email" class="col-sm-2 col-form-label ">ايميل الفرع</label>
+                  <label for="email" class="col-sm-2 col-form-label ">{{ __('admin.branch_email') }}</label>
                   <div class="col-sm-5">
                     <input type="email" class="form-control" name="email" id="email" value="{{ old('email',$data['email']) }}" >
                   </div>
                 </div>
                 <div class="form-group row">
-                  <label for="active" class="col-sm-2 col-form-label ">حالة الفرع</label>
+                  <label for="active" class="col-sm-2 col-form-label ">{{ __('admin.branch_status') }}</label>
                   <div class="col-sm-5">
                     <input type="text" class="form-control" name="active" id="active" value="{{ old('active',$data['active']) }}" >
                   </div>
-                </div>  
-                <div class="text-center">
-                  <button type="submit" class="text-center btn btn-primary btn-lg col-2">تحديث</button>
-                  <a class="btn btn-warning btn-lg col-2" href="{{ route('branches.index') }}">الغاء</a>
                 </div>
-                
+                <div class="text-center">
+                  <button type="submit" class="text-center btn btn-primary btn-lg col-2">{{ __('admin.update') }}</button>
+                  <a class="btn btn-warning btn-lg col-2" href="{{ route('branches.index') }}">{{ __('admin.cancel') }}</a>
+                </div>
               </form>
         </div>
     </div>
 </div>
-   
 @endsection

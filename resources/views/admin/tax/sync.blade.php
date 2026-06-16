@@ -66,6 +66,21 @@
           </div>
         </div>
 
+        {{-- خيار سحب التفاصيل --}}
+        <div class="card card-body bg-light mb-3 p-3">
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="fetch_details" name="fetch_details" value="1"
+              {{ old('fetch_details') ? 'checked' : '' }}>
+            <label class="custom-control-label font-weight-bold" for="fetch_details">
+              سحب تفاصيل كل فاتورة (أصناف + ضرائب تفصيلية)
+            </label>
+          </div>
+          <small class="text-muted mt-1 d-block">
+            <i class="fas fa-exclamation-circle text-warning ml-1"></i>
+            سيستغرق وقتاً أطول — طلب API منفصل لكل فاتورة. الفواتير التي يفشل سحب تفاصيلها تُحفظ بدون أصناف.
+          </small>
+        </div>
+
         <div class="alert alert-warning">
           <i class="fas fa-exclamation-triangle ml-1"></i>
           الفواتير المرحّلة محاسبياً لن يتم تحديثها. الفواتير الجديدة ستُضاف تلقائياً.
@@ -73,7 +88,7 @@
 
         <div id="loadingMsg" class="text-center d-none py-3">
           <div class="spinner-border text-dark ml-2" role="status"></div>
-          جارٍ السحب من ETA... قد يستغرق بعض الوقت
+          <span id="loadingText">جارٍ السحب من ETA... قد يستغرق بعض الوقت</span>
         </div>
 
         <button type="submit" class="btn btn-dark" id="syncBtn">
@@ -91,6 +106,10 @@
 document.getElementById('syncForm').addEventListener('submit', function() {
     document.getElementById('syncBtn').disabled = true;
     document.getElementById('loadingMsg').classList.remove('d-none');
+    if (document.getElementById('fetch_details').checked) {
+        document.getElementById('loadingText').textContent =
+            'جارٍ السحب من ETA وتحميل التفاصيل... قد يستغرق عدة دقائق حسب عدد الفواتير';
+    }
 });
 </script>
 @endsection

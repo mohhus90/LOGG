@@ -1,45 +1,39 @@
 <!DOCTYPE html>
-<!--
-This is a starter template page. Use this page to start your new project from
-scratch. This page gets rid of all links and provides the needed markup only.
--->
-<html lang="en">
+<html lang="{{ app()->getLocale() }}" {{ app()->getLocale() === 'ar' ? 'dir="rtl"' : '' }}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
 
   <title>@yield('title')</title>
- 
+
   <!-- Font Awesome Icons -->
-          {{-- <link rel="stylesheet" href="{{ asset('assets/admin/dist/css/adminlte.min.css') }}"> --}}
   <link rel="stylesheet" href="{{ asset('assets/admin/plugins/fontawesome-free/css/all.min.css')}}">
   <!-- Theme style -->
   <link rel="stylesheet" href="{{ asset('assets/admin/dist/css/adminlte.min.css')}}">
- <!-- Ionicons -->
- <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+  <!-- Ionicons -->
+  <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
   <!-- DataTables -->
   <link rel="stylesheet" href="{{ asset('assets/admin/plugins/datatables-bs4/css/dataTables.bootstrap4.css')}}">
-  <!-- Theme style -->
-  <link rel="stylesheet" href="{{ asset('assets/admin/dist/css/adminlte.min.css')}}">
-                    <!-- Google Font: Source Sans Pro -->
-                    <!-- Google Font: Source Sans Pro -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
-  <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap_rtl-v4.2.1/bootstrap.min.css')}}">
-  <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap_rtl-v4.2.1/custom_rtl.css')}}">
-  <link rel="stylesheet" href="{{ asset('assets/admin/css/mycustomstyle.css')}}">
   <link rel="dns-prefetch" href="//fonts.bunny.net">
   <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
-   @yield('css')
 
-  <!-- Scripts -->
-    <!-- Custom Theme - no npm needed -->
+  @if(app()->getLocale() === 'ar')
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap_rtl-v4.2.1/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap_rtl-v4.2.1/custom_rtl.css')}}">
+  @endif
+
+  <link rel="stylesheet" href="{{ asset('assets/admin/css/mycustomstyle.css')}}">
   <link rel="stylesheet" href="{{ asset('assets/admin/css/logg-theme.css') }}">
   <!-- Select2 -->
   <link rel="stylesheet" href="{{ asset('assets/admin/plugins/select2/css/select2.min.css') }}">
+
+  @yield('css')
 </head>
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini {{ app()->getLocale() === 'ar' ? 'layout-rtl' : '' }}">
 <div class="wrapper">
 
   <!-- Navbar -->
@@ -70,31 +64,26 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <!-- /.sidebar -->
   </aside>
 
-  <!-- Content Wrapper. Contains page content -->
+  <!-- Content Wrapper -->
   @include('admin.includes.content')
   <!-- /.content-wrapper -->
 
   <!-- Control Sidebar -->
   <aside class="control-sidebar control-sidebar-dark">
-    <!-- Control sidebar content goes here -->
     <div class="p-3">
       <h5>Title</h5>
       <p>Sidebar content</p>
     </div>
   </aside>
-  <!-- /.control-sidebar -->
 
   <!-- Main Footer -->
   @include('admin.includes.footer')
 </div>
 <!-- ./wrapper -->
 
-<!-- REQUIRED SCRIPTS -->
-
 <!-- jQuery -->
 <script src="{{ asset('assets/admin/plugins/jquery/jquery.min.js')}}"></script>
 <!-- Bootstrap 4 -->
-
 <script src="{{ asset('assets/admin/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
 <!-- DataTables -->
 <script src="{{ asset('assets/admin/plugins/datatables/jquery.dataTables.js')}}"></script>
@@ -104,11 +93,13 @@ scratch. This page gets rid of all links and provides the needed markup only.
 <script src="{{ asset('assets/admin/js/general.js')}}"></script>
 <!-- Select2 -->
 <script src="{{ asset('assets/admin/plugins/select2/js/select2.full.min.js') }}"></script>
-<script src="{{ asset('assets/admin/plugins/select2/js/i18n/ar.js') }}"></script>
+@if(app()->getLocale() === 'ar')
+  <script src="{{ asset('assets/admin/plugins/select2/js/i18n/ar.js') }}"></script>
+@endif
 <script>
 $(document).ready(function () {
   $('select.select2').select2({
-    language: 'ar',
+    language: '{{ app()->getLocale() }}',
     width: '100%'
   });
 });

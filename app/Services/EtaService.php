@@ -309,16 +309,41 @@ class EtaService
     public function fetchInvoiceDetails(EtaInvoice $invoice): bool
     {
         try {
-            $token    = $this->getAccessToken();
-            $response = $this->http->get($this->apiBase() . '/documents/' . $invoice->uuid, [
-                'headers' => ['Authorization' => 'Bearer ' . $token],
-            ]);
+            $token   = $this->getAccessToken();
+            $headers = ['Authorization' => 'Bearer ' . $token];
+            $base    = $this->apiBase();
+            $uuid    = $invoice->uuid;
 
-            $doc = json_decode((string) $response->getBody(), true);
+            // جرّب /details أولاً (Dev API)، ثم /raw، ثم بدون suffix (Portal API)
+            $tried = [];
+            $doc   = null;
+            foreach (['/documents/' . $uuid . '/details', '/documents/' . $uuid . '/raw', '/documents/' . $uuid] as $path) {
+                try {
+                    $response = $this->http->get($base . $path, ['headers' => $headers]);
+                    $body     = json_decode((string) $response->getBody(), true);
+                    // تأكد أن الرد يحتوي بيانات الفاتورة
+                    if (!empty($body['invoiceLines']) || !empty($body['issuer'])) {
+                        $doc = $body;
+                        break;
+                    }
+                    $tried[] = $path . ' (استجاب لكن بدون invoiceLines)';
+                } catch (\GuzzleHttp\Exception\ClientException $ex) {
+                    $tried[] = $path . ' → ' . $ex->getResponse()->getStatusCode();
+                    continue;
+                }
+            }
+
+            if ($doc === null) {
+                throw new \RuntimeException('لم يُعثر على تفاصيل الفاتورة. Endpoints جُرِّبت: ' . implode(' | ', $tried));
+            }
 
             $invoice->items()->delete();
             foreach ($doc['invoiceLines'] ?? [] as $line) {
-                $taxAmount = collect($line['taxableItems'] ?? [])->sum('amount');
+                $taxableItems = $line['taxableItems'] ?? [];
+                $taxAmount    = collect($taxableItems)->sum('amount');
+                // أخذ نسبة أول ضريبة موجودة (T1/T2) وإن لم توجد نستخدم 0
+                $firstTax     = collect($taxableItems)->first(fn($t) => in_array($t['taxType'] ?? '', ['T1','T2']));
+                $vatRate      = $firstTax['rate'] ?? (count($taxableItems) ? ($taxableItems[0]['rate'] ?? 0) : 0);
 
                 $invoice->items()->create([
                     'item_code'      => $line['itemCode']               ?? null,
@@ -329,9 +354,9 @@ class EtaService
                     'total'          => $line['salesTotal']             ?? 0,
                     'discount'       => $line['discount']['amount']     ?? 0,
                     'net_total'      => $line['netTotal']               ?? 0,
-                    'vat_rate'       => 14,
+                    'vat_rate'       => $vatRate,
                     'vat_amount'     => $taxAmount,
-                    'total_with_vat' => ($line['netTotal'] ?? 0) + $taxAmount,
+                    'total_with_vat' => $line['total']                  ?? (($line['netTotal'] ?? 0) + $taxAmount),
                 ]);
             }
 
@@ -340,7 +365,7 @@ class EtaService
 
         } catch (\Exception $e) {
             Log::error('ETA fetch details error: ' . $e->getMessage());
-            return false;
+            throw $e;
         }
     }
 

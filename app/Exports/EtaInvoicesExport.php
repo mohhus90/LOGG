@@ -38,11 +38,14 @@ class EtaInvoicesExport implements FromQuery, WithHeadings, WithMapping, ShouldA
     {
         return [
             'م', 'UUID', 'الرقم الداخلي', 'النوع',
-            'المُصدر', 'الرقم الضريبي للمُصدر',
-            'المستلم', 'الرقم الضريبي للمستلم',
+            'البائع', 'الرقم الضريبي للبائع',
+            'المشتري', 'الرقم الضريبي للمشتري',
             'تاريخ الإصدار',
-            'إجمالي المبيعات', 'إجمالي الخصم', 'صافي المبلغ',
-            'قيمة الضريبة', 'الإجمالي',
+            'إجمالي المبيعات (ج.م)', 'إجمالي الخصم (ج.م)', 'صافي المبلغ (ج.م)',
+            'ضريبة القيمة المضافة T1 (ج.م)',
+            'ضريبة جدولية T2 (ج.م)',
+            'خصم تحت حساب الضريبة T4 (ج.م)',
+            'إجمالي المبلغ (ج.م)',
             'الحالة', 'مرحّل محاسبياً',
         ];
     }
@@ -60,6 +63,23 @@ class EtaInvoicesExport implements FromQuery, WithHeadings, WithMapping, ShouldA
             'Rejected'  => 'مرفوضة',
         ];
 
+        // استخراج تفاصيل الضرائب من raw_data إن وُجدت
+        $raw       = $row->raw_data ?? [];
+        $taxTotals = $raw['taxTotals'] ?? [];
+        $t1 = $t2 = $t4 = 0.0;
+        foreach ($taxTotals as $tax) {
+            $type = $tax['taxType'] ?? '';
+            $amt  = (float)($tax['amount'] ?? 0);
+            if ($type === 'T1')                          $t1 += $amt;
+            elseif ($type === 'T2')                      $t2 += $amt;
+            elseif (in_array($type, ['T4','W1','W11']))  $t4 += abs($amt);
+        }
+
+        // fallback: لو taxTotals فارغة استخدم total_vat كـ T1
+        if ($t1 == 0 && $t2 == 0 && $t4 == 0 && $row->total_vat != 0) {
+            $t1 = (float) $row->total_vat;
+        }
+
         return [
             $i,
             $row->uuid,
@@ -73,7 +93,9 @@ class EtaInvoicesExport implements FromQuery, WithHeadings, WithMapping, ShouldA
             number_format($row->total_sales,    2),
             number_format($row->total_discount, 2),
             number_format($row->net_amount,     2),
-            number_format($row->total_vat,      2),
+            number_format($t1, 2),
+            number_format($t2, 2),
+            number_format($t4, 2),
             number_format($row->total_amount,   2),
             $statuses[$row->status] ?? $row->status,
             $row->is_posted ? 'نعم' : 'لا',
@@ -88,7 +110,8 @@ class EtaInvoicesExport implements FromQuery, WithHeadings, WithMapping, ShouldA
 
     public function styles(Worksheet $sheet): array
     {
-        $sheet->getStyle('A1:P1')->applyFromArray([
+        // R = عمود 18 (عدد الأعمدة الجديد)
+        $sheet->getStyle('A1:R1')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill'      => ['fillType' => 'solid', 'startColor' => ['rgb' => '1a6b3c']],
             'alignment' => ['horizontal' => 'center'],

@@ -11,16 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('employee_sanctions', function (Blueprint $table) {
-            // النوع 5: خصم باليوم — يُخزَّن عدد الأيام كرقم عشري (مثل 0.5 = نصف يوم)
-            $table->decimal('deduct_days', 8, 2)->default(0)->after('suspension_days');
-        });
+        if (Schema::hasTable('employee_sanctions') && !Schema::hasColumn('employee_sanctions', 'deduct_days')) {
+            Schema::table('employee_sanctions', function (Blueprint $table) {
+                $table->decimal('deduct_days', 8, 2)->default(0)->after('suspension_days');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('employee_sanctions', function (Blueprint $table) {
-            $table->dropColumn('deduct_days');
-        });
+        if (Schema::hasTable('employee_sanctions') && Schema::hasColumn('employee_sanctions', 'deduct_days')) {
+            Schema::table('employee_sanctions', function (Blueprint $table) {
+                $table->dropColumn('deduct_days');
+            });
+        }
     }
 };

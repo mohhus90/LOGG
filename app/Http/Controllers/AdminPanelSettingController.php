@@ -182,9 +182,6 @@ class AdminPanelSettingController extends Controller
                 'early_departure_halfday_minutes'       => (int)($request->early_departure_halfday_minutes ?? 0),
                 'early_departure_fullday_minutes'       => (int)($request->early_departure_fullday_minutes ?? 0),
                 'early_departure_fullplushalf_minutes'  => (int)($request->early_departure_fullplushalf_minutes ?? 0),
-                // أوفرتايم ثابت
-                'overtime_calc_type'                    => (int)($request->overtime_calc_type ?? 1),
-                'max_monthly_overtime_hours'            => (float)($request->max_monthly_overtime_hours ?? 0),
             ];
 
             Admin_panel_setting::where('com_code', $this->getComCode())

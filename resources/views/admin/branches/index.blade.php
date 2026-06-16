@@ -1,42 +1,40 @@
 @extends('admin.layouts.admin')
 @section('title')
-الفروع
+{{ __('admin.branches_title') }}
 @endsection
 @section('start')
-الضبط العام
+{{ __('admin.settings_menu') }}
 @endsection
 @section('home')
-<a href="{{ route('branches.index') }}"> الفروع</a>
-
+<a href="{{ route('branches.index') }}"> {{ __('admin.branches_title') }}</a>
 @endsection
 @section('startpage')
-    عرض
+    {{ __('admin.view') }}
 @endsection
 
 @section('content')
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">بيانات الفروع
-              <a class="btn btn-success" href="{{ route('branches.create') }}">اضافة جديد</a>
+            <h3 class="card-title card_title_center">{{ __('admin.branches_data') }}
+              <a class="btn btn-success" href="{{ route('branches.create') }}">{{ __('admin.add_new') }}</a>
             </h3>
         </div>
         <div class="card-body">
             @if(@isset($data) and !@empty($data) )
             <table class="table table-bordered">
                 <thead>
-                  <th scope="col">كود الفرع</th>
-                  <th scope="col">الاسم</th>
-                  <th scope="col">العنوان</th>
-                  <th scope="col">الهاتف</th>
-                  <th scope="col">الايميل</th>
-                  <th scope="col">الاضافة بواسطة</th>
-                  <th scope="col">تاريخ الاضافة </th>
-                  <th scope="col">التحديث بواسطة</th>
-                  <th scope="col">تاريخ التحديث</th>
-                  <th scope="col">حالة التفعيل</th>
-                  <th scope="col">اجراء</th>
-                  
+                  <th scope="col">{{ __('admin.branch_code') }}</th>
+                  <th scope="col">{{ __('admin.name') }}</th>
+                  <th scope="col">{{ __('admin.address') }}</th>
+                  <th scope="col">{{ __('admin.phone') }}</th>
+                  <th scope="col">{{ __('admin.email') }}</th>
+                  <th scope="col">{{ __('admin.created_by') }}</th>
+                  <th scope="col">{{ __('admin.created_at') }}</th>
+                  <th scope="col">{{ __('admin.updated_by') }}</th>
+                  <th scope="col">{{ __('admin.updated_at') }}</th>
+                  <th scope="col">{{ __('admin.status') }}</th>
+                  <th scope="col">{{ __('admin.action') }}</th>
                 </thead>
                 <tbody>
                   @foreach ($data as $info)
@@ -46,44 +44,43 @@
                       <td> {{ $info->address }}</td>
                       <td> {{ $info->phone }}</td>
                       <td> {{ $info->email }}</td>
-                      <td> {{ $info->added->name }}</td>
+                      <td> {{ $info->added?->name ?? __('admin.unknown') }}</td>
                       <td> {{ $info->created_at }}</td>
                       <td>
                         @if ($info->updated_by>0)
-                        {{ $info->updatedby->name }}
+                        {{ $info->updatedby?->name ?? __('admin.unknown') }}
                         @else
-                          لا يوجد
+                          {{ __('admin.unknown') }}
                         @endif
                       </td>
-                      <td> 
+                      <td>
                         @if(@isset($info->updated_at) and !@empty($info->updated_at) )
                         {{ $info->updated_at }}
                         @else
-                          لا يوجد
+                          —
                         @endif
                       </td>
                       <td>
                         @if ($info->active==1)
-                           مفعل
+                           {{ __('admin.active') }}
                         @else
-                           غير مفعل
+                           {{ __('admin.inactive') }}
                         @endif
                       </td>
                       <td>
-                        <a href="{{ route('branches.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
-                        <a href="{{ route('branches.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
+                        <a href="{{ route('branches.edit',$info->id) }}" class="btn btn-sm btn-success">{{ __('admin.edit') }}</a>
+                        <a href="{{ route('branches.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">{{ __('admin.delete') }}</a>
                       </td>
-                    </tr>  
+                    </tr>
                   @endforeach
                 </tbody>
               </table>
               <br>
               {{ $data->links() }}
             @else
-            <h1>لا توجد بيانات للعرض</h1>
+            <h1>{{ __('admin.no_data') }}</h1>
             @endif
         </div>
     </div>
 </div>
-   
 @endsection

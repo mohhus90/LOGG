@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EtaCredential;
+use App\Models\EtaFreeZone;
 use App\Models\EtaInvoice;
 use App\Services\EtaService;
 use App\Exports\EtaInvoicesExport;
@@ -153,14 +154,40 @@ class TaxController extends Controller
                     ->with('items')
                     ->findOrFail($id);
 
-        // إذا لا توجد بنود نجلب التفاصيل من ETA
+        // إذا لا توجد بنود نحاول جلب التفاصيل تلقائياً من ETA
         if ($invoice->items->isEmpty() && $this->credential()) {
-            $service = new EtaService($this->credential());
-            $service->fetchInvoiceDetails($invoice);
-            $invoice->load('items');
+            try {
+                $service = new EtaService($this->credential());
+                $service->fetchInvoiceDetails($invoice);
+                $invoice->load('items');
+            } catch (\Exception) {
+                // نكمل عرض الصفحة بدون بنود إذا فشل الجلب التلقائي
+            }
         }
 
         return view('admin.tax.show', compact('invoice'));
+    }
+
+    // ─────────────────────────────────────────────
+    //  Fetch Invoice Details from ETA
+    // ─────────────────────────────────────────────
+
+    public function fetchDetails(int $id)
+    {
+        $invoice    = EtaInvoice::where('com_code', $this->comCode())->findOrFail($id);
+        $credential = $this->credential();
+
+        if (!$credential) {
+            return back()->with('error', 'بيانات الاعتماد غير موجودة — يرجى إعداد بيانات ETA أولاً');
+        }
+
+        try {
+            $service = new EtaService($credential);
+            $service->fetchInvoiceDetails($invoice);
+            return back()->with('success', 'تم سحب تفاصيل الفاتورة من ETA بنجاح');
+        } catch (\Exception $e) {
+            return back()->with('error', 'فشل سحب التفاصيل: ' . $e->getMessage());
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -265,10 +292,11 @@ class TaxController extends Controller
     public function sync(Request $request)
     {
         $request->validate([
-            'direction' => 'required|in:Sent,Received,Both',
-            'from'      => 'required|date',
-            'to'        => 'required|date|after_or_equal:from',
-            'date_type' => 'nullable|in:issue,submission',
+            'direction'     => 'required|in:Sent,Received,Both',
+            'from'          => 'required|date',
+            'to'            => 'required|date|after_or_equal:from',
+            'date_type'     => 'nullable|in:issue,submission',
+            'fetch_details' => 'nullable|boolean',
         ]);
 
         $credential = $this->credential();
@@ -276,43 +304,63 @@ class TaxController extends Controller
             return back()->with('error', 'بيانات الاعتماد غير موجودة');
         }
 
-        $service      = new EtaService($credential);
-        $allStats     = ['new' => 0, 'updated' => 0, 'errors' => 0, 'error_details' => []];
+        $service    = new EtaService($credential);
+        $allStats   = ['new' => 0, 'updated' => 0, 'errors' => 0, 'error_details' => []];
+        $directions = $request->direction === 'Both'
+            ? ['Sent', 'Received']
+            : [$request->direction];
 
         try {
-            $directions = $request->direction === 'Both'
-                ? ['Sent', 'Received']
-                : [$request->direction];
-
             foreach ($directions as $dir) {
                 $stats = $service->syncInvoices($dir, $request->from, $request->to, $request->date_type ?? 'issue');
-                $allStats['new']     += $stats['new'];
-                $allStats['updated'] += $stats['updated'];
-                $allStats['errors']  += $stats['errors'];
+                $allStats['new']          += $stats['new'];
+                $allStats['updated']      += $stats['updated'];
+                $allStats['errors']       += $stats['errors'];
                 $allStats['error_details'] = array_merge(
                     $allStats['error_details'],
                     $stats['error_details'] ?? []
                 );
             }
-
-            if ($allStats['errors'] === 0) {
-                $msg = "تم السحب بنجاح: {$allStats['new']} جديدة، {$allStats['updated']} محدّثة";
-                return redirect()->route('tax.index')->with('success', $msg);
-            }
-
-            // نجاح جزئي أو فشل كامل
-            $errorText = implode("\n", $allStats['error_details']);
-            $msg = "تم السحب: {$allStats['new']} جديدة، {$allStats['updated']} محدّثة\n"
-                 . "الأخطاء ({$allStats['errors']}):\n{$errorText}";
-
-            return back()->with(
-                $allStats['new'] + $allStats['updated'] > 0 ? 'warning' : 'error',
-                $msg
-            );
-
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
+
+        // ── سحب التفاصيل (اختياري) ──────────────────────────────
+        $detailOk = $detailFail = 0;
+        if ($request->boolean('fetch_details') && ($allStats['new'] + $allStats['updated']) > 0) {
+            $invoices = EtaInvoice::where('com_code', $this->comCode())
+                ->whereIn('direction', $directions)
+                ->whereBetween('date_issued', [$request->from, $request->to . ' 23:59:59'])
+                ->get();
+
+            foreach ($invoices as $invoice) {
+                try {
+                    $service->fetchInvoiceDetails($invoice);
+                    $detailOk++;
+                } catch (\Exception $e) {
+                    $detailFail++;
+                }
+            }
+        }
+
+        // ── بناء رسالة النتيجة ───────────────────────────────────
+        $msg = "تم السحب: {$allStats['new']} جديدة، {$allStats['updated']} محدّثة";
+
+        if ($detailOk + $detailFail > 0) {
+            $msg .= " | التفاصيل: {$detailOk} ناجحة";
+            if ($detailFail > 0) {
+                $msg .= "، {$detailFail} فشلت (محفوظة بدون أصناف)";
+            }
+        }
+
+        if ($allStats['errors'] > 0) {
+            $errorText = implode("\n", $allStats['error_details']);
+            $msg .= "\nالأخطاء ({$allStats['errors']}):\n{$errorText}";
+            $type = $allStats['new'] + $allStats['updated'] > 0 ? 'warning' : 'error';
+            return back()->with($type, $msg);
+        }
+
+        return redirect()->route('tax.index')->with('success', $msg);
     }
 
     // ─────────────────────────────────────────────
@@ -418,5 +466,315 @@ class TaxController extends Controller
             new EtaInvoicesExport($filters, $this->comCode()),
             "فواتير_{$label}_" . now()->format('Y-m-d') . '.xlsx'
         );
+    }
+
+    // ─────────────────────────────────────────────
+    //  CSV Exports (منظومة الضرائب)
+    // ─────────────────────────────────────────────
+
+    public function exportCsvForm()
+    {
+        return view('admin.tax.export_csv');
+    }
+
+    /** تصدير فواتير المبيعات بتنسيق منظومة الضرائب (sales-doc) */
+    public function exportSalesDoc(Request $request)
+    {
+        $request->validate(['from' => 'required|date', 'to' => 'required|date|after_or_equal:from']);
+
+        $invoices = EtaInvoice::where('com_code', $this->comCode())
+            ->where('direction', 'Sent')
+            ->where('status', 'Valid')
+            ->whereDate('date_issued', '>=', $request->from)
+            ->whereDate('date_issued', '<=', $request->to)
+            ->with('items')
+            ->orderBy('date_issued')
+            ->get();
+
+        // أرقام تسجيل عملاء المناطق الحرة من قاعدة البيانات
+        $freeZoneIds = EtaFreeZone::where('com_code', $this->comCode())
+            ->pluck('tax_id');
+
+        $rows = [];
+
+        // صفا الرأس: عربي + كود
+        $rows[] = [
+            'نوع المستند *','نوع الضريبة *','نوع سلع الجدول *','رقم الفاتورة *',
+            'اسم العميل *','رقم التسجيل الضريبي للعميل *','رقم الملف الضريبي للعميل',
+            'العنوان *','الرقم القومي / رقم جواز السفر','رقم الموبايل',
+            'تاريخ الفاتورة *','إسم المنتج *','كود المنتج',
+            'نوع البيان *','نوع السلعة *','وحدة قياس المنتج',
+            'سعر الوحدة *','فئة الضريبة *','كمية المنتج *',
+            'المبلغ الإجمالي *','قيمة الخصم','المبلغ الصافي *',
+            'قيمة الضريبة *','الإجمالي *',
+        ];
+        $rows[] = [
+            'DOC_TYP_S','TAX_TYP','TYP_SCH','INVNUM',
+            'CUST_NAME','CUST_REG_NO','CUST_FILE_NO',
+            'ADDRESS','ID','PHONE',
+            'DOC_TIN_NUM','PROD_NAME','PROD_CODE',
+            'STAT_TYPE_S','COMM_TYPE_S','PMU',
+            'UNITP','TAX_CAT','QOP',
+            'TAMMOUNT','DISC','NET_AMM',
+            'TAX_VAL','TOTAL',
+        ];
+
+        foreach ($invoices as $invoice) {
+            $raw      = $invoice->raw_data ?? [];
+            $receiver = $raw['receiver'] ?? [];
+
+            // نوع المستند والسلعة والبيان
+            $addr      = $receiver['address'] ?? [];
+            $country   = strtoupper($addr['country'] ?? 'EG');
+            $recType   = strtoupper($receiver['type'] ?? 'B');
+
+            // أجنبي: دولة ≠ EG أو نوع F
+            $isForeign  = ($country !== 'EG' || in_array($recType, ['F', 'FOREIGN']));
+            // منطقة حرة: نوع FZ أو العنوان يحتوي "حر" أو رقم تسجيل مسجّل في قاعدة البيانات
+            $addrText   = implode(' ', array_values($addr));
+            $isFreeZone = !$isForeign && (
+                in_array($recType, ['FZ', 'FREEZONE', 'FREE_ZONE']) ||
+                $freeZoneIds->contains($invoice->receiver_id ?? '') ||
+                (bool) preg_match('/حر[هة]/u', $addrText)
+            );
+
+            $docType  = $isForeign ? 2 : 1;
+            $statType = $isForeign ? 5 : 4;  // STAT_TYPE_S: 5=تصدير، 4=خدمة محلية
+            $commType = $isFreeZone ? 2 : 1;  // COMM_TYPE_S: 2=منطقة حرة، 1=محلي/تصدير
+
+            // بناء العنوان
+            $address = trim(implode(' ', array_filter([
+                $addr['buildingNumber'] ?? null,
+                $addr['street'] ?? null,
+                $addr['regionCity'] ?? null,
+                $addr['governate'] ?? null,
+                $country !== 'EG' ? $country : null,
+            ])));
+            if (!$address) $address = $invoice->receiver_name ?? '';
+
+            // تصحيح العناوين الثابتة لعملاء بعينهم
+            $addressOverrides = [
+                '200029665' => '49 0 / 49 شياخه الفواله قسم عابدين قصر النيل قسم عابدين القاهرة',
+            ];
+            if (isset($addressOverrides[$invoice->receiver_id ?? ''])) {
+                $address = $addressOverrides[$invoice->receiver_id];
+            }
+
+            $date       = $invoice->date_issued?->format('d.m.Y') ?? '';
+            $fileNum    = $receiver['taxpayerFileNum'] ?? '';
+            $invNum     = $invoice->internal_id ?? $invoice->id;
+
+            if ($invoice->items->isNotEmpty()) {
+                // هل أي صنف يحمل ضريبة مدمجة في total_with_vat؟
+                $anyItemHasVat = $invoice->items->contains(
+                    fn($i) => ((float)$i->total_with_vat - (float)$i->net_total) > 0.005
+                );
+
+                // احتياطي لو لا يوجد أي صنف بضريبة سطرية — نشتق النسبة من taxTotals
+                $invT1Rate = 0.0;
+                if (!$anyItemHasVat) {
+                    $t1Amt = 0.0;
+                    foreach (($raw['taxTotals'] ?? []) as $tax) {
+                        if (($tax['taxType'] ?? '') === 'T1') {
+                            $t1Amt     = abs((float)($tax['amount'] ?? 0));
+                            $invT1Rate = (float)($tax['rate'] ?? 0);
+                            break;
+                        }
+                    }
+                    if ($invT1Rate == 0) {
+                        $fallbackAmt = $t1Amt > 0 ? $t1Amt : (float)$invoice->total_vat;
+                        $invNet      = (float)$invoice->net_amount;
+                        if ($invNet > 0 && $fallbackAmt > 0) {
+                            $invT1Rate = round($fallbackAmt / $invNet * 100);
+                        }
+                    }
+                }
+
+                foreach ($invoice->items as $item) {
+                    $netAmt       = (float)$item->net_total;
+                    $totalWithVat = (float)$item->total_with_vat;
+
+                    // الضريبة الفعلية لهذا السطر = الفرق بين الإجمالي والصافي
+                    $t1Line = max(0.0, $totalWithVat - $netAmt);
+
+                    if ($t1Line > 0.005) {
+                        // ضريبة سطرية متاحة من ETA line['total']
+                        $vatAmt  = round($t1Line, 4);
+                        $vatRate = $netAmt > 0 ? (int)round($vatAmt / $netAmt * 100) : 0;
+                    } elseif (!$anyItemHasVat && $invT1Rate > 0) {
+                        // جميع الأصناف بدون ضريبة سطرية — توزيع نسبي من إجمالي الفاتورة
+                        $vatRate = (int)$invT1Rate;
+                        $vatAmt  = round($netAmt * $vatRate / 100, 4);
+                    } else {
+                        // هذا الصنف معفى (أصناف أخرى لها ضريبة لكن هذا لا)
+                        $vatRate = 0;
+                        $vatAmt  = 0.0;
+                    }
+
+                    $taxCat = $vatRate > 0 ? $vatRate : 0; // 0=معفى
+                    $disc   = (float)$item->discount;
+
+                    $rows[] = [
+                        $docType,
+                        1,                              // TAX_TYP = VAT دائماً
+                        0,                              // TYP_SCH
+                        $invNum,
+                        $invoice->receiver_name ?? '',
+                        $invoice->receiver_id   ?? '',
+                        $fileNum,
+                        $address,
+                        '',                             // ID (رقم قومي)
+                        '',                             // PHONE
+                        $date,
+                        'خدمة',
+                        '',
+                        $statType,                      // STAT_TYPE_S: 4=محلي، 5=تصدير
+                        $commType,
+                        '',
+                        $this->fmt($item->unit_price),
+                        $taxCat,
+                        $this->fmt($item->quantity, 4),
+                        $this->fmt($item->total),
+                        $disc > 0 ? $this->fmt($disc) : '',
+                        $this->fmt($netAmt),
+                        $this->fmt($vatAmt),
+                        $this->fmt($totalWithVat),
+                    ];
+                }
+            } else {
+                // لا توجد أصناف — نستخدم إجماليات الفاتورة
+                $netAmt  = (float)$invoice->net_amount;
+                $vatAmt  = (float)$invoice->total_vat;
+                $total   = (float)$invoice->total_amount;
+                $sales   = (float)$invoice->total_sales;
+                $disc    = (float)$invoice->total_discount;
+                $vatRate = $netAmt > 0 ? round(($vatAmt / $netAmt) * 100) : 0;
+                $taxCat  = $vatRate > 0 ? (int)$vatRate : 0; // 0=معفى
+
+                $rows[] = [
+                    $docType, 1, 0, $invNum,
+                    $invoice->receiver_name ?? '',
+                    $invoice->receiver_id   ?? '',
+                    $fileNum, $address, '', '', $date,
+                    'خدمة', '',
+                    $statType, $commType, '',
+                    $this->fmt($netAmt),    // UNITP = سعر الوحدة الصافي
+                    $taxCat,
+                    1,                      // QOP = 1 وحدة
+                    $this->fmt($sales),     // TAMMOUNT
+                    $disc > 0 ? $this->fmt($disc) : '',
+                    $this->fmt($netAmt),    // NET_AMM
+                    $this->fmt($vatAmt),    // TAX_VAL
+                    $this->fmt($total),     // TOTAL
+                ];
+            }
+        }
+
+        $filename = 'sales_doc_' . $request->from . '_' . $request->to . '.csv';
+        return $this->streamCsv($filename, $rows);
+    }
+
+    /** تصدير نموذج 41 (خصم تحت حساب الضريبة) */
+    public function exportForm41(Request $request)
+    {
+        $request->validate(['from' => 'required|date', 'to' => 'required|date|after_or_equal:from']);
+
+        $invoices = EtaInvoice::where('com_code', $this->comCode())
+            ->where('direction', 'Received')
+            ->where('status', 'Valid')
+            ->whereDate('date_issued', '>=', $request->from)
+            ->whereDate('date_issued', '<=', $request->to)
+            ->orderBy('date_issued')
+            ->get();
+
+        $rows = [];
+
+        // صف رأس عربي واحد فقط
+        $rows[] = [
+            'مسلسل','رقم التسجيل الضريبي','الرقم القومي','اسم الممول',
+            'العنوان','اسم المأمورية','كود المأمورية',
+            'تاريخ التعامل','طبيعة التعامل','القيمة الإجمالية للتعامل',
+            'نوع الخصم','تاريخ التعامل للمبلغ المخصوم',
+            'القيمة الصافية للتعامل','نسبة الخصم','المحصل لحساب الضريبة',
+        ];
+
+        foreach ($invoices as $invoice) {
+            $raw    = $invoice->raw_data ?? [];
+            $issuer = $raw['issuer'] ?? [];
+
+            // استخراج T4 (خصم تحت حساب الضريبة) من taxTotals
+            $taxTotals = $raw['taxTotals'] ?? [];
+            $whtAmount = 0.0;
+            $whtRate   = 0.0;
+            foreach ($taxTotals as $tax) {
+                if (in_array($tax['taxType'] ?? '', ['T4', 'W1', 'W11'])) {
+                    $whtAmount += abs((float)($tax['amount'] ?? 0));
+                    $whtRate   += (float)($tax['rate']   ?? 0);
+                }
+            }
+
+            // DED_TYPE: 3=3%, 4=1%, 5=0.5% (أو افتراضي 5 للخدمات)
+            $dedType = 5;
+            if ($whtRate >= 3)     $dedType = 3;
+            elseif ($whtRate >= 1) $dedType = 4;
+
+            // TRNS_TYP: 4=خدمات (افتراضي للخدمات المهنية)
+            $trnsTyp = 4;
+
+            // بناء العنوان
+            $addr    = $issuer['address'] ?? [];
+            $address = trim(implode(' ', array_filter([
+                $addr['buildingNumber'] ?? null,
+                $addr['street'] ?? null,
+                $addr['regionCity'] ?? null,
+                $addr['governate'] ?? null,
+            ])));
+
+            $date    = $invoice->date_issued?->format('d.m.Y') ?? '';
+            $trnsVal = $this->fmt($invoice->net_amount ?? $invoice->total_sales ?? 0);
+
+            $rows[] = [
+                '',                             // SERIAL (فارغ)
+                $invoice->issuer_id   ?? '',    // TAX_REGI_NUM
+                '',                             // NATI_ID (رقم قومي — للأفراد فقط)
+                $invoice->issuer_name ?? '',    // TAXPAYEY_NAM
+                $address,                       // TAXPAY_ADDR
+                '',                             // TAX_OFF
+                '',                             // COD_OFF
+                $date,                          // TRNS_DAT
+                $trnsTyp,                       // TRNS_TYP
+                $trnsVal,                       // TRNS_VAL
+                $dedType,                       // DED_TYPE
+                $date,                          // DED_AMNT (نفس التاريخ)
+                '',                             // TRNS_NET_VAL
+                '',                             // DED_PRCT
+                '',                             // WTHLD_AMT
+            ];
+        }
+
+        $filename = 'form41_' . $request->from . '_' . $request->to . '.csv';
+        return $this->streamCsv($filename, $rows);
+    }
+
+    /** تنسيق رقم عشري بدون أصفار زائدة غير ضرورية */
+    private function fmt(float|string $val, int $dec = 2): string
+    {
+        return number_format((float)$val, $dec, '.', '');
+    }
+
+    /** إرجاع CSV كـ StreamedResponse بـ UTF-8 BOM */
+    private function streamCsv(string $filename, array $rows)
+    {
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM
+            foreach ($rows as $row) {
+                fputcsv($out, $row, ',', '"', '\\');
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }

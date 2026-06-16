@@ -37,6 +37,8 @@ use App\Http\Controllers\Admin\VacationsController;
 use App\Http\Controllers\Admin\OrgLevelsController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\TaxController;
+use App\Http\Controllers\Admin\EtaFreeZoneController;
+use App\Http\Controllers\Admin\ClientsController;
 
 define('paginate_counter', 20);
 
@@ -69,6 +71,25 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     Route::middleware(['auth:admin', 'admin.permission:general_settings,can_update'])->group(function () {
         Route::post('generalsetting/update', [AdminPanelSettingController::class, 'update'])->name('generalsetting.update');
     });
+    // ─────────────────────────────────────────────
+    //  العملاء — clients
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin', 'admin.permission:branches,can_read'])->group(function () {
+        Route::get('clients', [ClientsController::class, 'index'])->name('clients.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:branches,can_create'])->group(function () {
+        Route::get('clients/create',           [ClientsController::class, 'create'])->name('clients.create');
+        Route::post('clients/store',           [ClientsController::class, 'store'])->name('clients.store');
+        Route::get('clients/{id}/import',      [ClientsController::class, 'importForm'])->name('clients.import.form');
+        Route::post('clients/{id}/import',     [ClientsController::class, 'importCsv'])->name('clients.import.csv');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:branches,can_update'])->group(function () {
+        Route::get('clients/{id}/edit',        [ClientsController::class, 'edit'])->name('clients.edit');
+        Route::post('clients/update/{id}',     [ClientsController::class, 'update'])->name('clients.update');
+    });
+    Route::get('clients/delete/{id}', [ClientsController::class, 'delete'])
+        ->name('clients.delete')->middleware(['auth:admin', 'admin.permission:branches,can_delete']);
+
     // ─────────────────────────────────────────────
     //  الفروع — branches
     // ─────────────────────────────────────────────
@@ -418,6 +439,36 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('maintenance/backup/delete',      [MaintenanceController::class, 'deleteBackup'])->name('maintenance.backup.delete');
         Route::post('maintenance/logs/clear',        [MaintenanceController::class, 'clearLogs'])->name('maintenance.logs.clear');
     });
+
+    // ─────────────────────────────────────────────
+    //  الضرائب والفواتير الإلكترونية (ETA)
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin', 'admin.permission:tax,can_read'])->group(function () {
+        Route::get('tax',                        [TaxController::class, 'index'])->name('tax.index');
+        Route::get('tax/invoices',               [TaxController::class, 'invoices'])->name('tax.invoices');
+        Route::get('tax/invoices/{id}',          [TaxController::class, 'show'])->name('tax.show');
+        Route::post('tax/invoices/{id}/fetch',   [TaxController::class, 'fetchDetails'])->name('tax.fetch_details');
+        Route::get('tax/vat-report',             [TaxController::class, 'vatReport'])->name('tax.vat_report');
+        Route::get('tax/export',                 [TaxController::class, 'export'])->name('tax.export');
+        Route::get('tax/export/sales-doc',       [TaxController::class, 'exportSalesDoc'])->name('tax.export.sales_doc');
+        Route::get('tax/export/form41',          [TaxController::class, 'exportForm41'])->name('tax.export.form41');
+        Route::get('tax/export/csv-form',        [TaxController::class, 'exportCsvForm'])->name('tax.export.csv_form');
+        Route::get('tax/sync',                   [TaxController::class, 'syncForm'])->name('tax.sync.form');
+        Route::get('tax/free-zones',             [EtaFreeZoneController::class, 'index'])->name('tax.free_zones.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:tax,can_create'])->group(function () {
+        Route::post('tax/sync',                  [TaxController::class, 'sync'])->name('tax.sync');
+        Route::post('tax/free-zones',            [EtaFreeZoneController::class, 'store'])->name('tax.free_zones.store');
+        Route::delete('tax/free-zones/{freeZone}', [EtaFreeZoneController::class, 'destroy'])->name('tax.free_zones.destroy');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:tax,can_update'])->group(function () {
+        Route::get('tax/credentials',            [TaxController::class, 'credentials'])->name('tax.credentials');
+        Route::post('tax/credentials',           [TaxController::class, 'saveCredentials'])->name('tax.credentials.save');
+        Route::post('tax/credentials/test',      [TaxController::class, 'testConnection'])->name('tax.test_connection');
+        Route::post('tax/invoices/{id}/post',    [TaxController::class, 'postInvoice'])->name('tax.post');
+        Route::post('tax/invoices/{id}/unpost',  [TaxController::class, 'unpostInvoice'])->name('tax.unpost');
+        Route::post('tax/invoices/post-bulk',    [TaxController::class, 'postBulk'])->name('tax.post_bulk');
+    });
 });
 
 // ─────────────────────────────────────────────
@@ -451,25 +502,3 @@ Route::middleware(['auth:admin', 'admin.permission:vacations_balance,can_delete'
     Route::post('vacations/{empId}/{year}/delete', [VacationsController::class, 'deleteBalance'])->name('vacations.delete_balance_post');
 });
 
-// ─────────────────────────────────────────────
-//  الضرائب والفواتير الإلكترونية (ETA)
-// ─────────────────────────────────────────────
-Route::middleware(['auth:admin', 'admin.permission:tax,can_read'])->group(function () {
-    Route::get('tax',                        [TaxController::class, 'index'])->name('tax.index');
-    Route::get('tax/invoices',               [TaxController::class, 'invoices'])->name('tax.invoices');
-    Route::get('tax/invoices/{id}',          [TaxController::class, 'show'])->name('tax.show');
-    Route::get('tax/vat-report',             [TaxController::class, 'vatReport'])->name('tax.vat_report');
-    Route::get('tax/export',                 [TaxController::class, 'export'])->name('tax.export');
-    Route::get('tax/sync',                   [TaxController::class, 'syncForm'])->name('tax.sync.form');
-});
-Route::middleware(['auth:admin', 'admin.permission:tax,can_create'])->group(function () {
-    Route::post('tax/sync',                  [TaxController::class, 'sync'])->name('tax.sync');
-});
-Route::middleware(['auth:admin', 'admin.permission:tax,can_update'])->group(function () {
-    Route::get('tax/credentials',            [TaxController::class, 'credentials'])->name('tax.credentials');
-    Route::post('tax/credentials',           [TaxController::class, 'saveCredentials'])->name('tax.credentials.save');
-    Route::post('tax/credentials/test',      [TaxController::class, 'testConnection'])->name('tax.test_connection');
-    Route::post('tax/invoices/{id}/post',    [TaxController::class, 'postInvoice'])->name('tax.post');
-    Route::post('tax/invoices/{id}/unpost',  [TaxController::class, 'unpostInvoice'])->name('tax.unpost');
-    Route::post('tax/invoices/post-bulk',    [TaxController::class, 'postBulk'])->name('tax.post_bulk');
-});

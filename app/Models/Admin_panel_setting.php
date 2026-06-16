@@ -60,9 +60,6 @@ class Admin_panel_setting extends Model
         'early_departure_halfday_minutes',
         'early_departure_fullday_minutes',
         'early_departure_fullplushalf_minutes',
-        // أوفرتايم ثابت
-        'overtime_calc_type',
-        'max_monthly_overtime_hours',
         'created_at',
         'updated_at',
     ];

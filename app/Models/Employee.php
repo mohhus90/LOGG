@@ -41,6 +41,11 @@ class Employee extends Model
         return $this->belongsTo(Branche::class, 'branches_id');
     }
 
+    public function client()
+    {
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+
     public function vacationBalance()
     {
         return $this->hasMany(EmployeeVacationBalance::class, 'employee_id');

@@ -74,8 +74,8 @@
       <div class="col-md-4 form-group">
         <label>شعار الشركة (Logo)</label>
         <div class="d-flex align-items-center">
-          @if($data->image && file_exists(storage_path('app/public/' . $data->image)))
-            <img src="{{ request()->getSchemeAndHttpHost() . request()->getBasePath() . '/public/storage/' . $data->image }}"
+          @if($data->image)
+            <img src="{{ asset('storage/' . $data->image) }}"
               alt="Logo" style="height:50px;margin-left:10px;border-radius:6px;border:1px solid #dee2e6;object-fit:contain;padding:2px">
           @endif
         </div>

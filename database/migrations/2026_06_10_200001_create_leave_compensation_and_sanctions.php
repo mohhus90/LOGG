@@ -57,6 +57,7 @@ return new class extends Migration
             $table->tinyInteger('type');
             $table->decimal('amount', 10, 2)->default(0); // للخصم المالي
             $table->integer('suspension_days')->default(0); // للإيقاف
+            $table->decimal('deduct_days', 8, 2)->default(0); // النوع 5: خصم باليوم
             $table->text('description')->nullable();
             $table->date('date');
             $table->unsignedBigInteger('attendance_id')->nullable(); // ربط بسجل حضور
