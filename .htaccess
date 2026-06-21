@@ -1,13 +1,1 @@
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-
-    # Redirect root to public
-    RewriteRule ^$ public/ [L]
-
-    # Serve assets/ directly without going through public/
-    RewriteCond %{REQUEST_FILENAME} -f
-    RewriteRule ^assets/ - [L]
-
-    # Route all other requests through public/
-    RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
-</IfModule>
+# Routing handled by Apache Alias directive in httpd-vhosts.conf

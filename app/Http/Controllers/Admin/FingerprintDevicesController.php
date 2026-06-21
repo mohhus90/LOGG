@@ -8,6 +8,7 @@ use App\Models\FingerprintDevice;
 use App\Models\FingerprintLog;
 use App\Models\Employee;
 use App\Models\Branche;
+use App\Models\Attendance;
 use App\Services\FingerprintService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -29,13 +30,17 @@ class FingerprintDevicesController extends Controller
         $devices = FingerprintDevice::where('com_code', $this->comCode())
             ->orderBy('device_name')->get();
 
-        // إحصائيات سريعة
         $totalLogs = FingerprintLog::where('com_code', $this->comCode())->count();
         $pendingLogs = FingerprintLog::where('com_code', $this->comCode())
             ->where('is_processed', 0)->count();
 
+        $employees = Employee::where('com_code', $this->comCode())
+            ->where('functional_status', 1)
+            ->orderBy('employee_name_A')
+            ->get(['id', 'employee_name_A', 'finger_id']);
+
         return view('admin.fingerprint_devices.index',
-            compact('devices', 'totalLogs', 'pendingLogs'));
+            compact('devices', 'totalLogs', 'pendingLogs', 'employees'));
     }
 
     // =========================================================
@@ -192,11 +197,13 @@ class FingerprintDevicesController extends Controller
 
         // 2. معالجة السجلات الخام → attendance
         $forceReprocess = $request->boolean('force_reprocess');
+        $employeeId     = $request->filled('employee_id') ? (int)$request->employee_id : null;
         $processResult  = $service->processLogs(
             $this->comCode(),
             $request->sync_date_from,
             $request->sync_date_to,
-            $forceReprocess
+            $forceReprocess,
+            $employeeId
         );
 
         if (!$processResult['success']) {
@@ -204,8 +211,17 @@ class FingerprintDevicesController extends Controller
                 ->with('error', 'خطأ في المعالجة: ' . $processResult['error']);
         }
 
-        $msg = "✅ {$device->device_name}: جُلب {$syncResult['count']} سجل. "
-             . "حضور: {$processResult['imported']}، بصمة ناقصة: {$processResult['missing']}، غياب: {$processResult['absent']}.";
+        $empLabel = $employeeId
+            ? (' — موظف: ' . (Employee::find($employeeId)?->employee_name_A ?? $employeeId))
+            : '';
+
+        if ($device->protocol === 'agent') {
+            $msg = "✅ {$device->device_name} (Agent){$empLabel}: معالجة السجلات المُرسلة من الفرع — "
+                 . "حضور: {$processResult['imported']}، بصمة ناقصة: {$processResult['missing']}، غياب: {$processResult['absent']}.";
+        } else {
+            $msg = "✅ {$device->device_name}{$empLabel}: جُلب {$syncResult['count']} سجل. "
+                 . "حضور: {$processResult['imported']}، بصمة ناقصة: {$processResult['missing']}، غياب: {$processResult['absent']}.";
+        }
 
         if (!empty($processResult['notFound'])) {
             $msg .= " ⚠️ Finger IDs غير معروفة: " . implode('، ', $processResult['notFound']);
@@ -226,12 +242,14 @@ class FingerprintDevicesController extends Controller
         ]);
 
         $forceReprocess = $request->boolean('force_reprocess');
+        $employeeId     = $request->filled('employee_id') ? (int)$request->employee_id : null;
         $service        = new FingerprintService();
         $result         = $service->processLogs(
             $this->comCode(),
             $request->process_date_from,
             $request->process_date_to,
-            $forceReprocess
+            $forceReprocess,
+            $employeeId
         );
 
         if (!$result['success']) {
@@ -239,7 +257,11 @@ class FingerprintDevicesController extends Controller
                 ->with('error', 'خطأ: ' . $result['error']);
         }
 
-        $msg = "✅ تمت المعالجة: حضور {$result['imported']}، بصمة ناقصة {$result['missing']}، غياب {$result['absent']}.";
+        $empLabel = $employeeId
+            ? (' — موظف: ' . (Employee::find($employeeId)?->employee_name_A ?? $employeeId))
+            : '';
+
+        $msg = "✅ تمت المعالجة{$empLabel}: حضور {$result['imported']}، بصمة ناقصة {$result['missing']}، غياب {$result['absent']}.";
         if (!empty($result['notFound'])) {
             $msg .= " ⚠️ IDs غير معروفة: " . implode('، ', $result['notFound']);
         }
@@ -266,18 +288,38 @@ class FingerprintDevicesController extends Controller
             $query->where('is_processed', $request->processed);
         }
 
+        // البحث بالاسم: نجد finger_ids المطابقة ثم نفلتر عليها
+        if ($request->filled('employee_name')) {
+            $matchedIds = Employee::where('com_code', $this->comCode())
+                ->where('employee_name_A', 'like', '%' . $request->employee_name . '%')
+                ->whereNotNull('finger_id')
+                ->pluck('finger_id');
+            $query->whereIn('finger_id', $matchedIds->isNotEmpty() ? $matchedIds : [0]);
+        }
+
         $logs = $query->orderByDesc('punch_time')->paginate(50);
 
-        // finger_id → اسم الموظف: يشمل الفرع الأساسي والفروع الإضافية للجهاز
-        $empQuery = Employee::where('com_code', $this->comCode());
-        if ($device->branches_id) {
-            $branchIds = array_values(array_unique(array_filter(array_merge(
-                [$device->branches_id],
-                is_array($device->extra_branch_ids) ? $device->extra_branch_ids : []
-            ))));
+        // الخريطة الأساسية: موظفو فرع الجهاز فقط (لتجنب تضارب نفس finger_id بين الفروع)
+        $branchIds = array_values(array_unique(array_filter(array_merge(
+            [$device->branches_id],
+            is_array($device->extra_branch_ids) ? $device->extra_branch_ids : []
+        ))));
+        $empQuery = Employee::where('com_code', $this->comCode())->whereNotNull('finger_id');
+        if (!empty($branchIds)) {
             $empQuery->whereIn('branches_id', $branchIds);
         }
         $employees = $empQuery->get()->keyBy('finger_id');
+
+        // Fallback: finger_ids في سجلات هذه الصفحة غير موجودة في فرع الجهاز
+        // (موظف من فرع آخر يبصم على هذا الجهاز — مثل محمد محمود)
+        $unmatchedIds = $logs->pluck('finger_id')->unique()
+            ->filter(fn($fid) => !$employees->has($fid));
+        if ($unmatchedIds->isNotEmpty()) {
+            Employee::where('com_code', $this->comCode())
+                ->whereIn('finger_id', $unmatchedIds)
+                ->get()
+                ->each(fn($emp) => $employees->put($emp->finger_id, $emp));
+        }
 
         return view('admin.fingerprint_devices.logs', compact('device', 'logs', 'employees'));
     }
@@ -314,14 +356,20 @@ class FingerprintDevicesController extends Controller
             }
         }
 
+        $employeeId    = $request->filled('employee_id') ? (int)$request->employee_id : null;
         $processResult = $service->processLogs(
             $this->comCode(),
             $request->sync_date_from,
             $request->sync_date_to,
-            $forceReprocess
+            $forceReprocess,
+            $employeeId
         );
 
-        $msg = "✅ تمت مزامنة {$devices->count()} جهاز. إجمالي السجلات: $totalLogs. "
+        $empLabel = $employeeId
+            ? (' — موظف: ' . (Employee::find($employeeId)?->employee_name_A ?? $employeeId))
+            : '';
+
+        $msg = "✅ تمت مزامنة {$devices->count()} جهاز{$empLabel}. إجمالي السجلات: $totalLogs. "
              . "حضور: {$processResult['imported']}، بصمة ناقصة: {$processResult['missing']}، غياب: {$processResult['absent']}.";
 
         if (!empty($errors)) {
@@ -341,6 +389,151 @@ class FingerprintDevicesController extends Controller
 
         return redirect()->route('fingerprint_devices.edit', $id)
             ->with('success', '✅ تم تجديد التوكن بنجاح — انسخه وحدّث ملف config.php في الفرع');
+    }
+
+    // =========================================================
+    //  VOID LOGS — تفريغ البصمة → تحويل الحضور إلى غياب حسب الفلتر
+    // =========================================================
+    public function voidLogs(Request $request, int $id)
+    {
+        $device = FingerprintDevice::where('com_code', $this->comCode())->findOrFail($id);
+
+        $query = FingerprintLog::where('device_id', $id);
+
+        if ($request->filled('log_date_from')) {
+            $query->whereDate('punch_time', '>=', $request->log_date_from);
+        }
+        if ($request->filled('log_date_to')) {
+            $query->whereDate('punch_time', '<=', $request->log_date_to);
+        }
+        if ($request->filled('processed')) {
+            $query->where('is_processed', $request->processed);
+        }
+        if ($request->filled('employee_name')) {
+            $matchedIds = Employee::where('com_code', $this->comCode())
+                ->where('employee_name_A', 'like', '%' . $request->employee_name . '%')
+                ->whereNotNull('finger_id')
+                ->pluck('finger_id');
+            $query->whereIn('finger_id', $matchedIds->isNotEmpty() ? $matchedIds : [0]);
+        }
+
+        $logs = $query->get();
+        if ($logs->isEmpty()) {
+            return redirect()->back()->with('error', 'لا توجد سجلات تطابق الفلتر المحدد.');
+        }
+
+        // موظفو الجهاز
+        $branchIds = array_values(array_unique(array_filter(array_merge(
+            [$device->branches_id],
+            is_array($device->extra_branch_ids) ? $device->extra_branch_ids : []
+        ))));
+        $empQuery = Employee::where('com_code', $this->comCode())->whereNotNull('finger_id');
+        if (!empty($branchIds)) {
+            $empQuery->whereIn('branches_id', $branchIds);
+        }
+        $empMap = $empQuery->get()->keyBy('finger_id');
+
+        // تجميع أزواج (employee_id → dates) فريدة + خريطة الموظفين حسب id
+        $pairs   = [];
+        $logIds  = [];
+        $empById = $empMap->keyBy('id');
+        foreach ($logs as $log) {
+            $emp = $empMap->get($log->finger_id);
+            if (!$emp) {
+                $logIds[] = $log->id;
+                continue;
+            }
+            $date = $log->punch_time->format('Y-m-d');
+            $pairs[$emp->id][$date] = true;
+            $logIds[] = $log->id;
+        }
+
+        $updatedBy = Auth::guard('admin')->id();
+        $voided    = 0;
+        $locked    = 0;
+        foreach ($pairs as $empId => $dates) {
+            $emp = $empById->get($empId);
+            foreach (array_keys($dates) as $date) {
+                $dayOfWeek   = Carbon::parse($date)->dayOfWeek;
+                $isWeeklyOff = $emp
+                               && $emp->weekly_off_day !== null
+                               && (int)$emp->weekly_off_day === $dayOfWeek;
+
+                // تجاهل السجلات المثبَّتة يدوياً
+                $existingAtt = Attendance::where('employee_id', $empId)
+                    ->where('attendance_date', $date)
+                    ->first();
+                if ($existingAtt && $existingAtt->is_manual_lock) { $locked++; continue; }
+
+                $updated = Attendance::where('employee_id', $empId)
+                    ->where('attendance_date', $date)
+                    ->update([
+                        'status'                    => $isWeeklyOff ? 6 : 2,
+                        'check_in_time'             => null,
+                        'check_out_time'            => null,
+                        'late_minutes'              => 0,
+                        'overtime_hours'            => 0,
+                        'overtime_amount'           => 0,
+                        'late_deduction'            => 0,
+                        'early_departure_minutes'   => 0,
+                        'early_departure_deduction' => 0,
+                        'early_departure_fraction'  => null,
+                        'missing_punch'             => null,
+                        'missing_punch_resolution'  => null,
+                        'missing_punch_hours'       => null,
+                        'permission_early_minutes'  => 0,
+                        'notes'                     => $isWeeklyOff ? 'إجازة أسبوعية - تفريغ بصمة' : 'تم تفريغ البصمة يدوياً',
+                        'updated_by'                => $updatedBy,
+                    ]);
+                if ($updated) $voided++;
+            }
+        }
+
+        // إعادة is_processed إلى 0 حتى تُعالَج من جديد عند المزامنة
+        if (!empty($logIds)) {
+            FingerprintLog::whereIn('id', $logIds)->update(['is_processed' => 0]);
+        }
+
+        $msg = "✅ تم تفريغ بصمة {$logs->count()} سجل — {$voided} يوم حضور حُوِّل إلى غياب.";
+        if ($locked) $msg .= " | 🔒 تجاهل {$locked} سجل مثبَّت.";
+
+        return redirect()->route('fingerprint_devices.logs', array_merge(
+            ['id' => $id], $request->only(['log_date_from','log_date_to','processed','employee_name'])
+        ))->with('success', $msg);
+    }
+
+    // =========================================================
+    //  UPDATE LOG — تعديل سجل بصمة فردي
+    // =========================================================
+    public function updateLog(Request $request, int $id, int $logId)
+    {
+        FingerprintDevice::where('com_code', $this->comCode())->findOrFail($id);
+        $log = FingerprintLog::where('device_id', $id)->findOrFail($logId);
+
+        $request->validate([
+            'punch_time' => 'required|date',
+            'punch_type' => 'required|integer|in:0,1,2',
+        ]);
+
+        $log->update([
+            'punch_time'   => Carbon::parse($request->punch_time),
+            'punch_type'   => (int)$request->punch_type,
+            'is_processed' => 0,
+        ]);
+
+        return redirect()->route('fingerprint_devices.logs', array_merge(
+            ['id' => $id], $request->only(['log_date_from','log_date_to','processed','employee_name'])
+        ))->with('success', 'تم تعديل سجل البصمة — سيُعاد معالجته في المزامنة القادمة.');
+    }
+
+    // =========================================================
+    //  SETUP GUIDE — دليل إعداد Agent الفرع (قابل للطباعة كـ PDF)
+    // =========================================================
+    public function setupGuide(int $id)
+    {
+        $device = FingerprintDevice::where('com_code', $this->comCode())->findOrFail($id);
+        $serverUrl = url('/api/fingerprint-agent/push');
+        return view('admin.fingerprint_devices.setup_guide', compact('device', 'serverUrl'));
     }
 
     // ─────────────────────────────────────────────

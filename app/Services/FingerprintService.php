@@ -6,6 +6,7 @@ use App\Models\FingerprintDevice;
 use App\Models\FingerprintLog;
 use App\Models\Employee;
 use App\Models\Attendance;
+use App\Models\Shifts_type;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -230,6 +231,118 @@ class FingerprintService
     }
 
     // ─────────────────────────────────────────────
+    //  إعادة معالجة بصمة موظف محدد ليوم محدد بشيفت جديد
+    //  يُستخدم عند تغيير الشيفت المخصص لسجل حضور معين
+    // ─────────────────────────────────────────────
+    public function reprocessAttendanceFromLogs(
+        Attendance $attendance,
+        Employee $employee,
+        Shifts_type $shift
+    ): array {
+        $fingerId = (int)$employee->finger_id;
+        if (!$fingerId) {
+            return ['success' => false, 'error' => 'الموظف ليس لديه رقم بصمة مسجّل'];
+        }
+
+        $date        = $attendance->attendance_date->format('Y-m-d');
+        $nextDateStr = Carbon::parse($date)->addDay()->format('Y-m-d');
+        $isNight     = $shift->to_time < $shift->from_time;
+
+        // نافذة البحث حسب نوع الشيفت:
+        // - ليلي:  من (D from_time - 3h) إلى (D+1 to_time + 3h)
+        // - نهاري: من (D from_time - 3h) إلى (D+1 from_time - 1د) — يشمل الأوفرتايم
+        if ($isNight) {
+            $windowStart = Carbon::parse($date . ' ' . $shift->from_time)->subHours(3);
+            $windowEnd   = Carbon::parse($nextDateStr . ' ' . $shift->to_time)->addHours(3);
+        } else {
+            $windowStart    = Carbon::parse($date . ' ' . $shift->from_time)->subHours(3);
+            $windowEndFull  = Carbon::parse($nextDateStr . ' ' . $shift->from_time)->subMinute();
+            $overnightCutoff = Carbon::parse($nextDateStr . ' 06:00:00');
+            // لا نلتقط بصمات بعد 06:00 ص من اليوم التالي — فهي حضور جديد لـ D+1
+            $windowEnd = $windowEndFull->lt($overnightCutoff) ? $windowEndFull : $overnightCutoff;
+        }
+
+        // أجهزة الفرع الخاص بالموظف
+        $deviceIds = $this->getDeviceIdsForEmployee($employee);
+
+        $logsQuery = FingerprintLog::where('com_code', $employee->com_code)
+            ->where('finger_id', $fingerId)
+            ->whereBetween('punch_time', [
+                $windowStart->format('Y-m-d H:i:s'),
+                $windowEnd->format('Y-m-d H:i:s'),
+            ])
+            ->orderBy('punch_time');
+
+        if (!empty($deviceIds)) {
+            $logsQuery->whereIn('device_id', $deviceIds);
+        }
+
+        $logs = $logsQuery->get();
+
+        if ($logs->isEmpty()) {
+            // إذا كان وقت الحضور المحفوظ خارج النافذة الصالحة → بيانات قديمة خاطئة، نمسحها
+            $storedCheckIn = $attendance->check_in_time
+                ? Carbon::parse($date . ' ' . $attendance->check_in_time)
+                : null;
+            if ($storedCheckIn && $storedCheckIn->lt($windowStart)) {
+                $attendance->check_in_time   = null;
+                $attendance->check_out_time  = null;
+                $attendance->missing_punch   = null;
+                $attendance->status          = 2;
+                $attendance->late_minutes    = 0;
+                $attendance->overtime_hours  = 0;
+                $attendance->overtime_amount = 0;
+                $attendance->late_deduction  = 0;
+                $attendance->save();
+                return [
+                    'success' => false,
+                    'cleared' => true,
+                    'error'   => "لا توجد بصمات بين {$windowStart->format('Y-m-d H:i')} و {$windowEnd->format('Y-m-d H:i')} — تم مسح البيانات القديمة وتعيين الغياب",
+                ];
+            }
+            return [
+                'success' => false,
+                'error'   => "لا توجد بصمات بين {$windowStart->format('Y-m-d H:i')} و {$windowEnd->format('Y-m-d H:i')}",
+            ];
+        }
+
+        $isSingle = $logs->count() === 1;
+        $checkIn  = $logs->first()->punch_time->format('H:i');
+        $checkOut = $isSingle ? null : $logs->last()->punch_time->format('H:i');
+
+        $attendance->check_in_time  = $checkIn;
+        $attendance->check_out_time = $checkOut;
+        $attendance->missing_punch  = $isSingle ? 'out' : null;
+        $attendance->status         = 1;
+
+        FingerprintLog::whereIn('id', $logs->pluck('id'))->update(['is_processed' => 1]);
+
+        return [
+            'success'  => true,
+            'checkIn'  => $checkIn,
+            'checkOut' => $checkOut,
+            'punches'  => $logs->count(),
+        ];
+    }
+
+    // يُعيد معرّفات أجهزة البصمة المرتبطة بفرع الموظف
+    private function getDeviceIdsForEmployee(Employee $employee): array
+    {
+        if (!$employee->branches_id) {
+            return [];
+        }
+
+        return FingerprintDevice::where('com_code', $employee->com_code)
+            ->get()
+            ->filter(fn(FingerprintDevice $d) =>
+                $d->branches_id === $employee->branches_id
+                || in_array($employee->branches_id, $d->extra_branch_ids ?? [])
+            )
+            ->pluck('id')
+            ->toArray();
+    }
+
+    // ─────────────────────────────────────────────
     //  معالجة السجلات الخام → جدول الحضور
     //  يدعم نطاق تاريخ، إعادة المعالجة، الشيفت الليلي، والبصمة الناقصة
     // ─────────────────────────────────────────────
@@ -237,26 +350,79 @@ class FingerprintService
         int $comCode,
         string $dateFrom,
         string $dateTo,
-        bool $forceReprocess = false
+        bool $forceReprocess = false,
+        ?int $employeeId = null
     ): array {
         $from = Carbon::parse($dateFrom)->startOfDay();
         $to   = Carbon::parse($dateTo)->startOfDay();
 
+        // تحميل الموظفين مع تطبيق فلتر الموظف المحدد إن وُجد
+        $empQuery = Employee::with('shifts_type')
+            ->where('com_code', $comCode)
+            ->where('functional_status', 1);
+        if ($employeeId) {
+            $empQuery->where('id', $employeeId);
+        }
+        $allEmployees = $empQuery->get();
+
+        // finger_ids المطلوبة للفلتر (null = جميع الموظفين)
+        $filteredFingerIds = $employeeId
+            ? $allEmployees->pluck('finger_id')->filter()->values()->toArray()
+            : null;
+
         // إذا forceReprocess: إعادة ضبط is_processed للسجلات في النطاق (+ يوم احتياطي للشيفت الليلي)
         if ($forceReprocess) {
-            FingerprintLog::where('com_code', $comCode)
+            $fpQ = FingerprintLog::where('com_code', $comCode)
                 ->where('is_processed', 1)
                 ->whereBetween('punch_time', [
                     $from->copy()->subDay()->format('Y-m-d H:i:s'),
                     $to->copy()->addDays(2)->format('Y-m-d H:i:s'),
-                ])
-                ->update(['is_processed' => 0]);
+                ]);
+            if ($filteredFingerIds !== null) {
+                $fpQ->whereIn('finger_id', $filteredFingerIds ?: [0]);
+            }
+            $fpQ->update(['is_processed' => 0]);
         }
 
-        $allEmployees = Employee::with('shifts_type')
-            ->where('com_code', $comCode)
-            ->where('functional_status', 1)
-            ->get();
+        // تحميل إعدادات الشركة مرة واحدة قبل الحلقة
+        $settings = \App\Models\Admin_panel_setting::where('com_code', $comCode)->first();
+
+        // بناء معاملات الحساب لكل موظف وتاريخ (يراعي إعدادات الشركة كاملاً)
+        $buildParams = function (Employee $emp, string $date) use ($settings): array {
+            $dayDivisor = match ((int)($settings->day_rate_divisor_type ?? 1)) {
+                2 => 30,
+                3 => Carbon::parse($date)->daysInMonth,
+                4 => max(1, (float)($settings->day_rate_divisor_custom ?? 26)),
+                default => 26,
+            };
+            $dailyRate = $emp->emp_sal ? ($emp->emp_sal / $dayDivisor) : 0;
+
+            $settingsRate   = (float)($settings->overtime_multiplier ?? 1.5);
+            $overtimeMult   = ($settingsRate == 0.0 || !($emp->overtime_enabled ?? 1))
+                ? 0.0
+                : (float)($emp->custom_overtime_multiplier ?? $settingsRate);
+            $sanctionsMult  = max(1.0, (float)($settings->sanctions_value_minute_delay ?? 1));
+
+            return [
+                'dailyRate'                => $dailyRate,
+                'overtimeMultiplier'       => $overtimeMult,
+                'sanctionsMultiplier'      => $sanctionsMult,
+                'overtimeEnabled'          => (bool)($emp->overtime_enabled ?? 1),
+                'lateDeductEnabled'        => (bool)($emp->late_deduction_enabled ?? 1),
+                'hourDivisorType'          => (int)($settings->hour_rate_divisor_type ?? 1),
+                'hourDivisorCustom'        => max(1.0, (float)($settings->hour_rate_divisor_custom ?? 8)),
+                'graceMinutes'             => (float)($settings->after_minute_calc_delay ?? 0),
+                'graceEarlyMinutes'        => (float)($settings->after_minute_calc_early ?? 0),
+                'delayCalcMode'            => (int)($settings->delay_calc_mode ?? 1),
+                'afterMinuteQuarterday'    => (float)($settings->after_minute_quarterday ?? 0),
+                'delayTier1Minutes'        => (float)($settings->delay_tier1_minutes ?? 0),
+                'delayHalfDayMinutes'      => (float)($settings->delay_halfday_minutes ?? 0),
+                'delayFullDayMinutes'      => (float)($settings->delay_fullday_minutes ?? 0),
+                'earlyHalfDayMinutes'      => (float)($settings->early_departure_halfday_minutes ?? 0),
+                'earlyFullDayMinutes'      => (float)($settings->early_departure_fullday_minutes ?? 0),
+                'earlyFullPlusHalfMinutes' => (float)($settings->early_departure_fullplushalf_minutes ?? 0),
+            ];
+        };
 
         $branchFingerMap = [];
         $fallbackMap     = $allEmployees->keyBy(fn($e) => (int)$e->finger_id);
@@ -277,21 +443,25 @@ class FingerprintService
             $dateStr = $currentDate->format('Y-m-d');
 
             // تحميل بصمات اليوم الحالي
-            $dayLogs = FingerprintLog::with('device')
+            $dayLogsQ = FingerprintLog::with('device')
                 ->where('com_code', $comCode)
                 ->where('is_processed', 0)
-                ->whereDate('punch_time', $dateStr)
-                ->orderBy('punch_time')
-                ->get();
+                ->whereDate('punch_time', $dateStr);
+            if ($filteredFingerIds !== null) {
+                $dayLogsQ->whereIn('finger_id', $filteredFingerIds ?: [0]);
+            }
+            $dayLogs = $dayLogsQ->orderBy('punch_time')->get();
 
-            // تحميل بصمات اليوم التالي (للشيفت الليلي)
+            // تحميل بصمات اليوم التالي (للشيفت الليلي والأوفرتايم النهاري)
             $nextDateStr = $currentDate->copy()->addDay()->format('Y-m-d');
-            $nextDayLogs = FingerprintLog::with('device')
+            $nextDayLogsQ = FingerprintLog::with('device')
                 ->where('com_code', $comCode)
                 ->where('is_processed', 0)
-                ->whereDate('punch_time', $nextDateStr)
-                ->orderBy('punch_time')
-                ->get();
+                ->whereDate('punch_time', $nextDateStr);
+            if ($filteredFingerIds !== null) {
+                $nextDayLogsQ->whereIn('finger_id', $filteredFingerIds ?: [0]);
+            }
+            $nextDayLogs = $nextDayLogsQ->orderBy('punch_time')->get();
 
             // تجميع بصمات اليوم بـ (device_id + finger_id)
             $grouped = [];
@@ -340,14 +510,18 @@ class FingerprintService
                                 if ($employee) break;
                             }
                         }
+                        // إذا لم يُعثر عليه عبر الفرع → fallback بـ finger_id فقط
+                        // (نفس منطق reprocessAttendanceFromLogs التي تبحث بـ finger_id + com_code)
+                        if (!$employee) {
+                            $employee = $fallbackMap->get((int)$fingerId);
+                        }
                     } else {
                         $employee = $fallbackMap->get((int)$fingerId);
                     }
 
                     if (!$employee) {
+                        // لا نُعلّم البصمات كـ processed — ربما يُضاف الموظف/الجهاز لاحقاً
                         $notFound[] = $fingerId . ($branchId ? " (فرع {$branchId})" : '');
-                        FingerprintLog::whereIn('id', collect($group['punches'])->pluck('id')->toArray())
-                            ->update(['is_processed' => 1]);
                         continue;
                     }
 
@@ -358,15 +532,14 @@ class FingerprintService
 
                     $punches        = collect($group['punches'])->sortBy('punch_time')->values();
                     $nextDayPunches = collect($nextGrouped[$key] ?? [])->sortBy('punch_time')->values();
-                    $excludedPunches = collect();
 
                     if ($isNightShift && $shift) {
                         /*
                          * نافذة الشيفت الليلي ليوم D:
-                         *   البداية : D + from_time − 3 ساعات  (مثلاً 12:00 لشيفت 15:00)
-                         *   النهاية : D+1 + to_time + 3 ساعات (مثلاً 04:00 لشيفت ينتهي 01:00)
+                         *   البداية : D + from_time − 3 ساعات
+                         *   النهاية : D+1 + to_time + 3 ساعات
                          *
-                         * أي بصمة على D قبل حد البداية تنتمي لشيفت D-1 (انصراف شيفت الأمس).
+                         * أي بصمة على D قبل حد البداية تنتمي لانصراف شيفت D-1.
                          */
                         $windowStart = Carbon::parse($dateStr . ' ' . $shift->from_time)->subHours(3);
                         $windowEnd   = Carbon::parse($nextDateStr . ' ' . $shift->to_time)->addHours(3);
@@ -380,21 +553,28 @@ class FingerprintService
                             $punches = $punches->concat($nextRelevant)->sortBy('punch_time')->values();
                         }
 
-                        // معالجة البصمات المُستبعدة: تنتمي لانصراف شيفت اليوم السابق
+                        // البصمات المُستبعدة تنتمي لانصراف شيفت D-1 (مفقود)
                         if ($excludedPunches->isNotEmpty()) {
                             $prevDateStr = $currentDate->copy()->subDay()->format('Y-m-d');
                             $prevAtt = Attendance::where('employee_id', $employee->id)
                                                  ->where('attendance_date', $prevDateStr)
                                                  ->whereNull('check_out_time')
                                                  ->first();
-                            if ($prevAtt) {
+                            if ($prevAtt && !$prevAtt->is_manual_lock) {
                                 $lastExcluded = $excludedPunches->last();
                                 $prevAtt->check_out_time = $lastExcluded->punch_time->format('H:i');
                                 $prevAtt->missing_punch  = null;
                                 if ($prevAtt->check_in_time) {
-                                    $prevAtt->calculateDelayAndOvertime();
-                                    $dailyRate = $employee->emp_sal ? ($employee->emp_sal / 26) : 0;
-                                    $prevAtt->calculateAmounts($dailyRate);
+                                    $p = $buildParams($employee, $prevDateStr);
+                                    $prevAtt->calculateDelayAndOvertime($p['graceMinutes'], $p['graceEarlyMinutes']);
+                                    $prevAtt->calculateAmounts(
+                                        $p['dailyRate'], $p['overtimeMultiplier'], $p['sanctionsMultiplier'],
+                                        $p['overtimeEnabled'], $p['lateDeductEnabled'],
+                                        $p['hourDivisorType'], $p['hourDivisorCustom'],
+                                        $p['delayCalcMode'], $p['afterMinuteQuarterday'],
+                                        $p['delayTier1Minutes'], $p['delayHalfDayMinutes'], $p['delayFullDayMinutes'],
+                                        $p['earlyHalfDayMinutes'], $p['earlyFullDayMinutes'], $p['earlyFullPlusHalfMinutes']
+                                    );
                                 }
                                 $prevAtt->save();
                             }
@@ -402,10 +582,37 @@ class FingerprintService
                                 ->update(['is_processed' => 1]);
                         }
 
-                        // لا توجد بصمات لشيفت اليوم الحالي → لم يحضر بعد (سيُسجَّل غائباً)
                         if ($punches->isEmpty()) {
                             continue;
                         }
+                    }
+
+                    // ── شيفت نهاري: نافذة [D from_time−3h , D+1 min(from_time, 06:00)] ──────
+                    // نستبعد بصمات الفجر الباكر (قد تكون أوفرتايم من D-1)
+                    // نُضيف أوفرتايم D فقط إذا كانت قبل 06:00 ص من اليوم التالي
+                    // (بصمة بعد 06:00 ص تُعدّ حضوراً جديداً لـ D+1، وليست أوفرتايم)
+                    if (!$isNightShift && $shift) {
+                        $dayWindowStart = Carbon::parse($dateStr . ' ' . $shift->from_time)->subHours(3);
+                        $punches = $punches->filter(fn($l) => $l->punch_time->gte($dayWindowStart))->values();
+
+                        if ($nextDayPunches->isNotEmpty()) {
+                            $nextShiftStart  = Carbon::parse($nextDateStr . ' ' . $shift->from_time);
+                            $overnightCutoff = Carbon::parse($nextDateStr . ' 06:00:00');
+                            $overtimePunches = $nextDayPunches
+                                ->filter(fn($l) =>
+                                    $l->punch_time->lt($nextShiftStart) &&
+                                    $l->punch_time->lt($overnightCutoff)
+                                )
+                                ->values();
+                            if ($overtimePunches->isNotEmpty()) {
+                                $punches = $punches->concat($overtimePunches)->sortBy('punch_time')->values();
+                            }
+                        }
+                    }
+
+                    // إذا بقيت $punches فارغة بعد التصفية → غياب (لا بصمة صالحة لهذا الشيفت)
+                    if ($punches->isEmpty()) {
+                        continue;
                     }
 
                     // يُعدّ حاضراً فقط عند وجود بصمة صالحة لشيفت هذا اليوم
@@ -424,6 +631,13 @@ class FingerprintService
                         'attendance_date' => $dateStr,
                     ]);
 
+                    // سجل مثبَّت يدوياً — لا تُعدِّله أي معالجة بصمة
+                    if ($att->exists && $att->is_manual_lock) {
+                        FingerprintLog::whereIn('id', $allLogIds)->update(['is_processed' => 1]);
+                        $presentEmployeeIds[] = $employee->id;
+                        continue;
+                    }
+
                     $att->shift_id       = $employee->shifts_types_id;
                     $att->check_in_time  = $checkIn;
                     $att->check_out_time = $checkOut;
@@ -437,9 +651,16 @@ class FingerprintService
                     }
 
                     if ($checkIn && $checkOut) {
-                        $att->calculateDelayAndOvertime();
-                        $dailyRate = $employee->emp_sal ? ($employee->emp_sal / 26) : 0;
-                        $att->calculateAmounts($dailyRate);
+                        $p = $buildParams($employee, $dateStr);
+                        $att->calculateDelayAndOvertime($p['graceMinutes'], $p['graceEarlyMinutes']);
+                        $att->calculateAmounts(
+                            $p['dailyRate'], $p['overtimeMultiplier'], $p['sanctionsMultiplier'],
+                            $p['overtimeEnabled'], $p['lateDeductEnabled'],
+                            $p['hourDivisorType'], $p['hourDivisorCustom'],
+                            $p['delayCalcMode'], $p['afterMinuteQuarterday'],
+                            $p['delayTier1Minutes'], $p['delayHalfDayMinutes'], $p['delayFullDayMinutes'],
+                            $p['earlyHalfDayMinutes'], $p['earlyFullDayMinutes'], $p['earlyFullPlusHalfMinutes']
+                        );
                     }
 
                     $att->save();
@@ -449,22 +670,29 @@ class FingerprintService
                 }
 
                 // الغائبون في هذا اليوم
+                $dayOfWeek = $currentDate->dayOfWeek; // Carbon: 0=الأحد...6=السبت
                 foreach ($allEmployees as $emp) {
                     if (in_array($emp->id, $presentEmployeeIds)) continue;
                     if (Attendance::where('employee_id', $emp->id)->where('attendance_date', $dateStr)->exists()) continue;
 
+                    $isWeeklyOff  = $emp->weekly_off_day !== null
+                                    && (int)$emp->weekly_off_day === $dayOfWeek;
+                    $isBeforeHire = $emp->emp_start_date && $dateStr < $emp->emp_start_date;
+
                     Attendance::create([
-                        'employee_id'     => $emp->id,
-                        'shift_id'        => $emp->shifts_types_id,
-                        'attendance_date' => $dateStr,
-                        'status'          => 2,
-                        'late_minutes'    => 0,
-                        'overtime_hours'  => 0,
-                        'overtime_amount' => 0,
-                        'late_deduction'  => 0,
-                        'notes'           => 'غياب - بصمة',
-                        'com_code'        => $comCode,
-                        'added_by'        => 1,
+                        'employee_id'          => $emp->id,
+                        'shift_id'             => $emp->shifts_types_id,
+                        'attendance_date'      => $dateStr,
+                        'status'               => $isWeeklyOff ? 6 : 2,
+                        'is_before_hire'       => $isBeforeHire ? 1 : 0,
+                        'absence_deduction_days' => $isBeforeHire ? 0 : null,
+                        'late_minutes'         => 0,
+                        'overtime_hours'       => 0,
+                        'overtime_amount'      => 0,
+                        'late_deduction'       => 0,
+                        'notes'                => $isBeforeHire ? 'قبل التعيين' : ($isWeeklyOff ? 'إجازة أسبوعية - بصمة' : 'غياب - بصمة'),
+                        'com_code'             => $comCode,
+                        'added_by'             => 1,
                     ]);
                     $absent++;
                 }

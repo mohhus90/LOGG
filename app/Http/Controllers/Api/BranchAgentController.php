@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\FingerprintDevice;
 use App\Services\FingerprintService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -37,13 +38,35 @@ class BranchAgentController extends Controller
         $service = new FingerprintService();
         $result  = $service->saveLogs($device, $validated['logs'], 'agent');
 
+        // معالجة السجلات تلقائياً فور الاستلام — تحويلها من fingerprint_logs إلى attendance
+        $processResult = ['imported' => 0, 'missing' => 0, 'absent' => 0];
+        if ($result['success']) {
+            $dates = collect($validated['logs'])
+                ->map(fn($l) => Carbon::parse($l['timestamp'])->format('Y-m-d'))
+                ->unique()->sort()->values();
+
+            if ($dates->isNotEmpty()) {
+                $processResult = $service->processLogs(
+                    $device->com_code,
+                    $dates->first(),
+                    $dates->last(),
+                    false
+                );
+            }
+        }
+
         $device->update([
             'last_sync_at'      => now(),
             'last_sync_records' => $result['count'],
-            'last_error'        => $result['error'],
+            'last_error'        => $result['error'] ?? ($processResult['error'] ?? null),
             'status'            => $result['success'] ? 1 : 3,
         ]);
 
-        return response()->json($result);
+        return response()->json(array_merge($result, [
+            'attendance_imported' => $processResult['imported']  ?? 0,
+            'attendance_missing'  => $processResult['missing']   ?? 0,
+            'attendance_absent'   => $processResult['absent']    ?? 0,
+            'not_found_ids'       => $processResult['notFound']  ?? [],
+        ]));
     }
 }

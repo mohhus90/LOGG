@@ -37,7 +37,7 @@ use App\Http\Controllers\Admin\VacationsController;
 use App\Http\Controllers\Admin\OrgLevelsController;
 use App\Http\Controllers\Admin\MaintenanceController;
 
-define('paginate_counter', 20);
+defined('paginate_counter') || define('paginate_counter', 20);
 
 Route::group(['prefix' => 'admin/dashboard'], function () {
 
@@ -243,15 +243,23 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('attendance/{id}/edit',               [AttendanceController::class, 'edit'])->name('attendance.edit');
         Route::post('attendance/update/{id}',            [AttendanceController::class, 'update'])->name('attendance.update');
         Route::post('attendance/{id}/resolve-missing',   [AttendanceController::class, 'resolveMissingPunch'])->name('attendance.resolve_missing');
-        Route::post('attendance/{id}/update-shift',      [AttendanceController::class, 'updateShift'])->name('attendance.update_shift');
-        Route::get('fingerprint_devices/{id}/edit',      [FingerprintDevicesController::class, 'edit'])->name('fingerprint_devices.edit');
-        Route::put('fingerprint_devices/{id}',           [FingerprintDevicesController::class, 'update'])->name('fingerprint_devices.update');
+        Route::post('attendance/{id}/update-shift',        [AttendanceController::class, 'updateShift'])->name('attendance.update_shift');
+        Route::post('attendance/{id}/reprocess-fingerprint', [AttendanceController::class, 'reprocessFingerprint'])->name('attendance.reprocess_fingerprint');
+        Route::get('fingerprint_devices/{id}/edit',        [FingerprintDevicesController::class, 'edit'])->name('fingerprint_devices.edit');
+        Route::put('fingerprint_devices/{id}',             [FingerprintDevicesController::class, 'update'])->name('fingerprint_devices.update');
         Route::post('fingerprint_devices/{id}/generate-token', [FingerprintDevicesController::class, 'generateToken'])->name('fingerprint_devices.generate_token');
+        Route::get('fingerprint_devices/{id}/setup-guide',    [FingerprintDevicesController::class, 'setupGuide'])->name('fingerprint_devices.setup_guide');
+        Route::post('fingerprint_devices/{id}/void-logs',      [FingerprintDevicesController::class, 'voidLogs'])->name('fingerprint_devices.void_logs');
+        Route::put('fingerprint_devices/{id}/logs/{logId}',    [FingerprintDevicesController::class, 'updateLog'])->name('fingerprint_devices.log_update');
     });
     Route::get('attendance/delete/{id}', [AttendanceController::class, 'delete'])
         ->name('attendance.delete')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
     Route::post('attendance/bulk-delete', [AttendanceController::class, 'bulkDelete'])
         ->name('attendance.bulk_delete')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
+    Route::post('attendance/void-fingerprint', [AttendanceController::class, 'voidFingerprint'])
+        ->name('attendance.void_fingerprint')->middleware(['auth:admin', 'admin.permission:attendance,can_update']);
+    Route::post('attendance/bulk-reprocess-fingerprint', [AttendanceController::class, 'bulkReprocessFingerprint'])
+        ->name('attendance.bulk_reprocess_fingerprint')->middleware(['auth:admin', 'admin.permission:attendance,can_update']);
     Route::get('fingerprint_devices/{id}/delete', [FingerprintDevicesController::class, 'delete'])
         ->name('fingerprint_devices.delete')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
 

@@ -307,6 +307,42 @@ select.form-control {
 .form-group { margin-bottom: 1rem; }
 label { font-weight: 700; font-size: .87rem; color: #1a3a5c; margin-bottom: .35rem; display: block; }
 
+/* ══ إصلاح عكس الأرقام في RTL ══
+   الأرقام والأكواد تُعرض دائماً من اليسار لليمين (LTR)
+   بينما النص العربي يبقى RTL
+*/
+code,
+kbd,
+td code,
+.badge code {
+  direction: ltr !important;
+  unicode-bidi: embed !important;
+  display: inline-block;
+}
+/* حقول الإدخال التي تحتوي أرقام أو أكواد */
+input[type="number"],
+input[type="tel"],
+input[type="email"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input.input-ltr,
+.input-ltr {
+  direction: ltr !important;
+  text-align: right;
+}
+/* خلايا الجدول التي تعرض أرقاماً */
+td.num, th.num, .cell-num {
+  direction: ltr !important;
+  unicode-bidi: embed;
+  text-align: center;
+}
+/* أرقام عامة في الجداول (رقم الموظف، كود البصمة، إلخ) */
+td code, td kbd {
+  direction: ltr !important;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ══════════════════════════════
    BADGES
 ══════════════════════════════ */
@@ -433,55 +469,67 @@ label { font-weight: 700; font-size: .87rem; color: #1a3a5c; margin-bottom: .35r
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-dark); }
 
 /* ══════════════════════════════
-   SELECT2 — تناسق مع Bootstrap RTL
+   SELECT2 — تناسق مع Bootstrap 4 RTL / AdminLTE
 ══════════════════════════════ */
+
+/* الحاوية الخارجية */
 .select2-container {
   font-family: 'Cairo','Source Sans Pro',Arial,sans-serif !important;
   font-size: .875rem;
+  vertical-align: middle;
 }
 
-/* الحاوية: نفس شكل form-control */
+/* صندوق الاختيار — يطابق ارتفاع form-control بالضبط */
 .select2-container--default .select2-selection--single {
-  height: auto !important;
-  min-height: 34px;
-  padding: 4px 8px;
+  height: 38px !important;
+  padding: 6px 28px 6px 8px;
   border: 1px solid #ced4da;
   border-radius: .25rem;
   background-color: #fff;
   box-shadow: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  outline: none;
+  line-height: 1.5;
+  position: relative;
+  display: block;
 }
 
 /* النص المختار */
 .select2-container--default .select2-selection--single .select2-selection__rendered {
   display: block;
-  padding: 0;
-  line-height: 1.5;
+  padding-right: 0;
+  padding-left: 0;
+  line-height: 24px;
   color: #495057;
   font-size: .875rem;
-  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  direction: rtl;
+  text-align: right;
 }
 
-/* السهم */
+/* السهم — absolute داخل الصندوق على اليسار (RTL) */
 .select2-container--default .select2-selection--single .select2-selection__arrow {
-  position: static;
-  height: auto;
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  right: auto;
   width: 20px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  height: 20px;
+  margin-top: -10px;
 }
 .select2-container--default .select2-selection--single .select2-selection__arrow b {
-  border-color: #888 transparent transparent;
+  border-color: #555 transparent transparent;
+  border-style: solid;
+  border-width: 5px 4px 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -2px;
+  margin-left: -4px;
 }
 
-/* إخفاء زر X نهائياً */
+/* إخفاء زر X */
 .select2-container--default .select2-selection--single .select2-selection__clear {
   display: none !important;
 }
@@ -490,24 +538,28 @@ label { font-weight: 700; font-size: .87rem; color: #1a3a5c; margin-bottom: .35r
 .select2-container--default.select2-container--focus .select2-selection--single,
 .select2-container--default.select2-container--open  .select2-selection--single {
   border-color: #80bdff;
-  box-shadow: 0 0 0 .15rem rgba(0,123,255,.2);
+  box-shadow: 0 0 0 .15rem rgba(0,123,255,.25);
   outline: none;
 }
 
-/* الـ Dropdown */
+/* الـ Dropdown — فوق كل العناصر */
 .select2-dropdown {
   border: 1px solid #ced4da;
   border-radius: .25rem;
-  z-index: 9999 !important;
+  z-index: 99999 !important;
   font-size: .875rem;
   font-family: 'Cairo',Arial,sans-serif;
-}
-.select2-container--default .select2-results__option {
-  padding: 5px 10px;
   direction: rtl;
 }
+
+/* النتائج */
+.select2-container--default .select2-results__option {
+  padding: 6px 10px;
+  direction: rtl;
+  text-align: right;
+}
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
-  background-color: var(--primary-light, #1565a0);
+  background-color: #1565a0;
 }
 
 /* خانة البحث */
@@ -518,13 +570,15 @@ label { font-weight: 700; font-size: .87rem; color: #1a3a5c; margin-bottom: .35r
   font-family: 'Cairo',Arial,sans-serif;
   font-size: .875rem;
   direction: rtl;
+  text-align: right;
   width: 100%;
   box-sizing: border-box;
 }
 
 /* placeholder */
 .select2-container--default .select2-selection--single .select2-selection__placeholder {
-  color: #6c757d;
+  color: #aaa;
+  direction: rtl;
 }
 
 /* ══════════════════════════════

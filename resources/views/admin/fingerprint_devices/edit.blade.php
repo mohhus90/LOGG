@@ -156,11 +156,18 @@
                     </div>
 
                     @if(isset($device))
-                    {{-- استخدام form attribute بدلاً من form متداخل --}}
-                    <button type="submit" form="tokenRegenForm" class="btn btn-outline-danger btn-sm"
-                            onclick="return confirm('تجديد التوكن سيُبطل التوكن القديم — هل أنت متأكد؟')">
-                        <i class="fas fa-sync ml-1"></i> تجديد التوكن
-                    </button>
+                    <div class="d-flex gap-2 flex-wrap" style="gap:8px">
+                        <button type="submit" form="tokenRegenForm" class="btn btn-outline-danger btn-sm"
+                                onclick="return confirm('تجديد التوكن سيُبطل التوكن القديم — هل أنت متأكد؟')">
+                            <i class="fas fa-sync ml-1"></i> تجديد التوكن
+                        </button>
+                        <a href="{{ route('fingerprint_devices.setup_guide', $device->id) }}"
+                           target="_blank"
+                           class="btn btn-sm"
+                           style="background:#6f42c1;color:#fff;border-color:#6f42c1">
+                            <i class="fas fa-file-pdf ml-1"></i> تنزيل دليل الإعداد PDF
+                        </a>
+                    </div>
                     @endif
                 </div>
 

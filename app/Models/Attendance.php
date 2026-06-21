@@ -202,26 +202,37 @@ class Attendance extends Model
         }
 
         // ─── احتساب الانصراف المبكر ───
-        // حدود الانصراف مستقلة عن وضع التأخير وتتجاوزه إذا ضُبطت
+        // أولاً: حد يوم+نصف (عدم إتمام اليوم) — يتجاوز جميع الحدود الأخرى
         if ($earlyFullPlusHalfMinutes > 0 && $effectiveEarly >= $earlyFullPlusHalfMinutes) {
-            // عدم إتمام اليوم: يوم + نصف
             $this->early_departure_fraction  = 4;
             $this->early_departure_deduction = round($dailyRate * 1.5, 2);
-        } elseif ($earlyFullDayMinutes > 0 && $effectiveEarly >= $earlyFullDayMinutes) {
-            $this->early_departure_fraction  = 3;
-            $this->early_departure_deduction = round($dailyRate, 2);
-        } elseif ($earlyHalfDayMinutes > 0 && $effectiveEarly >= $earlyHalfDayMinutes) {
-            $this->early_departure_fraction  = 2;
-            $this->early_departure_deduction = round($dailyRate * 0.5, 2);
+
         } elseif ($delayCalcMode === 2 || $delayCalcMode === 3) {
-            // في وضعي الجزء والهرمي: الانصراف يستخدم حد ربع اليوم كاحتياطي
-            if ($afterMinuteQuarterday > 0 && $effectiveEarly >= $afterMinuteQuarterday) {
+            // في وضعي الجزء والهرمي: إذا لم تُضبط حدود الانصراف المبكر → تُستخدم حدود التأخير كاحتياطي
+            $effFullDay = $earlyFullDayMinutes  > 0 ? $earlyFullDayMinutes  : $delayFullDayMinutes;
+            $effHalfDay = $earlyHalfDayMinutes  > 0 ? $earlyHalfDayMinutes  : $delayHalfDayMinutes;
+
+            if ($effFullDay > 0 && $effectiveEarly >= $effFullDay) {
+                $this->early_departure_fraction  = 3;
+                $this->early_departure_deduction = round($dailyRate, 2);
+            } elseif ($effHalfDay > 0 && $effectiveEarly >= $effHalfDay) {
+                $this->early_departure_fraction  = 2;
+                $this->early_departure_deduction = round($dailyRate * 0.5, 2);
+            } elseif ($afterMinuteQuarterday > 0 && $effectiveEarly >= $afterMinuteQuarterday) {
                 $this->early_departure_fraction  = 1;
                 $this->early_departure_deduction = round($dailyRate * 0.25, 2);
             } else {
                 $this->early_departure_fraction  = null;
                 $this->early_departure_deduction = 0.0;
             }
+
+        } elseif ($earlyFullDayMinutes > 0 && $effectiveEarly >= $earlyFullDayMinutes) {
+            // وضع 1 مع حدود انصراف مضبوطة
+            $this->early_departure_fraction  = 3;
+            $this->early_departure_deduction = round($dailyRate, 2);
+        } elseif ($earlyHalfDayMinutes > 0 && $effectiveEarly >= $earlyHalfDayMinutes) {
+            $this->early_departure_fraction  = 2;
+            $this->early_departure_deduction = round($dailyRate * 0.5, 2);
         } else {
             // وضع 1: دقيقة × مضاعف
             $this->early_departure_fraction  = null;

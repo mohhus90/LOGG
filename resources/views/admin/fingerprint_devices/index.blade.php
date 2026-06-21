@@ -190,6 +190,19 @@
                 <form action="{{ route('fingerprint_devices.sync', $device->id) }}" method="POST">
                     @csrf
                     <div class="modal-body">
+                        <div class="form-group">
+                            <label><i class="fas fa-user ml-1"></i>الموظف</label>
+                            <select name="employee_id" class="form-control select2" style="width:100%">
+                                <option value="">-- جميع الموظفين --</option>
+                                @foreach($employees as $emp)
+                                    <option value="{{ $emp->id }}">
+                                        {{ $emp->employee_name_A }}
+                                        @if($emp->finger_id) (ID: {{ $emp->finger_id }}) @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">اختر موظفاً محدداً أو اتركه فارغاً لمعالجة الجميع</small>
+                        </div>
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label>من تاريخ</label>
@@ -253,6 +266,19 @@
             <form action="{{ route('fingerprint_devices.sync_all') }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    <div class="form-group">
+                        <label><i class="fas fa-user ml-1"></i>الموظف</label>
+                        <select name="employee_id" class="form-control select2" style="width:100%">
+                            <option value="">-- جميع الموظفين --</option>
+                            @foreach($employees as $emp)
+                                <option value="{{ $emp->id }}">
+                                    {{ $emp->employee_name_A }}
+                                    @if($emp->finger_id) (ID: {{ $emp->finger_id }}) @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">اختر موظفاً محدداً أو اتركه فارغاً لمعالجة الجميع</small>
+                    </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>من تاريخ</label>
@@ -298,6 +324,19 @@
             <form action="{{ route('fingerprint_devices.process_logs') }}" method="POST">
                 @csrf
                 <div class="modal-body">
+                    <div class="form-group">
+                        <label><i class="fas fa-user ml-1"></i>الموظف</label>
+                        <select name="employee_id" class="form-control select2" style="width:100%">
+                            <option value="">-- جميع الموظفين --</option>
+                            @foreach($employees as $emp)
+                                <option value="{{ $emp->id }}">
+                                    {{ $emp->employee_name_A }}
+                                    @if($emp->finger_id) (ID: {{ $emp->finger_id }}) @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">اختر موظفاً محدداً أو اتركه فارغاً لمعالجة الجميع</small>
+                    </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>من تاريخ</label>
@@ -339,6 +378,16 @@
 
 @section('script')
 <script>
+// تهيئة Select2 عند فتح أي modal
+$(document).on('shown.bs.modal', function (e) {
+    $(e.target).find('.select2').select2({
+        dropdownParent: $(e.target),
+        placeholder: '-- جميع الموظفين --',
+        allowClear: true,
+        width: '100%'
+    });
+});
+
 function testConnection(deviceId, btn) {
     const original = btn.innerHTML;
     btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> جاري الاختبار...';

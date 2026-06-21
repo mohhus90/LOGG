@@ -26,6 +26,9 @@
                 تعديل سجل الحضور — {{ $attendance->employee->employee_name_A ?? '' }}
                 <span class="badge badge-light mr-2">{{ $attendance->attendance_date->format('Y-m-d') }}</span>
                 {!! $attendance->status_label !!}
+                @if($attendance->is_manual_lock)
+                    <span class="badge badge-danger mr-2"><i class="fas fa-lock ml-1"></i>مثبَّت</span>
+                @endif
             </h3>
         </div>
         <form action="{{ route('attendance.update', $attendance->id) }}" method="POST">
@@ -108,6 +111,56 @@
                     </div>
                 </div>
 
+                {{-- ─── قسم خصم الغياب ─── --}}
+                <div id="absenceDeductionSection" style="display:{{ $attendance->status==2 ? 'block' : 'none' }}">
+                    <hr>
+                    <h6 class="text-danger"><i class="fas fa-minus-circle ml-1"></i>خصم الغياب</h6>
+                    <div class="row">
+                        <div class="col-md-5 form-group">
+                            <label>عدد أيام الخصم <span class="text-muted">(افتراضي من الضبط العام)</span></label>
+                            <div class="input-group">
+                                <input type="number"
+                                       name="absence_deduction_days"
+                                       id="absenceDeductionDays"
+                                       class="form-control"
+                                       min="0" max="30" step="0.5"
+                                       value="{{ old('absence_deduction_days', $attendance->absence_deduction_days ?? ($settings?->sanctions_value_first_abcence ?? 1)) }}">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">يوم</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                القيمة الافتراضية من الضبط العام:
+                                <strong>{{ $settings?->sanctions_value_first_abcence ?? 1 }} يوم</strong>
+                                — يمكن تعديلها لهذا السجل فقط.
+                            </small>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end form-group">
+                            @php
+                                $rates = null;
+                                if ($settings && $attendance->employee?->emp_sal) {
+                                    $dayDiv = match((int)($settings->day_rate_divisor_type ?? 1)) {
+                                        2 => 30,
+                                        3 => $attendance->attendance_date->daysInMonth,
+                                        4 => max(1, (float)($settings->day_rate_divisor_custom ?? 26)),
+                                        default => 26,
+                                    };
+                                    $dailyRate = $attendance->employee->emp_sal / max(1, $dayDiv);
+                                    $deductDays = $attendance->absence_deduction_days ?? ($settings->sanctions_value_first_abcence ?? 1);
+                                    $deductAmount = round($dailyRate * $deductDays, 2);
+                                }
+                            @endphp
+                            @if(isset($deductAmount))
+                            <div class="alert alert-danger py-2 mb-0 w-100" style="font-size:.88rem">
+                                <i class="fas fa-coins ml-1"></i>
+                                قيمة الخصم المتوقعة:
+                                <strong>{{ number_format($deductAmount, 2) }} ج.م</strong>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 {{-- ─── قسم الإجازة الأسبوعية ─── --}}
                 <div id="weeklyLeaveSection" style="display:{{ $attendance->status==6 ? 'block' : 'none' }}">
                     <div class="alert" style="background:#f3eeff;border:1px solid #6f42c1;border-radius:6px">
@@ -178,6 +231,33 @@
                             <small class="text-muted">يُطرح من دقائق الانصراف المبكر</small>
                         </div>
                     </div>
+                </div>
+
+                {{-- ─── قفل السجل من معالجة البصمة ─── --}}
+                <div class="form-group mt-3">
+                    <div class="custom-control custom-switch">
+                        <input type="hidden" name="is_manual_lock" value="0">
+                        <input type="checkbox"
+                               class="custom-control-input"
+                               id="isManualLock"
+                               name="is_manual_lock"
+                               value="1"
+                               {{ $attendance->is_manual_lock ? 'checked' : '' }}>
+                        <label class="custom-control-label font-weight-bold" for="isManualLock">
+                            <i class="fas fa-lock ml-1 text-danger"></i>
+                            تثبيت هذا السجل — لا تتأثر بأي معالجة بصمة لاحقة
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-1 mr-4">
+                        عند التفعيل: لن تؤثر عليه مزامنة الأجهزة، إعادة المعالجة الجماعية، أو تفريغ البصمة.
+                        يظل نافذاً حتى تزيل العلامة يدوياً.
+                    </small>
+                    @if($attendance->is_manual_lock)
+                    <div class="alert alert-warning py-2 mt-2 mb-0" style="font-size:.85rem">
+                        <i class="fas fa-lock ml-1"></i>
+                        <strong>هذا السجل مثبَّت</strong> — محمي من جميع عمليات معالجة البصمة التلقائية.
+                    </div>
+                    @endif
                 </div>
 
                 <div class="form-group">
@@ -257,7 +337,9 @@
                 <button type="submit" class="btn btn-warning">
                     <i class="fas fa-save ml-1"></i> حفظ التعديلات
                 </button>
-                <a href="{{ route('attendance.index') }}" class="btn btn-secondary mr-2">رجوع</a>
+                <a href="{{ $backUrl }}" class="btn btn-secondary mr-2">
+                    <i class="fas fa-arrow-right ml-1"></i> رجوع
+                </a>
             </div>
         </form>
     </div>
@@ -269,16 +351,19 @@
                 <i class="fas fa-exchange-alt ml-2"></i>تغيير الشيفت لهذا السجل فقط
             </h3>
         </div>
-        <form action="{{ route('attendance.update_shift', $attendance->id) }}" method="POST">
+        <form id="shiftForm" action="{{ route('attendance.update_shift', $attendance->id) }}" method="POST">
             @csrf
             <div class="card-body">
+                @if(session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
                 <p class="text-muted small">
                     الشيفت الأصلي للموظف: <strong>{{ $attendance->shift->type ?? '—' }}</strong>.
-                    يمكنك تعيين شيفت مختلف لهذا اليوم فقط — يؤثر على حساب التأخير والأوفرتايم فوراً.
+                    يمكنك تعيين شيفت مختلف لهذا اليوم فقط.
                 </p>
-                <div class="form-group">
+                <div class="form-group mb-0">
                     <label>الشيفت المخصص لهذا اليوم</label>
-                    <select name="shift_override_id" class="form-control">
+                    <select name="shift_override_id" id="shiftOverrideSelect" class="form-control">
                         <option value="">-- استخدام الشيفت الأصلي ({{ $attendance->shift->type ?? 'غير محدد' }}) --</option>
                         @foreach($shifts_types as $shift)
                             <option value="{{ $shift->id }}"
@@ -290,12 +375,105 @@
                     </select>
                 </div>
             </div>
-            <div class="card-footer">
+            <div class="card-footer d-flex flex-wrap gap-2" style="gap:.5rem">
+                {{-- زر 1: تطبيق الشيفت فقط وإعادة الاحتساب (يحتفظ بأوقات البصمة الحالية) --}}
                 <button type="submit" class="btn btn-info">
-                    <i class="fas fa-sync ml-1"></i> تطبيق الشيفت وإعادة الاحتساب
+                    <i class="fas fa-calculator ml-1"></i> تطبيق الشيفت وإعادة الاحتساب
+                </button>
+
+                {{-- زر 2: تطبيق الشيفت وإعادة معالجة البصمة من السجلات الخام --}}
+                <button type="submit"
+                        formaction="{{ route('attendance.reprocess_fingerprint', $attendance->id) }}"
+                        class="btn btn-warning"
+                        onclick="return confirm('سيتم إعادة تحديد أوقات الحضور والانصراف من سجلات البصمة الخام باستخدام الشيفت الجديد.\nهل تريد المتابعة؟')">
+                    <i class="fas fa-fingerprint ml-1"></i> تطبيق الشيفت وإعادة معالجة البصمة
                 </button>
             </div>
         </form>
+    </div>
+
+    {{-- وصف الفرق بين الزرين --}}
+    <div class="alert alert-light border mt-n2 mb-3" style="border-radius:0 0 6px 6px;font-size:.85em">
+        <i class="fas fa-info-circle text-info ml-1"></i>
+        <strong>الفرق بين الزرين:</strong>
+        <ul class="mb-0 mt-1">
+            <li><strong>إعادة الاحتساب فقط:</strong> يُبقي على أوقات الحضور/الانصراف المُسجَّلة ويُعيد حساب التأخير والأوفرتايم بالشيفت الجديد.</li>
+            <li><strong>إعادة معالجة البصمة:</strong> يرجع لسجلات البصمة الخام ويُعيد تحديد أوقات الحضور/الانصراف حسب نافذة الشيفت الجديد (ضروري عند التبديل بين شيفت صباحي وليلي).</li>
+        </ul>
+    </div>
+
+    {{-- ─── بطاقة البصمات الخام ─── --}}
+    <div class="card mt-3" style="border:2px solid #6c757d">
+        <div class="card-header" style="background:#f8f9fa">
+            <h3 class="card-title">
+                <i class="fas fa-fingerprint ml-2 text-secondary"></i>
+                <strong>سجلات البصمة الخام</strong>
+                <span class="text-muted">— {{ $date }}</span>
+                <span class="text-muted"> و </span>
+                <span class="text-warning">{{ $nextDate }}</span>
+                <span class="badge badge-{{ $fingerLogs->count() ? 'info' : 'secondary' }} mr-2" style="font-size:.9rem">
+                    {{ $fingerLogs->count() }} بصمة
+                </span>
+            </h3>
+        </div>
+        <div class="card-body p-0">
+            @if($fingerLogs->isEmpty())
+                <div class="p-4 text-muted text-center">
+                    @if(!($attendance->employee->finger_id ?? null))
+                        <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
+                        الموظف ليس لديه رقم بصمة مسجّل في ملفه.
+                    @else
+                        <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
+                        لا توجد سجلات بصمة لهذا الموظف
+                        (رقم البصمة: <strong>{{ $attendance->employee->finger_id }}</strong>)
+                        في يومَي <strong>{{ $date }}</strong> و <strong>{{ $nextDate }}</strong>.
+                    @endif
+                </div>
+            @else
+                <table class="table table-sm table-hover table-bordered mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th width="40">#</th>
+                            <th>وقت البصمة</th>
+                            <th>اليوم</th>
+                            <th>الجهاز</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($fingerLogs as $i => $log)
+                        <tr class="{{ $log->punch_time->format('Y-m-d') === $date ? '' : 'table-warning' }}">
+                            <td class="text-center">{{ $i + 1 }}</td>
+                            <td>
+                                <strong class="text-dark">{{ $log->punch_time->format('H:i:s') }}</strong>
+                                <small class="text-muted mr-2">{{ $log->punch_time->format('Y-m-d') }}</small>
+                            </td>
+                            <td>
+                                @if($log->punch_time->format('Y-m-d') === $date)
+                                    <span class="badge badge-primary">يوم الحضور</span>
+                                @else
+                                    <span class="badge badge-warning text-dark">اليوم التالي</span>
+                                @endif
+                            </td>
+                            <td>{{ $log->device?->device_name ?? '—' }}</td>
+                            <td>
+                                @if($log->is_processed)
+                                    <span class="badge badge-success">مُعالَجة</span>
+                                @else
+                                    <span class="badge badge-secondary">لم تُعالَج</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                <div class="px-3 py-2 text-muted" style="font-size:.82rem;background:#f8f9fa">
+                    <i class="fas fa-info-circle ml-1"></i>
+                    الصفوف الصفراء = اليوم التالي (للشيفت الليلي).
+                    &nbsp;|&nbsp; أول بصمة = وقت الحضور &nbsp;|&nbsp; آخر بصمة = وقت الانصراف.
+                </div>
+            @endif
+        </div>
     </div>
 
     {{-- ─── بطاقة معالجة البصمة الناقصة ─── --}}
@@ -353,11 +531,13 @@
 @section('script')
 <script>
 function handleStatusChange(val) {
-    var weeklySection    = document.getElementById('weeklyLeaveSection');
-    var permissionSection = document.getElementById('permissionSection');
+    var weeklySection         = document.getElementById('weeklyLeaveSection');
+    var permissionSection     = document.getElementById('permissionSection');
+    var absenceSection        = document.getElementById('absenceDeductionSection');
 
-    weeklySection.style.display    = (val == '6') ? 'block' : 'none';
-    permissionSection.style.display = (val == '1') ? 'block' : 'none';
+    weeklySection.style.display         = (val == '6') ? 'block' : 'none';
+    permissionSection.style.display     = (val == '1') ? 'block' : 'none';
+    absenceSection.style.display        = (val == '2') ? 'block' : 'none';
 }
 
 document.getElementById('resolutionSelect')?.addEventListener('change', function () {

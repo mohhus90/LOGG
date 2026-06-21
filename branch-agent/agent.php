@@ -19,9 +19,23 @@ if (!file_exists(__DIR__ . '/config.php')) {
 $config  = require __DIR__ . '/config.php';
 $dryRun  = in_array('--dry-run', $argv ?? []);
 
-$log = function(string $msg) {
-    echo '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
+$logFile = __DIR__ . '/agent.log';
+set_time_limit(110);
+ini_set('default_socket_timeout', 30); // timeout لاتصال البصمة 30 ثانية
+
+$log = function(string $msg) use ($logFile) {
+    $line = '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
+    echo $line;
+    file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
 };
+// التقاط أي fatal error وكتابته في الـ log
+register_shutdown_function(function() use ($logFile) {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        $line = '[' . date('Y-m-d H:i:s') . '] [FATAL] ' . $err['message'] . ' in ' . $err['file'] . ':' . $err['line'] . PHP_EOL;
+        file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+    }
+});
 
 $log("Starting fingerprint sync" . ($dryRun ? ' [DRY RUN]' : '') . "...");
 
@@ -104,7 +118,16 @@ if ($curlError) {
 $result = json_decode($response, true);
 
 if ($httpCode === 200 && isset($result['success']) && $result['success']) {
-    $log("SUCCESS: {$result['count']} new record(s) saved on server.");
+    $log("SUCCESS: {$result['count']} new log(s) saved."
+        . " Attendance → imported: " . ($result['attendance_imported'] ?? 0)
+        . ", missing punch: "        . ($result['attendance_missing']  ?? 0)
+        . ", absent: "               . ($result['attendance_absent']   ?? 0) . ".");
+
+    $notFound = $result['not_found_ids'] ?? [];
+    if (!empty($notFound)) {
+        $log("WARNING: " . count($notFound) . " finger ID(s) not matched to any employee → IDs: " . implode(', ', $notFound));
+        $log("ACTION REQUIRED: Assign these finger IDs to employees in the system, then re-run with force reprocess.");
+    }
     exit(0);
 }
 

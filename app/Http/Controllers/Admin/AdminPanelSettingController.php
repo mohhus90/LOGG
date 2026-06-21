@@ -171,10 +171,16 @@ class AdminPanelSettingController extends Controller
                 'sanctions_value_second_abcence' => $request->sanctions_value_second_abcence ?? 1,
                 'sanctions_value_third_abcence'  => $request->sanctions_value_third_abcence  ?? 1,
                 'sanctions_value_forth_abcence'  => $request->sanctions_value_forth_abcence  ?? 1,
-                'day_rate_divisor_type'          => (int)($request->day_rate_divisor_type    ?? 1),
-                'day_rate_divisor_custom'        => $request->day_rate_divisor_custom        ?? 26,
-                'hour_rate_divisor_type'         => (int)($request->hour_rate_divisor_type   ?? 1),
-                'hour_rate_divisor_custom'       => $request->hour_rate_divisor_custom       ?? 8,
+                'day_rate_divisor_type'               => (int)($request->day_rate_divisor_type    ?? 1),
+                'day_rate_divisor_custom'             => $request->day_rate_divisor_custom        ?? 26,
+                'hour_rate_divisor_type'              => (int)($request->hour_rate_divisor_type   ?? 1),
+                'hour_rate_divisor_custom'            => $request->hour_rate_divisor_custom       ?? 8,
+                'delay_tier1_minutes'                 => (int)($request->delay_tier1_minutes              ?? 0),
+                'delay_halfday_minutes'               => (int)($request->delay_halfday_minutes             ?? 0),
+                'delay_fullday_minutes'               => (int)($request->delay_fullday_minutes             ?? 0),
+                'early_departure_halfday_minutes'     => (int)($request->early_departure_halfday_minutes   ?? 0),
+                'early_departure_fullday_minutes'     => (int)($request->early_departure_fullday_minutes   ?? 0),
+                'early_departure_fullplushalf_minutes'=> (int)($request->early_departure_fullplushalf_minutes ?? 0),
             ];
 
             $debug = [

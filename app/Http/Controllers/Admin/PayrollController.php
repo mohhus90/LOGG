@@ -144,15 +144,18 @@ class PayrollController extends Controller
         $dailyRate = $totalDays > 0 ? ($basicSal / $totalDays) : 0;
         $hourlyRate = $dailyRate / 8;
 
-        // ── الحضور ──
+        // ── الحضور (نستبعد سجلات ما قبل تاريخ التعيين من جميع الحسابات) ──
         $attendances = Attendance::where('employee_id', $employee->id)
             ->whereBetween('attendance_date', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->where('is_before_hire', 0)
+            ->when($employee->emp_start_date, fn($q) => $q->where('attendance_date', '>=', $employee->emp_start_date))
             ->get();
 
-        $presentDays = $attendances->where('status', 1)->count();
-        $absenceDays = $attendances->where('status', 2)->count();
-        $leaveDays   = $attendances->whereIn('status', [3, 4, 5])->count();
-        $earnedSal   = round($dailyRate * ($presentDays + $leaveDays), 2);
+        $presentDays   = $attendances->where('status', 1)->count();
+        $absentRecords = $attendances->where('status', 2)->sortBy('attendance_date');
+        $absenceDays   = $absentRecords->count();
+        $leaveDays     = $attendances->whereIn('status', [3, 4, 5])->count();
+        $earnedSal     = round($dailyRate * ($presentDays + $leaveDays), 2);
 
         // ── الأوفرتايم ──
         $overtimeAmount = round($attendances->sum('overtime_amount'), 2);
@@ -160,8 +163,8 @@ class PayrollController extends Controller
         // ── التأخيرات ──
         $lateDeductions = $this->calcLateDeductions($attendances, $settings, $dailyRate, $hourlyRate);
 
-        // ── خصم الغياب ──
-        $absenceDeductions = $this->calcAbsenceDeductions($absenceDays, $dailyRate, $settings);
+        // ── خصم الغياب (يستخدم الخصم المخصص لكل سجل إن وُجد) ──
+        $absenceDeductions = $this->calcAbsenceDeductions($absentRecords, $dailyRate, $settings);
 
         // ── العمولات ──
         $commissionsAmount = round(
@@ -286,9 +289,9 @@ class PayrollController extends Controller
         }
     }
 
-    private function calcAbsenceDeductions(int $absenceDays, float $dailyRate, $settings): float
+    private function calcAbsenceDeductions(\Illuminate\Support\Collection $absentRecords, float $dailyRate, $settings): float
     {
-        if ($absenceDays <= 0) return 0.0;
+        if ($absentRecords->isEmpty()) return 0.0;
 
         $s1 = (float)($settings->sanctions_value_first_abcence  ?? 1);
         $s2 = (float)($settings->sanctions_value_second_abcence ?? 2);
@@ -296,15 +299,25 @@ class PayrollController extends Controller
         $s4 = (float)($settings->sanctions_value_forth_abcence  ?? 4);
 
         $deduction = 0.0;
-        for ($i = 1; $i <= $absenceDays; $i++) {
-            $multiplier = match (true) {
-                $i === 1 => $s1,
-                $i === 2 => $s2,
-                $i === 3 => $s3,
-                default  => $s4,
-            };
-            $deduction += $dailyRate * $multiplier;
+        $seqIndex  = 0;
+
+        foreach ($absentRecords as $record) {
+            if ($record->absence_deduction_days !== null) {
+                // استخدام الخصم المخصص لهذا السجل
+                $deduction += $dailyRate * (float)$record->absence_deduction_days;
+            } else {
+                // الصيغة التسلسلية من الضبط العام
+                $seqIndex++;
+                $multiplier = match (true) {
+                    $seqIndex === 1 => $s1,
+                    $seqIndex === 2 => $s2,
+                    $seqIndex === 3 => $s3,
+                    default         => $s4,
+                };
+                $deduction += $dailyRate * $multiplier;
+            }
         }
+
         return round($deduction, 2);
     }
 

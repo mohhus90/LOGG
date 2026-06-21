@@ -59,44 +59,139 @@
         </div>
       </div>
 
-      {{-- إعدادات التأخير --}}
+      {{-- إعدادات التأخير والانصراف المبكر --}}
+      @php $mode = (int)($data->delay_calc_mode ?? 1); @endphp
       <div class="card mb-3">
-        <div class="card-header"><h5 class="mb-0"><i class="fas fa-clock ml-2"></i>إعدادات التأخير والانصراف المبكر</h5></div>
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-clock ml-2"></i>إعدادات التأخير والانصراف المبكر</h5>
+        </div>
         <div class="card-body">
-          <div class="row mb-2">
+
+          {{-- وضع الاحتساب --}}
+          <div class="row mb-3">
             <div class="col-md-6">
               <small class="text-muted d-block">طريقة الاحتساب</small>
               <strong>
-                @php $mode = $data->delay_calc_mode ?? 1; @endphp
-                @if($mode == 1) بالدقيقة
-                @elseif($mode == 2) نصف/يوم بعد X مرة
-                @else مدمج (دقيقة + مرات)
+                @if($mode == 1) وضع 1 — بالدقيقة (دقيقة × مضاعف)
+                @elseif($mode == 2) وضع 2 — جزء اليوم (ربع / نصف / يوم)
+                @else وضع 3 — هرمي مدمج (دقيقة ثم جزء اليوم)
                 @endif
               </strong>
             </div>
             <div class="col-md-6">
-              <small class="text-muted d-block">خصم الدقيقة</small>
-              <strong>{{ $data->sanctions_value_minute_delay ?? 0 }} ج.م
-                <span class="text-muted small">{{ ($data->sanctions_value_minute_delay ?? 0) == 0 ? '(تلقائي من الراتب)' : '' }}</span>
+              <small class="text-muted d-block">قيمة خصم الدقيقة (مضاعف)</small>
+              <strong>
+                @if($mode == 2)
+                  <span class="text-muted">غير مستخدم في وضع جزء اليوم</span>
+                @elseif(($data->sanctions_value_minute_delay ?? 0) == 0)
+                  تلقائي من الراتب
+                @else
+                  {{ $data->sanctions_value_minute_delay }} ×
+                @endif
               </strong>
             </div>
           </div>
-          <div class="row text-center">
-            @foreach([
-              ['after_minute_calc_delay',   'تأخير بعد (د)',    'warning'],
-              ['after_minute_calc_early',   'انصراف مبكر (د)', 'warning'],
-              ['after_minute_quarterday',   'ربع يوم بعد (د)', 'danger'],
-              ['after_time_half_daycut',    'نصف يوم بعد (م)', 'danger'],
-              ['after_time_allday_daycut',  'يوم كامل بعد (م)','danger'],
-            ] as [$field, $label, $color])
-            <div class="col-md-4 col-6 mb-3">
+
+          {{-- دقائق السماح --}}
+          <div class="row text-center mb-3">
+            <div class="col-md-6 mb-2">
               <div class="p-2 rounded" style="background:#f8f9fa">
-                <div class="h4 font-weight-bold text-{{ $color }} mb-0">{{ $data->$field ?? 0 }}</div>
-                <small class="text-muted">{{ $label }}</small>
+                <div class="h4 font-weight-bold text-secondary mb-0">{{ $data->after_minute_calc_delay ?? 0 }} د</div>
+                <small class="text-muted">سماح التأخير</small>
               </div>
             </div>
-            @endforeach
+            <div class="col-md-6 mb-2">
+              <div class="p-2 rounded" style="background:#f8f9fa">
+                <div class="h4 font-weight-bold text-secondary mb-0">{{ $data->after_minute_calc_early ?? 0 }} د</div>
+                <small class="text-muted">سماح الانصراف المبكر</small>
+              </div>
+            </div>
           </div>
+
+          {{-- حدود جزء اليوم (تظهر في وضعي 2 و3) --}}
+          @if($mode == 2 || $mode == 3)
+          <div class="alert alert-warning py-2 mb-2" style="font-size:.85rem">
+            <i class="fas fa-layer-group ml-1"></i>
+            <strong>حدود جزء اليوم — التأخير:</strong>
+          </div>
+          <div class="row text-center mb-3">
+            @if($mode == 3)
+            <div class="col-md-3 mb-2">
+              <div class="p-2 rounded border" style="background:#fff8e1">
+                <div class="h5 font-weight-bold text-warning mb-0">{{ $data->delay_tier1_minutes ?? 0 }} د</div>
+                <small class="text-muted">حد المرحلة الأولى</small>
+                <div class="text-muted" style="font-size:.75rem">(دقيقة × مضاعف حتى هذا الحد)</div>
+              </div>
+            </div>
+            @endif
+            <div class="col-md-3 mb-2">
+              <div class="p-2 rounded border" style="background:#fff3e0">
+                <div class="h5 font-weight-bold text-warning mb-0">{{ $data->after_minute_quarterday ?? 0 }} د</div>
+                <small class="text-muted">خصم ربع يوم بعد</small>
+              </div>
+            </div>
+            <div class="col-md-3 mb-2">
+              <div class="p-2 rounded border" style="background:#fce4ec">
+                <div class="h5 font-weight-bold text-danger mb-0">{{ $data->delay_halfday_minutes ?? 0 }} د</div>
+                <small class="text-muted">خصم نصف يوم بعد</small>
+              </div>
+            </div>
+            <div class="col-md-3 mb-2">
+              <div class="p-2 rounded border" style="background:#ffebee">
+                <div class="h5 font-weight-bold text-danger mb-0">{{ $data->delay_fullday_minutes ?? 0 }} د</div>
+                <small class="text-muted">خصم يوم كامل بعد</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-danger py-2 mb-2" style="font-size:.85rem">
+            <i class="fas fa-sign-out-alt ml-1"></i>
+            <strong>حدود جزء اليوم — الانصراف المبكر:</strong>
+          </div>
+          <div class="row text-center mb-2">
+            <div class="col-md-4 mb-2">
+              <div class="p-2 rounded border" style="background:#e8f5e9">
+                <div class="h5 font-weight-bold text-success mb-0">{{ $data->early_departure_halfday_minutes ?? 0 }} د</div>
+                <small class="text-muted">خصم نصف يوم بعد</small>
+              </div>
+            </div>
+            <div class="col-md-4 mb-2">
+              <div class="p-2 rounded border" style="background:#fce4ec">
+                <div class="h5 font-weight-bold text-danger mb-0">{{ $data->early_departure_fullday_minutes ?? 0 }} د</div>
+                <small class="text-muted">خصم يوم كامل بعد</small>
+              </div>
+            </div>
+            <div class="col-md-4 mb-2">
+              <div class="p-2 rounded border" style="background:#ffebee">
+                <div class="h5 font-weight-bold text-danger mb-0">{{ $data->early_departure_fullplushalf_minutes ?? 0 }} د</div>
+                <small class="text-muted">خصم يوم + نصف بعد</small>
+              </div>
+            </div>
+          </div>
+          @else
+          {{-- وضع 1: عرض مبسّط --}}
+          <div class="row text-center">
+            <div class="col-md-4 mb-2">
+              <div class="p-2 rounded" style="background:#f8f9fa">
+                <div class="h4 font-weight-bold text-warning mb-0">{{ $data->after_minute_quarterday ?? 0 }} د</div>
+                <small class="text-muted">ربع يوم بعد (د)</small>
+              </div>
+            </div>
+            <div class="col-md-4 mb-2">
+              <div class="p-2 rounded" style="background:#f8f9fa">
+                <div class="h4 font-weight-bold text-danger mb-0">{{ $data->after_time_half_daycut ?? 0 }}</div>
+                <small class="text-muted">نصف يوم بعد (م)</small>
+              </div>
+            </div>
+            <div class="col-md-4 mb-2">
+              <div class="p-2 rounded" style="background:#f8f9fa">
+                <div class="h4 font-weight-bold text-danger mb-0">{{ $data->after_time_allday_daycut ?? 0 }}</div>
+                <small class="text-muted">يوم كامل بعد (م)</small>
+              </div>
+            </div>
+          </div>
+          @endif
+
         </div>
       </div>
     </div>
@@ -106,11 +201,17 @@
   <div class="card mb-3">
     <div class="card-header"><h5 class="mb-0"><i class="fas fa-business-time ml-2"></i>إعدادات الأوفرتايم</h5></div>
     <div class="card-body">
+      @php $overtimeMult = (float)($data->overtime_multiplier ?? 1.5); @endphp
       <div class="row text-center">
         <div class="col-md-4">
           <div class="p-3 rounded" style="background:#f8f9fa">
-            <div class="h2 font-weight-bold text-success mb-0">{{ $data->overtime_multiplier ?? 1.5 }}×</div>
-            <small class="text-muted">مضاعف سعر الساعة للأوفرتايم</small>
+            @if($overtimeMult == 0)
+              <div class="h2 font-weight-bold text-danger mb-0">معطّل</div>
+              <small class="text-muted">الأوفرتايم معطّل (المضاعف = 0)</small>
+            @else
+              <div class="h2 font-weight-bold text-success mb-0">{{ $overtimeMult }}×</div>
+              <small class="text-muted">مضاعف سعر الساعة للأوفرتايم</small>
+            @endif
           </div>
         </div>
       </div>

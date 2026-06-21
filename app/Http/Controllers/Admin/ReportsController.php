@@ -16,6 +16,7 @@ use App\Models\Advance;
 use App\Models\EmployeeVacationBalance;
 use App\Models\Finance_calender;
 use App\Models\Department;
+use App\Models\Admin_panel_setting;
 
 class ReportsController extends Controller
 {
@@ -41,21 +42,27 @@ class ReportsController extends Controller
     // ─────────────────────────────────────────────
     public function attendance(Request $request)
     {
-        $filters   = $request->only(['employee_id','from_date','to_date','status','department_id']);
-        $format    = $request->input('format', 'excel');
+        $filters = $request->only([
+            'employee_id','from_date','to_date','status','department_id','sort_by',
+        ]);
+        $format  = $request->input('format', 'excel');
+        $sortBy  = $request->input('sort_by', 'date_desc'); // date_desc | date_asc | name_asc | name_desc
 
         if ($format === 'excel') {
             $filename = 'attendance_' . now()->format('Ymd_His') . '.xlsx';
-            return Excel::download(new AttendanceExport($filters), $filename);
+            return Excel::download(new AttendanceExport($filters, $sortBy), $filename);
         }
 
         // PDF — view قابل للطباعة
-        $query = Attendance::with(['employee','shift'])
+        $query = Attendance::with(['employee','shift','shiftOverride'])
             ->where('attendances.com_code', $this->comCode());
         $this->applyAttendanceFilters($query, $filters);
-        $data = $query->orderBy('attendance_date','desc')->get();
+        $this->applyAttendanceSort($query, $sortBy);
+        $data = $query->get();
 
-        return view('admin.reports.attendance_print', compact('data', 'filters'));
+        $settings = Admin_panel_setting::getByComCode($this->comCode());
+
+        return view('admin.reports.attendance_print', compact('data', 'filters', 'settings', 'sortBy'));
     }
 
     // ─────────────────────────────────────────────
@@ -131,5 +138,21 @@ class ReportsController extends Controller
         if (!empty($filters['department_id'])) {
             $query->whereHas('employee', fn($q) => $q->where('emp_departments_id', $filters['department_id']));
         }
+    }
+
+    private function applyAttendanceSort($query, string $sortBy): void
+    {
+        match ($sortBy) {
+            'date_asc'   => $query->orderBy('attendance_date', 'asc'),
+            'name_asc'   => $query->join('employees', 'attendances.employee_id', '=', 'employees.id')
+                                  ->orderBy('employees.employee_name_A', 'asc')
+                                  ->orderBy('attendance_date', 'asc')
+                                  ->select('attendances.*'),
+            'name_desc'  => $query->join('employees', 'attendances.employee_id', '=', 'employees.id')
+                                  ->orderBy('employees.employee_name_A', 'desc')
+                                  ->orderBy('attendance_date', 'asc')
+                                  ->select('attendances.*'),
+            default      => $query->orderBy('attendance_date', 'desc'),
+        };
     }
 }
