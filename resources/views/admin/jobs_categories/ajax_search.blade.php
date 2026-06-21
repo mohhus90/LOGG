@@ -2,41 +2,40 @@
             @if(@isset($data) and !@empty($data) )
             <table class="table table-bordered">
               <thead>
-                <th scope="col">كود الوظيفة</th>
-                <th scope="col">اسم الوظيفة</th>
-                <th scope="col">الاضافة بواسطة</th>
-                <th scope="col">تاريخ الاضافة </th>
-                <th scope="col">التحديث بواسطة</th>
-                <th scope="col">تاريخ التحديث</th>
-                <th scope="col">اجراء</th>
-                
+                <th scope="col">{{ __('admin.job_code') }}</th>
+                <th scope="col">{{ __('admin.job_name') }}</th>
+                <th scope="col">{{ __('admin.created_by') }}</th>
+                <th scope="col">{{ __('admin.created_at') }}</th>
+                <th scope="col">{{ __('admin.updated_by') }}</th>
+                <th scope="col">{{ __('admin.updated_at') }}</th>
+                <th scope="col">{{ __('admin.action') }}</th>
               </thead>
               <tbody>
                 @foreach ($data as $info)
                   <tr>
                     <td> {{ $info->id }}</td>
                     <td> {{ $info->job_name }}</td>
-                    <td> {{ $info->addedby->name }}</td>
+                    <td> {{ $info->addedby?->name ?? __('admin.unknown') }}</td>
                     <td> {{ $info->created_at }}</td>
                     <td>
                       @if ($info->updated_by>0)
-                      {{ $info->updatedby->name }}
+                      {{ $info->updatedby?->name ?? __('admin.unknown') }}
                       @else
-                        لا يوجد
-                      @endif
-                    </td>
-                    <td> 
-                      @if(@isset($info->updated_at) and !@empty($info->updated_at) )
-                      {{ $info->updated_at }}
-                      @else
-                        لا يوجد
+                        —
                       @endif
                     </td>
                     <td>
-                      <a href="{{ route('jobs_categories.edit',$info->id) }}" class="btn btn-sm btn-success">تعديل</a>
-                      <a href="{{ route('jobs_categories.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">حذف</a>
+                      @if(@isset($info->updated_at) and !@empty($info->updated_at) )
+                      {{ $info->updated_at }}
+                      @else
+                        —
+                      @endif
                     </td>
-                  </tr>  
+                    <td>
+                      <a href="{{ route('jobs_categories.edit',$info->id) }}" class="btn btn-sm btn-success">{{ __('admin.edit') }}</a>
+                      <a href="{{ route('jobs_categories.delete',$info->id) }}" class="btn btn-sm btn-danger are_you_sure">{{ __('admin.delete') }}</a>
+                    </td>
+                  </tr>
                 @endforeach
               </tbody>
             </table>
@@ -45,6 +44,5 @@
                 {{ $data->links() }}
               </div>
             @else
-            <h1>لا توجد بيانات للعرض</h1>
+            <h1>{{ __('admin.no_data') }}</h1>
             @endif
-        

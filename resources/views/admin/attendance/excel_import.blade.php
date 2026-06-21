@@ -1,8 +1,8 @@
 @extends('admin.layouts.admin')
-@section('title') استيراد الحضور من Excel @endsection
-@section('start') الحضور والانصراف @endsection
-@section('home') <a href="{{ route('attendance.index') }}">الحضور والانصراف</a> @endsection
-@section('startpage') استيراد Excel @endsection
+@section('title') {{ __('admin.att_excel_title') }} @endsection
+@section('start') {{ __('admin.att_title') }} @endsection
+@section('home') <a href="{{ route('attendance.index') }}">{{ __('admin.att_title') }}</a> @endsection
+@section('startpage') Excel @endsection
 
 @section('css')
 <style>
@@ -20,12 +20,11 @@
 @section('content')
 <div class="col-md-9 mx-auto">
 
-    {{-- بطاقة الرفع --}}
     <div class="card card-primary">
         <div class="card-header">
             <h3 class="card-title">
                 <i class="fas fa-file-excel ml-2"></i>
-                استيراد الحضور والانصراف من Excel
+                {{ __('admin.att_excel_title') }}
             </h3>
         </div>
         <form action="{{ route('attendance.excel_import') }}" method="POST" enctype="multipart/form-data" id="importForm">
@@ -43,12 +42,11 @@
                     </div>
                 @endif
 
-                {{-- منطقة رفع الملف --}}
                 <div class="drop-zone" id="dropZone" onclick="document.getElementById('excelFile').click()">
                     <i class="fas fa-file-excel"></i>
                     <div id="dropText">
-                        <h5>اضغط أو اسحب ملف Excel هنا</h5>
-                        <p class="text-muted mb-0">يدعم: .xlsx, .xls, .csv — حجم أقصى 10MB</p>
+                        <h5>{{ __('admin.att_drop_here') }}</h5>
+                        <p class="text-muted mb-0">{{ __('admin.att_file_types') }}</p>
                     </div>
                     <div id="filePreview" class="d-none mt-2">
                         <span class="badge badge-success p-2" id="fileName"></span>
@@ -59,28 +57,28 @@
 
                 <div class="row mt-3">
                     <div class="col-md-4 form-group">
-                        <label>تاريخ الحضور <span class="text-danger">*</span></label>
+                        <label>{{ __('admin.att_date') }} <span class="text-danger">*</span></label>
                         <input type="date" name="attendance_date" class="form-control" required
                             value="{{ today()->format('Y-m-d') }}">
                     </div>
                     <div class="col-md-4 form-group">
-                        <label>تنسيق الملف</label>
+                        <label>{{ __('admin.att_file_format') }}</label>
                         <select name="has_date_col" class="form-control" id="formatSelect">
-                            <option value="0">A=Finger ID | B=حضور | C=انصراف</option>
-                            <option value="1">A=Finger ID | B=التاريخ | C=حضور | D=انصراف</option>
+                            <option value="0">A=Finger ID | B={{ __('admin.att_check_in') }} | C={{ __('admin.att_check_out') }}</option>
+                            <option value="1">A=Finger ID | B={{ __('admin.att_date') }} | C={{ __('admin.att_check_in') }} | D={{ __('admin.att_check_out') }}</option>
                         </select>
                     </div>
                     <div class="col-md-4 form-group">
-                        <label>الموظفون الغائبون</label>
+                        <label>{{ __('admin.att_absent_employees') }}</label>
                         <div class="mt-2">
                             <div class="custom-control custom-switch">
                                 <input type="checkbox" class="custom-control-input" id="markAbsent"
                                     name="mark_absent" value="1" checked>
                                 <label class="custom-control-label" for="markAbsent">
-                                    تسجيل غياب تلقائي للغائبين
+                                    {{ __('admin.att_auto_absent') }}
                                 </label>
                             </div>
-                            <small class="text-muted">الموظفون غير الموجودين في الملف يُسجَّل لهم غياب</small>
+                            <small class="text-muted">{{ __('admin.att_not_in_file_absent') }}</small>
                         </div>
                     </div>
                 </div>
@@ -88,31 +86,30 @@
             </div>
             <div class="card-footer">
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-upload ml-1"></i> رفع ومعالجة
+                    <i class="fas fa-upload ml-1"></i> {{ __('admin.att_upload_process') }}
                 </button>
-                <a href="{{ route('attendance.index') }}" class="btn btn-secondary mr-2">رجوع</a>
+                <a href="{{ route('attendance.index') }}" class="btn btn-secondary mr-2">{{ __('admin.back') }}</a>
                 <a href="{{ route('attendance.excel_template') }}" class="btn btn-outline-success mr-2">
-                    <i class="fas fa-download ml-1"></i> تحميل نموذج Excel
+                    <i class="fas fa-download ml-1"></i> {{ __('admin.att_download_template') }}
                 </a>
             </div>
         </form>
     </div>
 
-    {{-- توضيح التنسيق --}}
     <div class="card">
         <div class="card-header bg-light">
-            <h5 class="mb-0"><i class="fas fa-info-circle text-info ml-2"></i>تنسيق ملف Excel المطلوب</h5>
+            <h5 class="mb-0"><i class="fas fa-info-circle text-info ml-2"></i>{{ __('admin.att_excel_format_title') }}</h5>
         </div>
         <div class="card-body">
 
-            <h6 class="text-primary">التنسيق الأول (بدون عمود تاريخ)</h6>
+            <h6 class="text-primary">{{ __('admin.att_format_one_title') }}</h6>
             <div class="table-responsive mb-3">
                 <table class="table table-bordered table-sm" style="max-width:500px">
                     <thead>
                         <tr>
                             <th class="template-col">A — Finger ID</th>
-                            <th class="template-col">B — وقت الحضور</th>
-                            <th class="template-col">C — وقت الانصراف</th>
+                            <th class="template-col">B — {{ __('admin.att_check_in') }}</th>
+                            <th class="template-col">C — {{ __('admin.att_check_out') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,15 +120,15 @@
                 </table>
             </div>
 
-            <h6 class="text-primary">التنسيق الثاني (مع عمود تاريخ — لأجهزة تصدّر سجلات متعددة الأيام)</h6>
+            <h6 class="text-primary">{{ __('admin.att_format_two_title') }}</h6>
             <div class="table-responsive mb-3">
                 <table class="table table-bordered table-sm" style="max-width:650px">
                     <thead>
                         <tr>
                             <th class="template-col">A — Finger ID</th>
-                            <th class="template-col">B — التاريخ</th>
-                            <th class="template-col">C — وقت الحضور</th>
-                            <th class="template-col">D — وقت الانصراف</th>
+                            <th class="template-col">B — {{ __('admin.att_date') }}</th>
+                            <th class="template-col">C — {{ __('admin.att_check_in') }}</th>
+                            <th class="template-col">D — {{ __('admin.att_check_out') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -145,23 +142,23 @@
                 <div class="col-md-6">
                     <div class="alert alert-success mb-0">
                         <i class="fas fa-check-circle ml-1"></i>
-                        <strong>ملاحظات:</strong>
+                        <strong>{{ __('admin.notes') }}:</strong>
                         <ul class="mb-0 mt-1">
-                            <li>الصف الأول (Headers) يُتجاهل تلقائياً</li>
-                            <li>إذا بصم موظف أكثر من مرة → أبكر وقت = حضور، أحدث وقت = انصراف</li>
-                            <li>Finger ID يجب أن يتطابق مع بيانات الموظف في النظام</li>
-                            <li>يدعم توقيت Excel الرقمي (0.354 = 08:30) تلقائياً</li>
+                            <li>{{ __('admin.att_first_row_ignored') }}</li>
+                            <li>{{ __('admin.att_multiple_punches') }}</li>
+                            <li>{{ __('admin.att_finger_must_match') }}</li>
+                            <li>{{ __('admin.att_excel_time_support') }}</li>
                         </ul>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="alert alert-warning mb-0">
                         <i class="fas fa-exclamation-triangle ml-1"></i>
-                        <strong>تنبيهات:</strong>
+                        <strong>{{ __('admin.att_warnings') }}:</strong>
                         <ul class="mb-0 mt-1">
-                            <li>Finger IDs غير الموجودة في النظام تُعرض في نتيجة الاستيراد</li>
-                            <li>الموظف إذا كان لديه سجل مسبق في هذا اليوم لن يُستبدل</li>
-                            <li>تأكد من تطابق finger_id في بيانات الموظف</li>
+                            <li>{{ __('admin.att_unknown_fingers') }}</li>
+                            <li>{{ __('admin.att_existing_not_replaced') }}</li>
+                            <li>{{ __('admin.att_check_finger') }}</li>
                         </ul>
                     </div>
                 </div>
@@ -183,7 +180,6 @@ function previewFile(input) {
     document.getElementById('dropZone').classList.add('active');
 }
 
-// Drag & Drop
 const zone = document.getElementById('dropZone');
 zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('active'); });
 zone.addEventListener('dragleave', () => zone.classList.remove('active'));

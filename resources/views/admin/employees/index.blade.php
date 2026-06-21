@@ -1,8 +1,8 @@
 @extends('admin.layouts.admin')
-@section('title') الموظفون @endsection
-@section('start') شئون الموظفين @endsection
-@section('home') <a href="{{ route('employees.index') }}">الموظفون</a> @endsection
-@section('startpage') عرض @endsection
+@section('title') {{ __('admin.emp_title') }} @endsection
+@section('start') {{ __('admin.hr_management') }} @endsection
+@section('home') <a href="{{ route('employees.index') }}">{{ __('admin.emp_title') }}</a> @endsection
+@section('startpage') {{ __('admin.view') }} @endsection
 @section('css')
 <style>
 .search-panel{background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:1rem;border-right:4px solid #2d5a9e;}
@@ -16,20 +16,20 @@
 <div class="col-12">
 
 <div class="row mb-3">
-  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num">{{ $totalAll }}</div><div class="text-muted small">إجمالي الموظفين</div></div></div>
-  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num" style="color:#198754">{{ $totalActive }}</div><div class="text-muted small">يعملون حالياً</div></div></div>
-  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num" style="color:#dc3545">{{ $totalAll - $totalActive }}</div><div class="text-muted small">غير نشطين</div></div></div>
-  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num" style="color:#2d5a9e">{{ number_format($totalSalary,0) }}</div><div class="text-muted small">إجمالي الرواتب ج.م</div></div></div>
+  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num">{{ $totalAll }}</div><div class="text-muted small">{{ __('admin.emp_total') }}</div></div></div>
+  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num" style="color:#198754">{{ $totalActive }}</div><div class="text-muted small">{{ __('admin.emp_active') }}</div></div></div>
+  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num" style="color:#dc3545">{{ $totalAll - $totalActive }}</div><div class="text-muted small">{{ __('admin.emp_inactive') }}</div></div></div>
+  <div class="col-md-3 col-6 mb-2"><div class="stat-mini"><div class="num" style="color:#2d5a9e">{{ number_format($totalSalary,0) }}</div><div class="text-muted small">{{ __('admin.emp_total_salary') }}</div></div></div>
 </div>
 
 <div class="search-panel">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h6 class="mb-0 font-weight-bold" style="color:#1e3a5f">
-      <i class="fas fa-search ml-1"></i>بحث متقدم
+      <i class="fas fa-search ml-1"></i>{{ __('admin.emp_advanced_search') }}
     </h6>
     <div>
       <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleAdv">
-        <i class="fas fa-sliders-h ml-1"></i>فلاتر إضافية
+        <i class="fas fa-sliders-h ml-1"></i>{{ __('admin.emp_extra_filters') }}
       </button>
       <a href="{{ route('employees.index') }}" class="btn btn-sm btn-outline-danger mr-1">
         <i class="fas fa-times"></i>
@@ -38,93 +38,110 @@
   </div>
   <form method="GET" action="{{ route('employees.index') }}">
     <div class="row">
-      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_name" class="form-control form-control-sm" placeholder="الاسم" value="{{ request('search_name') }}"></div>
-      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_code" class="form-control form-control-sm" placeholder="الكود" value="{{ request('search_code') }}"></div>
-      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_national" class="form-control form-control-sm" placeholder="الرقم القومي" value="{{ request('search_national') }}"></div>
-      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_phone" class="form-control form-control-sm" placeholder="الهاتف" value="{{ request('search_phone') }}"></div>
+      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_name" class="form-control form-control-sm" placeholder="{{ __('admin.name') }}" value="{{ request('search_name') }}"></div>
+      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_code" class="form-control form-control-sm" placeholder="{{ __('admin.code') }}" value="{{ request('search_code') }}"></div>
+      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_national" class="form-control form-control-sm" placeholder="{{ __('admin.emp_national_id') }}" value="{{ request('search_national') }}"></div>
+      <div class="col-md-2 col-6 mb-2"><input type="text" name="search_phone" class="form-control form-control-sm" placeholder="{{ __('admin.phone') }}" value="{{ request('search_phone') }}"></div>
       <div class="col-md-2 col-6 mb-2">
         <select name="search_func_status" class="form-control form-control-sm">
-          <option value="">كل الحالات</option>
-          <option value="1" {{ request('search_func_status')=='1'?'selected':'' }}>يعمل</option>
-          <option value="2" {{ request('search_func_status')=='2'?'selected':'' }}>لا يعمل</option>
+          <option value="">{{ __('admin.emp_all_status') }}</option>
+          <option value="1" {{ request('search_func_status')=='1'?'selected':'' }}>{{ __('admin.emp_working') }}</option>
+          <option value="2" {{ request('search_func_status')=='2'?'selected':'' }}>{{ __('admin.emp_not_working') }}</option>
         </select>
       </div>
-      <div class="col-md-2 mb-2"><button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-search ml-1"></i>بحث</button></div>
+      <div class="col-md-2 mb-2"><button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-search ml-1"></i>{{ __('admin.search') }}</button></div>
     </div>
 
     <div id="advFilters" style="display:none">
       <hr class="mt-1 mb-2">
       <div class="row">
+        {{-- فلتر العميل --}}
         <div class="col-md-2 col-6 mb-2">
-          <label class="small">الفرع</label>
-          <select name="search_branch" class="form-control form-control-sm">
+          <label class="small" style="color:#b8860b;font-weight:600;">العميل (Outsource)</label>
+          <select name="client_id" class="form-control form-control-sm" style="border-color:#b8860b">
             <option value="">الكل</option>
+            <option value="0" {{ request('client_id')==='0'?'selected':'' }}>— موظفو الشركة فقط —</option>
+            @foreach($clients as $cl)
+              <option value="{{ $cl->id }}" {{ request('client_id')==$cl->id?'selected':'' }}>{{ $cl->client_name }}</option>
+            @endforeach
+          </select>
+        </div>
+        {{-- فلتر HRID --}}
+        <div class="col-md-2 col-6 mb-2">
+          <label class="small">HRID (كود العميل)</label>
+          <input type="text" name="search_hrid" class="form-control form-control-sm"
+                 placeholder="KR-15" value="{{ request('search_hrid') }}">
+        </div>
+        <div class="col-md-2 col-6 mb-2">
+          <label class="small">{{ __('admin.emp_branch') }}</label>
+          <select name="search_branch" class="form-control form-control-sm">
+            <option value="">{{ __('admin.all') }}</option>
             @foreach($branches as $br)<option value="{{ $br->id }}" {{ request('search_branch')==$br->id?'selected':'' }}>{{ $br->branch_name }}</option>@endforeach
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
-          <label class="small">الإدارة</label>
+          <label class="small">{{ __('admin.emp_dept') }}</label>
           <select name="search_dept" class="form-control form-control-sm">
-            <option value="">الكل</option>
+            <option value="">{{ __('admin.all') }}</option>
             @foreach($departments as $d)<option value="{{ $d->id }}" {{ request('search_dept')==$d->id?'selected':'' }}>{{ $d->dep_name }}</option>@endforeach
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
-          <label class="small">الوظيفة</label>
+          <label class="small">{{ __('admin.emp_job') }}</label>
           <select name="search_job" class="form-control form-control-sm">
-            <option value="">الكل</option>
+            <option value="">{{ __('admin.all') }}</option>
             @foreach($jobs_categories as $j)<option value="{{ $j->id }}" {{ request('search_job')==$j->id?'selected':'' }}>{{ $j->job_name }}</option>@endforeach
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
-          <label class="small">الشيفت</label>
+          <label class="small">{{ __('admin.emp_shift') }}</label>
           <select name="search_shift" class="form-control form-control-sm">
-            <option value="">الكل</option>
+            <option value="">{{ __('admin.all') }}</option>
             @foreach($shifts as $sh)<option value="{{ $sh->id }}" {{ request('search_shift')==$sh->id?'selected':'' }}>{{ $sh->type }}</option>@endforeach
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
-          <label class="small">الجنس</label>
+          <label class="small">{{ __('admin.emp_gender') }}</label>
           <select name="search_gender" class="form-control form-control-sm">
-            <option value="">الكل</option>
-            <option value="1" {{ request('search_gender')=='1'?'selected':'' }}>ذكر</option>
-            <option value="2" {{ request('search_gender')=='2'?'selected':'' }}>أنثى</option>
+            <option value="">{{ __('admin.all') }}</option>
+            <option value="1" {{ request('search_gender')=='1'?'selected':'' }}>{{ __('admin.male') }}</option>
+            <option value="2" {{ request('search_gender')=='2'?'selected':'' }}>{{ __('admin.female') }}</option>
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
-          <label class="small">التأمين</label>
+          <label class="small">{{ __('admin.emp_insurance_status') }}</label>
           <select name="search_insurance" class="form-control form-control-sm">
-            <option value="">الكل</option>
-            <option value="1" {{ request('search_insurance')=='1'?'selected':'' }}>مؤمن</option>
-            <option value="2" {{ request('search_insurance')=='2'?'selected':'' }}>غير مؤمن</option>
-            <option value="3" {{ request('search_insurance')=='3'?'selected':'' }}>تدريب</option>
-            <option value="4" {{ request('search_insurance')=='4'?'selected':'' }}>منتهى</option>
+            <option value="">{{ __('admin.all') }}</option>
+            <option value="1" {{ request('search_insurance')=='1'?'selected':'' }}>{{ __('admin.emp_insured') }}</option>
+            <option value="2" {{ request('search_insurance')=='2'?'selected':'' }}>{{ __('admin.emp_not_insured') }}</option>
+            <option value="3" {{ request('search_insurance')=='3'?'selected':'' }}>{{ __('admin.emp_training') }}</option>
+            <option value="4" {{ request('search_insurance')=='4'?'selected':'' }}>{{ __('admin.emp_service_ended') }}</option>
           </select>
         </div>
       </div>
       <div class="row">
         <div class="col-md-2 col-6 mb-2">
-          <label class="small">البصمة</label>
+          <label class="small">{{ __('admin.fingerprint_devices') }}</label>
           <select name="search_has_finger" class="form-control form-control-sm">
-            <option value="">الكل</option>
-            <option value="1" {{ request('search_has_finger')=='1'?'selected':'' }}>لديه بصمة</option>
-            <option value="2" {{ request('search_has_finger')=='2'?'selected':'' }}>بدون بصمة</option>
+            <option value="">{{ __('admin.all') }}</option>
+            <option value="1" {{ request('search_has_finger')=='1'?'selected':'' }}>{{ __('admin.emp_has_finger') }}</option>
+            <option value="2" {{ request('search_has_finger')=='2'?'selected':'' }}>{{ __('admin.emp_no_finger') }}</option>
           </select>
         </div>
         <div class="col-md-2 col-6 mb-2">
           <label class="small">Finger ID</label>
-          <input type="number" name="search_finger" class="form-control form-control-sm" placeholder="رقم البصمة" value="{{ request('search_finger') }}">
+          <input type="number" name="search_finger" class="form-control form-control-sm" placeholder="{{ __('admin.emp_finger_id') }}" value="{{ request('search_finger') }}">
         </div>
         <div class="col-md-3 mb-2">
-          <label class="small">الراتب من — إلى</label>
+          <label class="small">{{ __('admin.emp_salary_from') }} — {{ __('admin.emp_salary_to') }}</label>
           <div class="input-group input-group-sm">
-            <input type="number" name="sal_from" class="form-control" placeholder="من" value="{{ request('sal_from') }}" step="100">
+            <input type="number" name="sal_from" class="form-control" placeholder="{{ __('admin.from') }}" value="{{ request('sal_from') }}" step="100">
             <div class="input-group-prepend input-group-append"><span class="input-group-text px-1">—</span></div>
-            <input type="number" name="sal_to" class="form-control" placeholder="إلى" value="{{ request('sal_to') }}" step="100">
+            <input type="number" name="sal_to" class="form-control" placeholder="{{ __('admin.to') }}" value="{{ request('sal_to') }}" step="100">
           </div>
         </div>
         <div class="col-md-3 mb-2">
-          <label class="small">تاريخ التعيين</label>
+          <label class="small">{{ __('admin.emp_hire_date') }}</label>
           <div class="input-group input-group-sm">
             <input type="date" name="hire_from" class="form-control" value="{{ request('hire_from') }}">
             <div class="input-group-prepend input-group-append"><span class="input-group-text px-1">—</span></div>
@@ -132,7 +149,7 @@
           </div>
         </div>
         <div class="col-md-2 mb-2">
-          <label class="small">عدد في الصفحة</label>
+          <label class="small">{{ __('admin.per_page') }}</label>
           <select name="per_page" class="form-control form-control-sm">
             @foreach([10,20,50,100] as $pp)<option value="{{ $pp }}" {{ request('per_page',20)==$pp?'selected':'' }}>{{ $pp }}</option>@endforeach
           </select>
@@ -147,9 +164,9 @@
 <div class="card">
   <div class="card-header">
     <h3 class="card-title card_title_center">
-      <i class="fas fa-users ml-2"></i>قائمة الموظفين
+      <i class="fas fa-users ml-2"></i>{{ __('admin.emp_list') }}
       <span class="badge badge-light mr-1">{{ $data->total() }}</span>
-      <a href="{{ route('employees.create') }}" class="btn btn-sm btn-success mr-2"><i class="fas fa-plus"></i> إضافة</a>
+      <a href="{{ route('employees.create') }}" class="btn btn-sm btn-success mr-2"><i class="fas fa-plus"></i> {{ __('admin.add') }}</a>
       <a href="{{ route('employees.uploadexcel') }}" class="btn btn-sm btn-info mr-1"><i class="fas fa-file-excel"></i> Excel</a>
     </h3>
   </div>
@@ -167,16 +184,16 @@
     <thead>
       <tr>
         <th>#</th>
-        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'employee_id','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">الكود</a></th>
-        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'employee_name_A','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">الاسم</a></th>
-        <th>الرقم القومي</th>
+        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'employee_id','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">{{ __('admin.code') }}</a></th>
+        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'employee_name_A','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">{{ __('admin.name') }}</a></th>
+        <th>{{ __('admin.emp_national_id') }}</th>
         <th>Finger ID</th>
-        <th>الإدارة / الوظيفة</th>
-        <th>الفرع</th>
-        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'emp_sal','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">الراتب</a></th>
-        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'emp_start_date','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">التعيين</a></th>
-        <th>الحالة</th>
-        <th>إجراء</th>
+        <th>{{ __('admin.emp_dept_job') }}</th>
+        <th>{{ __('admin.emp_branch') }}</th>
+        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'emp_sal','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">{{ __('admin.emp_sal_label') }}</a></th>
+        <th><a href="{{ request()->fullUrlWithQuery(['sort_by'=>'emp_start_date','sort_dir'=>request('sort_dir','asc')==='asc'?'desc':'asc']) }}" class="sort-link">{{ __('admin.emp_hire_date') }}</a></th>
+        <th>{{ __('admin.status') }}</th>
+        <th>{{ __('admin.action') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -214,34 +231,43 @@
           <small class="d-block">{{ $emp->department->dep_name ?? '—' }}</small>
           <small class="text-muted">{{ $emp->jobs_categories->job_name ?? '—' }}</small>
         </td>
-        <td><small>{{ $emp->branches->branch_name ?? '—' }}</small></td>
+        <td>
+          @if($emp->client_id)
+            <span class="badge" style="background:#b8860b;color:#fff;font-size:.78em">
+              {{ $emp->client->client_name ?? '—' }}
+            </span>
+            @if($emp->hrid)<br><small class="text-muted">{{ $emp->hrid }}</small>@endif
+          @else
+            <small>{{ $emp->branches->branch_name ?? '—' }}</small>
+          @endif
+        </td>
         <td class="text-center">
-          @if($emp->emp_sal)<strong>{{ number_format($emp->emp_sal,0) }}</strong><small class="text-muted d-block">ج.م</small>
+          @if($emp->emp_sal)<strong>{{ number_format($emp->emp_sal,0) }}</strong><small class="text-muted d-block">{{ __('admin.egp') }}</small>
           @else —@endif
         </td>
         <td>
           <small>{{ $emp->emp_start_date ? \Carbon\Carbon::parse($emp->emp_start_date)->format('Y-m-d') : '—' }}</small>
-          @if($emp->emp_start_date)<br><small class="text-muted">{{ \Carbon\Carbon::parse($emp->emp_start_date)->diffInYears(now()) }} سنة</small>@endif
+          @if($emp->emp_start_date)<br><small class="text-muted">{{ \Carbon\Carbon::parse($emp->emp_start_date)->diffInYears(now()) }} {{ __('admin.years') }}</small>@endif
         </td>
         <td>
           @switch($emp->functional_status)
-            @case(1)<span class="badge badge-success">يعمل</span>@break
-            @case(2)<span class="badge badge-danger">لا يعمل</span>@break
+            @case(1)<span class="badge badge-success">{{ __('admin.emp_working') }}</span>@break
+            @case(2)<span class="badge badge-danger">{{ __('admin.emp_not_working') }}</span>@break
             @default<span class="badge badge-secondary">—</span>
           @endswitch
-          @if($emp->emp_gender==1)<span class="badge badge-light ml-1">ذكر</span>
-          @elseif($emp->emp_gender==2)<span class="badge badge-light ml-1">أنثى</span>@endif
+          @if($emp->emp_gender==1)<span class="badge badge-light ml-1">{{ __('admin.male') }}</span>
+          @elseif($emp->emp_gender==2)<span class="badge badge-light ml-1">{{ __('admin.female') }}</span>@endif
         </td>
         <td>
-          <a href="{{ route('employees.show',$emp->id) }}" class="btn btn-xs btn-info" title="عرض"><i class="fas fa-eye"></i></a>
-          <a href="{{ route('employees.edit',$emp->id) }}" class="btn btn-xs btn-warning" title="تعديل"><i class="fas fa-edit"></i></a>
-          <a href="{{ route('employees.delete',$emp->id) }}" class="btn btn-xs btn-danger" title="حذف" onclick="return confirm('حذف هذا الموظف؟')"><i class="fas fa-trash"></i></a>
+          <a href="{{ route('employees.show',$emp->id) }}" class="btn btn-xs btn-info" title="{{ __('admin.view') }}"><i class="fas fa-eye"></i></a>
+          <a href="{{ route('employees.edit',$emp->id) }}" class="btn btn-xs btn-warning" title="{{ __('admin.edit') }}"><i class="fas fa-edit"></i></a>
+          <a href="{{ route('employees.delete',$emp->id) }}" class="btn btn-xs btn-danger" title="{{ __('admin.delete') }}" onclick="return confirm('{{ __('admin.emp_delete_confirm') }}')"><i class="fas fa-trash"></i></a>
         </td>
       </tr>
       @empty
       <tr><td colspan="11" class="text-center py-4 text-muted">
-        <i class="fas fa-search fa-2x mb-2 d-block"></i>لا توجد نتائج
-        <br><a href="{{ route('employees.index') }}" class="btn btn-sm btn-outline-secondary mt-2">مسح الفلاتر</a>
+        <i class="fas fa-search fa-2x mb-2 d-block"></i>{{ __('admin.emp_no_results') }}
+        <br><a href="{{ route('employees.index') }}" class="btn btn-sm btn-outline-secondary mt-2">{{ __('admin.emp_clear_filters') }}</a>
       </td></tr>
       @endforelse
     </tbody>
@@ -249,7 +275,7 @@
   </div>
   </div>
   <div class="card-footer d-flex justify-content-between align-items-center">
-    <small class="text-muted">عرض {{ $data->firstItem() }}–{{ $data->lastItem() }} من {{ $data->total() }}</small>
+    <small class="text-muted">{{ __('admin.view') }} {{ $data->firstItem() }}–{{ $data->lastItem() }} {{ __('admin.from') }} {{ $data->total() }}</small>
     {{ $data->appends(request()->except('page'))->links() }}
   </div>
 </div>
@@ -261,7 +287,6 @@ document.getElementById('toggleAdv').addEventListener('click', function() {
   var f = document.getElementById('advFilters');
   f.style.display = f.style.display === 'none' ? '' : 'none';
 });
-// إذا توجد فلاتر محفوظة، أظهر القسم المتقدم
 (function() {
   var adv = ['search_branch','search_dept','search_job','search_shift','search_gender',
     'search_insurance','search_has_finger','search_finger','sal_from','sal_to','hire_from','hire_to','per_page'];

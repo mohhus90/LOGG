@@ -1,8 +1,8 @@
 @extends('admin.layouts.admin')
-@section('title') أرصدة الإجازات @endsection
-@section('start') شئون الموظفين @endsection
-@section('home') <a href="{{ route('vacations.index') }}">الإجازات</a> @endsection
-@section('startpage') الأرصدة السنوية @endsection
+@section('title') {{ __('admin.vac_title') }} @endsection
+@section('start') {{ __('admin.hr_management') }} @endsection
+@section('home') <a href="{{ route('vacations.index') }}">{{ __('admin.vac_title') }}</a> @endsection
+@section('startpage') {{ __('admin.vac_balances') }} @endsection
 
 @section('css')
 <style>
@@ -19,45 +19,43 @@
 @section('content')
 <div class="col-12">
 
-{{-- إحصائيات --}}
 @if($stats)
 <div class="row mb-3">
   <div class="col-md-3 col-6 mb-2">
     <div class="vac-stat">
       <div class="num text-success">{{ $stats->total_employees ?? 0 }}</div>
-      <div class="text-muted small">موظف لديهم رصيد {{ $year }}</div>
+      <div class="text-muted small">{{ __('admin.vac_employees_balance') }} {{ $year }}</div>
     </div>
   </div>
   <div class="col-md-3 col-6 mb-2">
     <div class="vac-stat">
       <div class="num">{{ number_format($stats->total_annual_remaining ?? 0, 1) }}</div>
-      <div class="text-muted small">رصيد اعتيادي متبقٍ (يوم)</div>
+      <div class="text-muted small">{{ __('admin.vac_regular_remain') }}</div>
     </div>
   </div>
   <div class="col-md-3 col-6 mb-2">
     <div class="vac-stat">
       <div class="num" style="color:#856404">{{ number_format($stats->total_annual_used ?? 0, 1) }}</div>
-      <div class="text-muted small">اعتيادي مستخدم (يوم)</div>
+      <div class="text-muted small">{{ __('admin.vac_regular_used') }}</div>
     </div>
   </div>
   <div class="col-md-3 col-6 mb-2">
     <div class="vac-stat">
       <div class="num" style="color:#0d6efd">{{ number_format($stats->total_casual_remaining ?? 0, 1) }}</div>
-      <div class="text-muted small">رصيد عارضة متبقٍ (يوم)</div>
+      <div class="text-muted small">{{ __('admin.vac_casual_remain') }}</div>
     </div>
   </div>
 </div>
 @endif
 
-{{-- شريط الأدوات --}}
 <div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap:.5rem">
   <h5 class="mb-0 font-weight-bold" style="color:#1e3a5f">
-    <i class="fas fa-umbrella-beach ml-2"></i>أرصدة الإجازات — سنة {{ $year }}
+    <i class="fas fa-umbrella-beach ml-2"></i>{{ __('admin.vac_title') }} — {{ $year }}
     @if($settings)
       <small class="text-muted" style="font-size:.72em">
-        (اعتيادي: {{ $settings->annual_vacation_days ?? 21 }} يوم |
-        عارض: {{ $settings->casual_vacation_days ?? 6 }} أيام |
-        شهري: {{ $settings->monthly_vacation_balance ?? 1.75 }} يوم)
+        ({{ __('admin.vac_regular') }}: {{ $settings->annual_vacation_days ?? 21 }} {{ __('admin.day') }} |
+        {{ __('admin.vac_casual') }}: {{ $settings->casual_vacation_days ?? 6 }} {{ __('admin.days') }} |
+        {{ __('admin.vac_monthly') }}: {{ $settings->monthly_vacation_balance ?? 1.75 }} {{ __('admin.day') }})
       </small>
     @endif
   </h5>
@@ -70,16 +68,16 @@
       @csrf
       <input type="hidden" name="year" value="{{ $year }}">
       <button type="submit" class="btn btn-sm btn-success"
-        onclick="return confirm('إنشاء رصيد {{ $year }} لجميع الموظفين؟')">
-        <i class="fas fa-magic ml-1"></i>إنشاء أرصدة {{ $year }}
+        onclick="return confirm('{{ __('admin.vac_create_confirm') }} {{ $year }}?')">
+        <i class="fas fa-magic ml-1"></i>{{ __('admin.vac_create_balances') }} {{ $year }}
       </button>
     </form>
     <form method="POST" action="{{ route('vacations.monthly_accrual') }}" class="d-inline">
       @csrf
       <input type="hidden" name="year" value="{{ $year }}">
       <button type="submit" class="btn btn-sm btn-info"
-        onclick="return confirm('إضافة الاستحقاق الشهري لجميع الموظفين؟')">
-        <i class="fas fa-plus-circle ml-1"></i>استحقاق شهري
+        onclick="return confirm('{{ __('admin.vac_accrual_confirm') }}')">
+        <i class="fas fa-plus-circle ml-1"></i>{{ __('admin.vac_monthly_accrual') }}
       </button>
     </form>
   </div>
@@ -98,7 +96,6 @@
   </div>
 @endif
 
-{{-- بحث --}}
 <div class="card mb-2" style="border-right:4px solid #2d5a9e">
   <div class="card-body py-2">
     <form method="GET" action="{{ route('vacations.index') }}">
@@ -106,36 +103,35 @@
       <div class="row align-items-end">
         <div class="col-md-3 col-6 mb-1">
           <input type="text" name="search_name" class="form-control form-control-sm"
-            placeholder="اسم الموظف" value="{{ request('search_name') }}">
+            placeholder="{{ __('admin.emp_name_ar') }}" value="{{ request('search_name') }}">
         </div>
         <div class="col-md-2 col-6 mb-1">
           <input type="text" name="search_code" class="form-control form-control-sm"
-            placeholder="الكود" value="{{ request('search_code') }}">
+            placeholder="{{ __('admin.emp_code') }}" value="{{ request('search_code') }}">
         </div>
         <div class="col-md-2 col-6 mb-1">
           <input type="text" name="search_national" class="form-control form-control-sm"
-            placeholder="الرقم القومي" value="{{ request('search_national') }}">
+            placeholder="{{ __('admin.emp_national_id') }}" value="{{ request('search_national') }}">
         </div>
         <div class="col-md-2 col-6 mb-1">
           <select name="has_balance" class="form-control form-control-sm">
-            <option value="">كل الموظفين</option>
-            <option value="1" {{ request('has_balance')=='1'?'selected':'' }}>لديهم رصيد</option>
-            <option value="0" {{ request('has_balance')=='0'?'selected':'' }}>بدون رصيد</option>
+            <option value="">{{ __('admin.vac_all_employees') }}</option>
+            <option value="1" {{ request('has_balance')=='1'?'selected':'' }}>{{ __('admin.vac_has_balance') }}</option>
+            <option value="0" {{ request('has_balance')=='0'?'selected':'' }}>{{ __('admin.vac_no_balance') }}</option>
           </select>
         </div>
         <div class="col-md-3 mb-1 d-flex" style="gap:.3rem">
           <button type="submit" class="btn btn-primary btn-sm flex-fill">
-            <i class="fas fa-search ml-1"></i>بحث
+            <i class="fas fa-search ml-1"></i>{{ __('admin.search') }}
           </button>
           <a href="{{ route('vacations.index',['year'=>$year]) }}"
-             class="btn btn-outline-secondary btn-sm flex-fill">مسح</a>
+             class="btn btn-outline-secondary btn-sm flex-fill">{{ __('admin.clear') }}</a>
         </div>
       </div>
     </form>
   </div>
 </div>
 
-{{-- الجدول --}}
 <div class="card">
   <div class="card-body p-0">
   <div class="table-responsive">
@@ -143,23 +139,23 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>الكود</th>
-        <th>اسم الموظف</th>
-        <th>الرقم القومي</th>
-        <th>السن</th>
-        <th colspan="3" class="text-center" style="background:#e8f5e9">🏖 إجازة اعتيادية</th>
-        <th colspan="3" class="text-center" style="background:#fff8e1">📅 إجازة عارضة</th>
-        <th>شهري</th>
-        <th>إجراء</th>
+        <th>{{ __('admin.emp_code') }}</th>
+        <th>{{ __('admin.emp_name_ar') }}</th>
+        <th>{{ __('admin.emp_national_id') }}</th>
+        <th>{{ __('admin.vac_age') }}</th>
+        <th colspan="3" class="text-center" style="background:#e8f5e9">🏖 {{ __('admin.vac_regular') }}</th>
+        <th colspan="3" class="text-center" style="background:#fff8e1">📅 {{ __('admin.vac_casual') }}</th>
+        <th>{{ __('admin.vac_monthly') }}</th>
+        <th>{{ __('admin.action') }}</th>
       </tr>
       <tr style="background:#f8f9fa;font-size:.78em">
         <th colspan="5"></th>
-        <th class="text-center">الكلي</th>
-        <th class="text-center text-danger">مستخدم</th>
-        <th class="text-center text-success">متبقي</th>
-        <th class="text-center">الكلي</th>
-        <th class="text-center text-danger">مستخدم</th>
-        <th class="text-center text-success">متبقي</th>
+        <th class="text-center">{{ __('admin.vac_total') }}</th>
+        <th class="text-center text-danger">{{ __('admin.vac_used') }}</th>
+        <th class="text-center text-success">{{ __('admin.vac_remaining') }}</th>
+        <th class="text-center">{{ __('admin.vac_total') }}</th>
+        <th class="text-center text-danger">{{ __('admin.vac_used') }}</th>
+        <th class="text-center text-success">{{ __('admin.vac_remaining') }}</th>
         <th></th><th></th>
       </tr>
     </thead>
@@ -178,7 +174,7 @@
         <td>
           <strong>{{ $emp->employee_name_A }}</strong>
           @if($law30)
-            <span class="age-warn mr-1" title="يستحق 30 يوم">30 يوم</span>
+            <span class="age-warn mr-1" title="{{ __('admin.vac_law30_title') }}">30 {{ __('admin.day') }}</span>
           @endif
         </td>
         <td><small>{{ $emp->national_id ?? '—' }}</small></td>
@@ -206,17 +202,17 @@
           <td class="text-center"><small>{{ $bal->monthly_accrual }}</small></td>
         @else
           <td colspan="7" class="text-center text-muted">
-            <i class="fas fa-exclamation-triangle text-warning ml-1"></i>لا يوجد رصيد
+            <i class="fas fa-exclamation-triangle text-warning ml-1"></i>{{ __('admin.vac_no_balance') }}
           </td>
         @endif
         <td>
           <a href="{{ route('vacations.edit', [$emp->id, $year]) }}"
-             class="btn btn-xs btn-warning" title="تعديل الرصيد">
+             class="btn btn-xs btn-warning" title="{{ __('admin.edit') }}">
             <i class="fas fa-edit"></i>
           </a>
           @if($bal)
-          <button class="btn btn-xs btn-danger" title="حذف الرصيد"
-            onclick="if(confirm('حذف رصيد هذا الموظف؟'))document.getElementById('del_{{$emp->id}}_{{$year}}').submit()">
+          <button class="btn btn-xs btn-danger" title="{{ __('admin.delete') }}"
+            onclick="if(confirm('{{ __('admin.vac_delete_confirm') }}'))document.getElementById('del_{{$emp->id}}_{{$year}}').submit()">
             <i class="fas fa-trash"></i>
           </button>
           <form id="del_{{$emp->id}}_{{$year}}"
@@ -231,7 +227,7 @@
       <tr>
         <td colspan="14" class="text-center py-4 text-muted">
           <i class="fas fa-search fa-2x mb-2 d-block"></i>
-          لا توجد نتائج
+          {{ __('admin.no_data') }}
         </td>
       </tr>
       @endforelse

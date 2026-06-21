@@ -29,3 +29,10 @@ Route::middleware('verified')->group(function(){
 
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+Route::get('/switch-lang/{locale}', function ($locale) {
+    if (in_array($locale, ['ar', 'en'])) {
+        session(['locale' => $locale]);
+    }
+    return redirect()->back(302, [], route('admin.dashboard.home.page'));
+})->name('lang.switch');

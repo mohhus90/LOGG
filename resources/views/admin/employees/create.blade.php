@@ -1,11 +1,11 @@
-﻿@extends('admin.layouts.admin')
+@extends('admin.layouts.admin')
 
 @section('title')
-الموظفين
+{{ __('admin.emp_title') }}
 @endsection
 
 @section('start')
-    شئون الموظفين
+    {{ __('admin.hr_management') }}
 @endsection
 
 @section('css')
@@ -28,18 +28,18 @@
 @endsection
 
 @section('home')
-<a href="{{ route('employees.index') }}">الموظفين</a>
+<a href="{{ route('employees.index') }}">{{ __('admin.emp_title') }}</a>
 @endsection
 
 @section('startpage')
-اضافة
+{{ __('admin.add') }}
 @endsection
 
 @section('content')
 <div class="col-12">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title card_title_center">اضافة موظف جديد</h3>
+            <h3 class="card-title card_title_center">{{ __('admin.emp_add_new') }}</h3>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ route('employees.store') }}" enctype="multipart/form-data">
@@ -47,235 +47,194 @@
                 <div class="card-body">
                     <ul class="nav nav-tabs" id="custom-content-below-tab" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="custom-content-below-baisc_data-tab" data-toggle="pill" href="#custom-content-below-baisc_data" role="tab" aria-controls="custom-content-below-baisc_data" aria-selected="true">بيانات اساسية</a>
+                            <a class="nav-link active" id="custom-content-below-baisc_data-tab" data-toggle="pill" href="#custom-content-below-baisc_data" role="tab" aria-controls="custom-content-below-baisc_data" aria-selected="true">{{ __('admin.emp_tab_basic') }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="custom-content-below-job_data-tab" data-toggle="pill" href="#custom-content-below-job_data" role="tab" aria-controls="custom-content-below-job_data" aria-selected="false">بيانات الوظيفة</a>
+                            <a class="nav-link" id="custom-content-below-job_data-tab" data-toggle="pill" href="#custom-content-below-job_data" role="tab" aria-controls="custom-content-below-job_data" aria-selected="false">{{ __('admin.emp_tab_job') }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="custom-content-below-other_data-tab" data-toggle="pill" href="#custom-content-below-other_data" role="tab" aria-controls="custom-content-below-other_data" aria-selected="false">بيانات اخرى</a>
+                            <a class="nav-link" id="custom-content-below-other_data-tab" data-toggle="pill" href="#custom-content-below-other_data" role="tab" aria-controls="custom-content-below-other_data" aria-selected="false">{{ __('admin.emp_tab_other') }}</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" id="custom-content-below-Salary_data-tab" data-toggle="pill" href="#custom-content-below-Salary_data" role="tab" aria-controls="custom-content-below-Salary_data" aria-selected="false">بيانات الراتب</a>
+                            <a class="nav-link" id="custom-content-below-Salary_data-tab" data-toggle="pill" href="#custom-content-below-Salary_data" role="tab" aria-controls="custom-content-below-Salary_data" aria-selected="false">{{ __('admin.emp_tab_salary') }}</a>
                         </li>
                     </ul>
 
                     <div class="tab-content" id="custom-content-below-tabContent">
-                        {{-- بيانات اساسية --}}
                         <div class="tab-pane fade show active" id="custom-content-below-baisc_data" role="tabpanel" aria-labelledby="custom-content-below-baisc_data-tab">
                             <br>
-                            <div class="row"> {{-- Start a Bootstrap row for grouping inputs --}}
-                                <div class="col-md-4"> {{-- Each input will take 4 columns (12/3 = 4) --}}
-                                    <div class=""> {{-- Removed form-inline, it's not ideal with col grid --}}
-                                        <label for="employee_id">كود الموظف <span style="color: red">*</span></label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label for="employee_id">{{ __('admin.emp_code') }} <span style="color: red">*</span></label>
                                         <input type="text" class="form-control" name="employee_id" id="employee_id" value="{{ old('employee_id') }}">
-                                        @error('employee_id')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('employee_id')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="finger_id">كود البصمة</label>
+                                        <label for="finger_id">{{ __('admin.emp_finger_code') }}</label>
                                         <input type="text" class="form-control" name="finger_id" id="finger_id" value="{{ old('finger_id') }}">
-                                        @error('finger_id')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('finger_id')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="employee_name_A">
-                                            اسم الموظف رباعي (عربي)<span style="color:red">*</span>
-                                            <small class="text-muted">(يترجم تلقائياً)</small>
+                                            {{ __('admin.emp_name_ar') }}<span style="color:red">*</span>
+                                            <small class="text-muted">({{ __('admin.emp_name_ar_hint') }})</small>
                                         </label>
                                         <input type="text" class="form-control" name="employee_name_A" id="employee_name_A"
                                             value="{{ old('employee_name_A') }}" dir="rtl"
-                                            placeholder="مثال: محمد أحمد علي حسن">
-                                        @error('employee_name_A')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                            placeholder="{{ __('admin.emp_name_ar_example') }}">
+                                        @error('employee_name_A')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="employee_name_E">
-                                            اسم الموظف (إنجليزي)<span style="color:red">*</span>
-                                            <small class="text-muted">(يترجم تلقائياً)</small>
+                                            {{ __('admin.emp_name_en') }}<span style="color:red">*</span>
+                                            <small class="text-muted">({{ __('admin.emp_translate_auto') }})</small>
                                         </label>
                                         <input type="text" class="form-control" name="employee_name_E" id="employee_name_E"
                                             value="{{ old('employee_name_E') }}" dir="ltr"
                                             placeholder="e.g. Mohamed Ahmed Ali Hassan">
-                                        @error('employee_name_E')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('employee_name_E')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="employee_address">عنوان الموظف</label>
+                                        <label for="employee_address">{{ __('admin.emp_address') }}</label>
                                         <input type="text" class="form-control" name="employee_address" id="employee_address" value="{{ old('employee_address') }}">
-                                        @error('employee_address')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('employee_address')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="national_id">الرقم القومي<span style="color: red">*</span></label>
+                                        <label for="national_id">{{ __('admin.emp_national_id') }}<span style="color: red">*</span></label>
                                         <input type="text" class="form-control" name="national_id" id="national_id" value="{{ old('national_id') }}">
-                                        @error('national_id')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('national_id')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="insurance_no">الرقم التأمينى</label>
+                                        <label for="insurance_no">{{ __('admin.emp_insurance_no') }}</label>
                                         <input type="text" class="form-control" name="insurance_no" id="insurance_no" value="{{ old('insurance_no') }}">
-                                        @error('insurance_no')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('insurance_no')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_mobile">موبيل</label>
+                                        <label for="emp_mobile">{{ __('admin.emp_mobile') }}</label>
                                         <input type="text" class="form-control" name="emp_mobile" id="emp_mobile" value="{{ old('emp_mobile') }}">
-                                        @error('emp_mobile')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_mobile')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_home_tel">تليفون المنزل</label>
+                                        <label for="emp_home_tel">{{ __('admin.emp_home_phone') }}</label>
                                         <input type="text" class="form-control" name="emp_home_tel" id="emp_home_tel" value="{{ old('emp_home_tel') }}">
-                                        @error('emp_home_tel')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_home_tel')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="emp_email">Email</label>
                                         <input type="email" class="form-control" name="emp_email" id="emp_email" value="{{ old('emp_email') }}">
-                                        @error('emp_email')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_email')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="birth_date">تاريخ الميلاد</label>
+                                        <label for="birth_date">{{ __('admin.emp_birth_date') }}</label>
                                         <input type="date" class="form-control" name="birth_date" id="birth_date" value="{{ old('birth_date') }}">
-                                        @error('birth_date')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('birth_date')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_gender">نوع الجنس</label>
+                                        <label for="emp_gender">{{ __('admin.emp_gender') }}</label>
                                         <select class="form-control" name="emp_gender" id="emp_gender">
-                                            <option value="">اختر النوع</option>
-                                            <option value="1" @if (old('emp_gender')==1)selected @endif>ذكر</option>
-                                            <option value="2" @if (old('emp_gender')==2)selected @endif>انثى</option>
+                                            <option value="">{{ __('admin.emp_gender_choose') }}</option>
+                                            <option value="1" @if (old('emp_gender')==1)selected @endif>{{ __('admin.male') }}</option>
+                                            <option value="2" @if (old('emp_gender')==2)selected @endif>{{ __('admin.female') }}</option>
                                         </select>
-                                        @error('emp_gender')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_gender')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_social_status">الحالة الاجتماعية</label>
+                                        <label for="emp_social_status">{{ __('admin.emp_marital_status') }}</label>
                                         <select class="form-control" name="emp_social_status" id="emp_social_status">
-                                            <option value="">اختر الحالة</option>
-                                            <option value="1" @if (old('emp_social_status')==1)selected @endif>اعزب</option>
-                                            <option value="2" @if (old('emp_social_status')==2)selected @endif>متزوج</option>
-                                            <option value="3" @if (old('emp_social_status')==3)selected @endif>متزوج ويعول</option>
+                                            <option value="">{{ __('admin.emp_marital_choose') }}</option>
+                                            <option value="1" @if (old('emp_social_status')==1)selected @endif>{{ __('admin.emp_single') }}</option>
+                                            <option value="2" @if (old('emp_social_status')==2)selected @endif>{{ __('admin.emp_married') }}</option>
+                                            <option value="3" @if (old('emp_social_status')==3)selected @endif>{{ __('admin.emp_married_dependent') }}</option>
                                         </select>
-                                        @error('emp_social_status')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_social_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_photo">اختر صورة الموظف</label>
+                                        <label for="emp_photo">{{ __('admin.emp_choose_photo') }}</label>
                                         <input type="file" class="form-control" name="emp_photo" id="emp_photo" value="{{ old('emp_photo') }}">
-                                        @error('emp_photo')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_photo')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_cv">اختر السيرة الذاتية</label>
+                                        <label for="emp_cv">{{ __('admin.emp_choose_cv') }}</label>
                                         <input type="file" class="form-control" name="emp_cv" id="emp_cv" value="{{ old('emp_cv') }}">
-                                        @error('emp_cv')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_cv')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
-
-                            </div> {{-- End of row --}}
+                            </div>
                         </div>
 
-                        {{-- بيانات الوظيفة --}}
                         <div class="tab-pane fade" id="custom-content-below-job_data" role="tabpanel" aria-labelledby="custom-content-below-job_data-tab">
                             <br>
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_start_date">تاريخ الالتحاق</label>
+                                        <label for="emp_start_date">{{ __('admin.emp_join_date') }}</label>
                                         <input type="date" class="form-control" name="emp_start_date" id="emp_start_date" value="{{ old('emp_start_date') }}">
-                                        @error('emp_start_date')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_start_date')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="functional_status">الحالة الوظيفية</label>
+                                        <label for="functional_status">{{ __('admin.emp_status') }}</label>
                                         <select class="form-control" name="functional_status" id="functional_status">
-                                            <option value="1" @if (old('functional_status')==1)selected @endif>يعمل</option>
-                                            <option value="2" @if (old('functional_status')==2)selected @endif>لا يعمل</option>
+                                            <option value="1" @if (old('functional_status')==1)selected @endif>{{ __('admin.emp_working') }}</option>
+                                            <option value="2" @if (old('functional_status')==2)selected @endif>{{ __('admin.emp_not_working') }}</option>
                                         </select>
-                                        @error('functional_status')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('functional_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="insurance_status">الحالة التامينية</label>
+                                        <label for="insurance_status">{{ __('admin.emp_insurance_status') }}</label>
                                         <select class="form-control" name="insurance_status" id="insurance_status">
-                                            <option value="1" @if (old('insurance_status')==1)selected @endif>مؤمن</option>
-                                            <option value="2" @if (old('insurance_status')==2)selected @endif>غير مؤمن</option>
-                                            <option value="3" @if (old('insurance_status')==3)selected @endif>تدريب</option>
-                                            <option value="4" @if (old('insurance_status')==4)selected @endif>منتهى خدمته</option>
+                                            <option value="1" @if (old('insurance_status')==1)selected @endif>{{ __('admin.emp_insured') }}</option>
+                                            <option value="2" @if (old('insurance_status')==2)selected @endif>{{ __('admin.emp_not_insured') }}</option>
+                                            <option value="3" @if (old('insurance_status')==3)selected @endif>{{ __('admin.emp_training') }}</option>
+                                            <option value="4" @if (old('insurance_status')==4)selected @endif>{{ __('admin.emp_service_ended') }}</option>
                                         </select>
-                                        @error('insurance_status')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('insurance_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_jobs_id">الوظيفة<span style="color: red">*</span></label>
+                                        <label for="emp_jobs_id">{{ __('admin.emp_job') }}<span style="color: red">*</span></label>
                                         <select name="emp_jobs_id" id="emp_jobs_id" class="form-control select2">
-                                            <option value="">اختر الوظيفة</option>
+                                            <option value="">{{ __('admin.emp_job_choose') }}</option>
                                             @foreach($jobs_categories as $job)
                                                 <option value="{{ $job->id }}" {{ old('emp_jobs_id') == $job->id ? 'selected' : '' }}>
                                                     {{ $job->job_name }}
                                                 </option>
                                             @endforeach
                                         </select>
-                                        @error('emp_jobs_id')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_jobs_id')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -283,54 +242,48 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_departments_id">الادارة<span style="color: red">*</span></label>
+                                        <label for="emp_departments_id">{{ __('admin.emp_dept') }}<span style="color: red">*</span></label>
                                         <select name="emp_departments_id" id="emp_departments_id" class="form-control select2">
-                                            <option value="">اختر الادارة</option>
+                                            <option value="">{{ __('admin.emp_dept_choose') }}</option>
                                             @foreach($departments as $department)
                                                 <option value="{{ $department->id }}" {{ old('emp_departments_id') == $department->id ? 'selected' : '' }}>
                                                     {{ $department->dep_name}}
                                                 </option>
                                             @endforeach
                                         </select>
-                                        @error('emp_departments_id')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_departments_id')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="shifts_types_id">الشيفت</label>
+                                        <label for="shifts_types_id">{{ __('admin.emp_shift') }}</label>
                                         <select name="shifts_types_id" id="shifts_types_id" class="form-control">
-                                            <option value="">اختر الشيفت</option>
+                                            <option value="">{{ __('admin.emp_shift_choose') }}</option>
                                             @foreach($shifts_types as $shifts_type)
                                                 <option value="{{ $shifts_type->id }}"
                                                     data-hours="{{ $shifts_type->total_hour }}"
                                                     {{ old('shifts_types_id') == $shifts_type->id ? 'selected' : '' }}>
-                                                    من {{ \Carbon\Carbon::parse($shifts_type->from_time)->format('H:i') }}
-                                                    إلى {{ \Carbon\Carbon::parse($shifts_type->to_time)->format('H:i') }}
-                                                    ({{ $shifts_type->total_hour }} ساعة)
+                                                    {{ __('admin.from') }} {{ \Carbon\Carbon::parse($shifts_type->from_time)->format('H:i') }}
+                                                    {{ __('admin.to') }} {{ \Carbon\Carbon::parse($shifts_type->to_time)->format('H:i') }}
+                                                    ({{ $shifts_type->total_hour }} {{ __('admin.hour') }})
                                                 </option>
                                             @endforeach
                                         </select>
-                                        @error('shifts_types_id')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('shifts_types_id')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="branches_id">الفرع<span style="color: red">*</span></label>
+                                        <label for="branches_id">{{ __('admin.emp_branch') }}<span style="color: red">*</span></label>
                                         <select name="branches_id" id="branches_id" class="form-control select2">
-                                            <option value="">اختر الفرع</option>
+                                            <option value="">{{ __('admin.emp_branch_choose') }}</option>
                                             @foreach($branches as $branche)
                                                 <option value="{{ $branche->id }}" {{ old('branches_id') == $branche->id ? 'selected' : '' }}>
                                                     {{ $branche->branch_name}}
                                                 </option>
                                             @endforeach
                                         </select>
-                                        @error('branches_id')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('branches_id')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -338,36 +291,30 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="daily_work_hours">عدد ساعات العمل</label>
+                                        <label for="daily_work_hours">{{ __('admin.emp_work_hours') }}</label>
                                         <input type="number" class="form-control" name="daily_work_hours" id="daily_work_hours" value="{{ old('daily_work_hours') }}">
-                                        @error('daily_work_hours')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('daily_work_hours')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="resignation_status">حالة ترك العمل</label>
+                                        <label for="resignation_status">{{ __('admin.emp_leave_reason_label') }}</label>
                                         <select class="form-control" name="resignation_status" id="resignation_status">
-                                            <option value="">اختر الحالة</option>
-                                            <option value="1" @if (old('resignation_status')==1)selected @endif>استقالة</option>
-                                            <option value="2" @if (old('resignation_status')==2)selected @endif>فصل</option>
-                                            <option value="3" @if (old('resignation_status')==3)selected @endif>ترك العمل</option>
-                                            <option value="4" @if (old('resignation_status')==4)selected @endif>سن المعاش</option>
-                                            <option value="5" @if (old('resignation_status')==5)selected @endif>الوفاة</option>
+                                            <option value="">{{ __('admin.emp_marital_choose') }}</option>
+                                            <option value="1" @if (old('resignation_status')==1)selected @endif>{{ __('admin.emp_resignation') }}</option>
+                                            <option value="2" @if (old('resignation_status')==2)selected @endif>{{ __('admin.emp_fired') }}</option>
+                                            <option value="3" @if (old('resignation_status')==3)selected @endif>{{ __('admin.emp_left_work') }}</option>
+                                            <option value="4" @if (old('resignation_status')==4)selected @endif>{{ __('admin.emp_retirement_age') }}</option>
+                                            <option value="5" @if (old('resignation_status')==5)selected @endif>{{ __('admin.emp_death') }}</option>
                                         </select>
-                                        @error('resignation_status')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('resignation_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="resignation_date">تاريخ ترك العمل</label>
+                                        <label for="resignation_date">{{ __('admin.emp_leave_date') }}</label>
                                         <input type="date" class="form-control" name="resignation_date" id="resignation_date" value="{{ old('resignation_date') }}">
-                                        @error('resignation_date')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('resignation_date')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -375,50 +322,41 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="resignation_cause">سبب ترك العمل</label>
+                                        <label for="resignation_cause">{{ __('admin.emp_leave_reason') }}</label>
                                         <input type="text" class="form-control" name="resignation_cause" id="resignation_cause" value="{{ old('resignation_cause') }}">
-                                        @error('resignation_cause')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('resignation_cause')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- بيانات أخرى --}}
                         <div class="tab-pane fade" id="custom-content-below-other_data" role="tabpanel" aria-labelledby="custom-content-below-other_data-tab">
                             <br>
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_military_status">الخدمة العسكرية</label>
+                                        <label for="emp_military_status">{{ __('admin.emp_military') }}</label>
                                         <select class="form-control" name="emp_military_status" id="emp_military_status">
-                                            <option value="">اختر الحالة</option>
-                                            <option value="1" @if (old('emp_military_status')==1)selected @endif>أدى الخدمة</option>
-                                            <option value="2" @if (old('emp_military_status')==2)selected @endif>إعفاء</option>
-                                            <option value="3" @if (old('emp_military_status')==3)selected @endif>مؤجل</option>
+                                            <option value="">{{ __('admin.emp_marital_choose') }}</option>
+                                            <option value="1" @if (old('emp_military_status')==1)selected @endif>{{ __('admin.emp_military_served') }}</option>
+                                            <option value="2" @if (old('emp_military_status')==2)selected @endif>{{ __('admin.emp_military_exempt') }}</option>
+                                            <option value="3" @if (old('emp_military_status')==3)selected @endif>{{ __('admin.emp_military_deferred') }}</option>
                                         </select>
-                                        @error('emp_military_status')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_military_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_qualification">المؤهل الدراسي</label>
+                                        <label for="emp_qualification">{{ __('admin.emp_education') }}</label>
                                         <input type="text" class="form-control" name="emp_qualification" id="emp_qualification" value="{{ old('emp_qualification') }}">
-                                        @error('emp_qualification')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_qualification')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="qualification_year">سنة المؤهل</label>
+                                        <label for="qualification_year">{{ __('admin.emp_edu_year') }}</label>
                                         <input type="text" class="form-control" name="qualification_year" id="qualification_year" value="{{ old('qualification_year') }}">
-                                        @error('qualification_year')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('qualification_year')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -426,52 +364,43 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="qualification_grade">تقدير المؤهل</label>
+                                        <label for="qualification_grade">{{ __('admin.emp_edu_grade') }}</label>
                                         <select class="form-control" name="qualification_grade" id="qualification_grade">
-                                            <option value="">اختر التقدير</option>
-                                            <option value="1" @if (old('qualification_grade')==1)selected @endif>امتياز</option>
-                                            <option value="2" @if (old('qualification_grade')==2)selected @endif>جيد جداً</option>
-                                            <option value="3" @if (old('qualification_grade')==3)selected @endif>جيد مرتفع</option>
-                                            <option value="4" @if (old('qualification_grade')==4)selected @endif>جيد</option>
-                                            <option value="5" @if (old('qualification_grade')==5)selected @endif>مقبول</option>
+                                            <option value="">{{ __('admin.emp_marital_choose') }}</option>
+                                            <option value="1" @if (old('qualification_grade')==1)selected @endif>{{ __('admin.emp_distinction') }}</option>
+                                            <option value="2" @if (old('qualification_grade')==2)selected @endif>{{ __('admin.emp_very_good') }}</option>
+                                            <option value="3" @if (old('qualification_grade')==3)selected @endif>{{ __('admin.emp_very_good_high') }}</option>
+                                            <option value="4" @if (old('qualification_grade')==4)selected @endif>{{ __('admin.emp_good') }}</option>
+                                            <option value="5" @if (old('qualification_grade')==5)selected @endif>{{ __('admin.emp_accepted') }}</option>
                                         </select>
-                                        @error('qualification_grade')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('qualification_grade')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- بيانات الراتب --}}
                         <div class="tab-pane fade" id="custom-content-below-Salary_data" role="tabpanel" aria-labelledby="custom-content-below-Salary_data-tab">
                             <br>
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_sal">الراتب الاساسي</label>
+                                        <label for="emp_sal">{{ __('admin.emp_basic_salary') }}</label>
                                         <input type="number" class="form-control" name="emp_sal" id="emp_sal" value="{{ old('emp_sal') }}">
-                                        @error('emp_sal')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_sal')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_sal_insurance">الراتب التأميني</label>
+                                        <label for="emp_sal_insurance">{{ __('admin.emp_insurance_salary') }}</label>
                                         <input type="number" class="form-control" name="emp_sal_insurance" id="emp_sal_insurance" value="{{ old('emp_sal_insurance') }}">
-                                        @error('emp_sal_insurance')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_sal_insurance')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="emp_fixed_allowances">علاوة ثابتة</label>
+                                        <label for="emp_fixed_allowances">{{ __('admin.emp_fixed_allowance') }}</label>
                                         <input type="number" class="form-control" name="emp_fixed_allowances" id="emp_fixed_allowances" value="{{ old('emp_fixed_allowances') }}">
-                                        @error('emp_fixed_allowances')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('emp_fixed_allowances')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -479,33 +408,27 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="motivation">الحافز</label>
+                                        <label for="motivation">{{ __('admin.emp_incentive') }}</label>
                                         <input type="number" class="form-control" name="motivation" id="motivation" value="{{ old('motivation') }}">
-                                        @error('motivation')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('motivation')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="medical_insurance">التأمين الصحي الخاص</label>
+                                        <label for="medical_insurance">{{ __('admin.emp_health_insurance') }}</label>
                                         <input type="number" class="form-control" name="medical_insurance" id="medical_insurance" value="{{ old('medical_insurance') }}">
-                                        @error('medical_insurance')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('medical_insurance')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="sal_cash_visa">طريقة الدفع</label>
+                                        <label for="sal_cash_visa">{{ __('admin.emp_payment_method') }}</label>
                                         <select class="form-control" name="sal_cash_visa" id="sal_cash_visa">
-                                            <option value="">اختر طريقة الدفع</option>
-                                            <option value="1" @if (old('sal_cash_visa')==1)selected @endif>كاش</option>
-                                            <option value="2" @if (old('sal_cash_visa')==2)selected @endif>فيزا</option>
+                                            <option value="">{{ __('admin.emp_marital_choose') }}</option>
+                                            <option value="1" @if (old('sal_cash_visa')==1)selected @endif>{{ __('admin.emp_cash') }}</option>
+                                            <option value="2" @if (old('sal_cash_visa')==2)selected @endif>{{ __('admin.emp_visa') }}</option>
                                         </select>
-                                        @error('sal_cash_visa')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('sal_cash_visa')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -513,29 +436,23 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="bank_name">اسم البنك</label>
+                                        <label for="bank_name">{{ __('admin.emp_bank_name') }}</label>
                                         <input type="text" class="form-control" name="bank_name" id="bank_name" value="{{ old('bank_name') }}">
-                                        @error('bank_name')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('bank_name')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
-                                        <label for="bank_account">رقم الحساب البنكي</label>
+                                        <label for="bank_account">{{ __('admin.emp_bank_account') }}</label>
                                         <input type="text" class="form-control" name="bank_account" id="bank_account" value="{{ old('bank_account') }}">
-                                        @error('bank_account')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('bank_account')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="bank_ID">bank ID</label>
                                         <input type="text" class="form-control" name="bank_ID" id="bank_ID" value="{{ old('bank_ID') }}">
-                                        @error('bank_ID')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('bank_ID')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -545,9 +462,7 @@
                                     <div class="">
                                         <label for="bank_branch">bank branch</label>
                                         <input type="text" class="form-control" name="bank_branch" id="bank_branch" value="{{ old('bank_branch') }}">
-                                        @error('bank_branch')
-                                        <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        @error('bank_branch')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -555,8 +470,8 @@
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg col-2">اضافة</button>
-                        <a class="btn btn-warning btn-lg col-2" href="{{ route('employees.index') }}">الغاء</a>
+                        <button type="submit" class="btn btn-primary btn-lg col-2">{{ __('admin.add') }}</button>
+                        <a class="btn btn-warning btn-lg col-2" href="{{ route('employees.index') }}">{{ __('admin.cancel') }}</a>
                     </div>
                 </div>
             </form>
@@ -569,13 +484,11 @@
     <script>
         $(document).ready(function() {
 
-            // auto-fill ساعات العمل عند اختيار الشيفت
             $('#shifts_types_id').on('change', function() {
                 var hours = $(this).find(':selected').data('hours');
                 $('#daily_work_hours').val(hours ? hours : '');
             });
 
-            // ─── القاموس الثابت (عربي → إنجليزي) ───
             const arToEnNames = {
                 'محمد':'Mohamed','محمود':'Mahmoud','أحمد':'Ahmed','علي':'Ali','حسن':'Hassan',
                 'حسين':'Hussein','عمر':'Omar','عمرو':'Amr','إبراهيم':'Ibrahim','إسماعيل':'Ismail',
@@ -638,7 +551,6 @@
                 'غزالي':'Ghazaly','فقي':'Fiky','قرشي':'Qorashi','كيلاني':'Kilany',
             };
 
-            // تحميل القاموس المخصص من قاعدة البيانات ودمجه
             $.get('{{ route("employees.dictionary.get") }}', function(data) {
                 $.each(data, function(i, item) {
                     arToEnNames[item.ar_name] = item.en_name;
@@ -651,7 +563,6 @@
                         .replace(/ة$/, 'ة');
             }
 
-            // الترجمة من عربي → إنجليزي فقط (الحقل العربي هو الأساس)
             function arToEn(text) {
                 return text.trim().split(/\s+/).map(word => {
                     const clean = normalizeAr(word);
@@ -675,7 +586,6 @@
                 const result = arToEn(val);
                 $('#employee_name_E').val(result);
 
-                // استخراج الكلمات غير الموجودة بالترتيب
                 lastUnknownWords = [];
                 const arWords = val.trim().split(/\s+/);
                 const enWords = result.trim().split(/\s+/);
@@ -687,9 +597,6 @@
 
                 renderDictionaryPanel();
             });
-
-            // عند تعديل الحقل الإنجليزي — الحقل العربي يبقى كما هو تماماً
-            // (تم إزالة الترجمة العكسية لكسر الحلقة المغلقة)
 
             function renderDictionaryPanel() {
                 $('#dict-panel').remove();
@@ -703,18 +610,18 @@
                         '</div>' +
                         '<span class="input-group-text">=</span>' +
                         '<input type="text" class="form-control dict-en-input" dir="ltr" ' +
-                        'placeholder="الترجمة الإنجليزية" data-ar="' + arWord + '">' +
+                        'placeholder="English translation" data-ar="' + arWord + '">' +
                         '</div>';
                 });
 
                 const panel = '<div id="dict-panel" class="mt-2 p-2 border border-warning rounded bg-light">' +
                     '<small class="text-warning font-weight-bold d-block mb-1">' +
                     '<i class="fas fa-exclamation-triangle ml-1"></i>' +
-                    'كلمات غير موجودة في القاموس — أضف ترجمتها لحفظها للمرة القادمة' +
+                    'Words not in dictionary — add their translation to save for next time' +
                     '</small>' +
                     rows +
                     '<button type="button" id="btn-save-dict" class="btn btn-warning btn-sm mt-1">' +
-                    '<i class="fas fa-save ml-1"></i> حفظ في القاموس' +
+                    '<i class="fas fa-save ml-1"></i> Save to Dictionary' +
                     '</button>' +
                     '</div>';
 
@@ -728,7 +635,7 @@
                         if (en) entries.push({ ar: ar, en: en });
                     });
                     if (entries.length === 0) {
-                        alert('أدخل الترجمة الإنجليزية للكلمات أولاً');
+                        alert('Please enter the English translation first');
                         return;
                     }
                     $.ajax({
@@ -742,12 +649,12 @@
                             lastUnknownWords = [];
                             $('#dict-panel').remove();
                             $('<div class="alert alert-success alert-dismissible py-1 mt-1" id="dict-saved-msg">' +
-                              '<strong>تم الحفظ!</strong> تمت إضافة الكلمات للقاموس.' +
+                              '<strong>Saved!</strong> Words added to dictionary.' +
                               '<button type="button" class="close py-1" data-dismiss="alert">&times;</button>' +
                               '</div>').insertAfter('#employee_name_E');
                             setTimeout(function(){ $('#dict-saved-msg').fadeOut(500, function(){ $(this).remove(); }); }, 3000);
                         },
-                        error: function() { alert('حدث خطأ أثناء الحفظ، حاول مجدداً'); }
+                        error: function() { alert('An error occurred, please try again'); }
                     });
                 });
             }

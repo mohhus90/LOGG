@@ -11,6 +11,7 @@ use App\Models\Department;
 use App\Models\Jobs_categories;
 use App\Models\Shifts_type;
 use App\Models\Branche;
+use App\Models\Client;
 use App\Models\NameDictionary;
 use App\Imports\EmployeeImport;
 use App\Exports\EmployeeExport;
@@ -66,6 +67,7 @@ class EmployeesConroller extends Controller
         $jobs_categories = Jobs_categories::where('com_code', $comCode)->orderBy('job_name')->get(['id','job_name']);
         $branches        = Branche::where('com_code', $comCode)->orderBy('branch_name')->get(['id','branch_name']);
         $shifts          = Shifts_type::where('com_code', $comCode)->orderBy('type')->get(['id','type']);
+        $clients         = Client::where('com_code', $comCode)->where('active', 1)->orderBy('client_name')->get(['id','client_name']);
 
         $query = Employee::where('com_code', $comCode);
 
@@ -87,6 +89,8 @@ class EmployeesConroller extends Controller
         if ($request->filled('search_gender'))      $query->where('emp_gender',$request->search_gender);
         if ($request->filled('search_insurance'))   $query->where('insurance_status',$request->search_insurance);
         if ($request->filled('search_has_finger'))  $query->where('is_has_finger',$request->search_has_finger);
+        if ($request->filled('client_id'))          $query->where('client_id',$request->client_id);
+        if ($request->filled('search_hrid'))        $query->where('hrid','like','%'.$request->search_hrid.'%');
         if ($request->filled('sal_from')) $query->where('emp_sal','>=',$request->sal_from);
         if ($request->filled('sal_to'))   $query->where('emp_sal','<=',$request->sal_to);
         if ($request->filled('hire_from'))$query->where('emp_start_date','>=',$request->hire_from);
@@ -108,7 +112,7 @@ class EmployeesConroller extends Controller
         $totalAll    = Employee::where('com_code',$comCode)->count();
 
         return view('admin.employees.index', compact(
-            'data','departments','jobs_categories','branches','shifts',
+            'data','departments','jobs_categories','branches','shifts','clients',
             'totalSalary','totalActive','totalAll'
         ));
     }
@@ -471,7 +475,6 @@ public function store(Request $request)
             'shifts_types_id' => $request->shifts_types_id,
             'branches_id' => $request->branches_id,
             'custom_overtime_multiplier'  => $request->custom_overtime_multiplier ?: null,
-            'overtime_fixed_daily_amount' => $request->overtime_fixed_daily_amount ? (float)$request->overtime_fixed_daily_amount : null,
             'overtime_enabled'            => $request->overtime_enabled           ?? 1,
             'late_deduction_enabled'      => $request->late_deduction_enabled     ?? 1,
             'weekly_off_day'              => $request->weekly_off_day !== '' && $request->filled('weekly_off_day') ? (int)$request->weekly_off_day : null,
