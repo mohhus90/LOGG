@@ -1,459 +1,551 @@
 @extends('admin.layouts.admin')
 
-@section('title')
-{{ __('admin.emp_title') }}
-@endsection
-
-@section('start')
-    {{ __('admin.hr_management') }}
-@endsection
+@section('title'){{ __('admin.emp_view_data') }}@endsection
+@section('start'){{ __('admin.hr_management') }}@endsection
+@section('home')<a href="{{ route('employees.index') }}">{{ __('admin.emp_title') }}</a>@endsection
+@section('startpage'){{ __('admin.view') }}@endsection
 
 @section('css')
 <style>
-    .tab-content {
-        padding: 15px;
-        border-left: 1px solid #dee2e6;
-        border-right: 1px solid #dee2e6;
-        border-bottom: 1px solid #dee2e6;
-        border-radius: 0 0 0.25rem 0.25rem;
-    }
+/* ── Profile Header ── */
+.emp-profile-header {
+    background: linear-gradient(135deg, #1a237e 0%, #283593 40%, #3949ab 100%);
+    border-radius: 12px 12px 0 0;
+    padding: 32px 28px 20px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.emp-profile-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+}
+.emp-photo-wrap {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.4);
+    overflow: hidden;
+    background: #fff;
+    flex-shrink: 0;
+}
+.emp-photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.emp-header-name { font-size: 1.45rem; font-weight: 700; margin-bottom: 4px; }
+.emp-header-sub  { font-size: 0.9rem; opacity: .8; }
+.emp-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin: 2px;
+}
+.badge-working   { background: rgba(72,199,142,0.25); border: 1px solid #48c78e; color: #d1fae5; }
+.badge-resigned  { background: rgba(239,68,68,0.25);  border: 1px solid #ef4444; color: #fee2e2; }
+.badge-client    { background: rgba(251,191,36,0.2);  border: 1px solid #f59e0b; color: #fef3c7; }
+.badge-male      { background: rgba(96,165,250,0.2);  border: 1px solid #60a5fa; color: #dbeafe; }
+.badge-female    { background: rgba(236,72,153,0.2);  border: 1px solid #ec4899; color: #fce7f3; }
+
+/* ── Section Cards ── */
+.info-section { background: #fff; border-radius: 0; border-bottom: 1px solid #e9ecef; }
+.info-section:last-child { border-bottom: none; border-radius: 0 0 12px 12px; }
+.section-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 24px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 700;
+    font-size: .93rem;
+    color: #374151;
+    cursor: pointer;
+    user-select: none;
+}
+.section-header .sec-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; color: #fff; flex-shrink: 0;
+}
+.section-body { padding: 20px 24px; }
+
+/* ── Info Grid ── */
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.info-item label {
+    display: block; font-size: .72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px;
+    color: #9ca3af; margin-bottom: 4px;
+}
+.info-item .info-val {
+    font-size: .92rem; color: #111827; font-weight: 500;
+    padding: 7px 12px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    min-height: 36px;
+    word-break: break-word;
+}
+.info-item .info-val.empty { color: #9ca3af; font-style: italic; }
+.info-item .info-val.highlighted { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+/* ── Document Cards ── */
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.doc-card {
+    border: 2px dashed #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 14px;
+    text-align: center;
+    transition: all .2s;
+    position: relative;
+}
+.doc-card.has-file { border-style: solid; border-color: #3b82f6; background: #eff6ff; }
+.doc-card .doc-icon {
+    font-size: 2rem; margin-bottom: 8px;
+    color: #9ca3af;
+}
+.doc-card.has-file .doc-icon { color: #3b82f6; }
+.doc-card .doc-name { font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+.doc-card .doc-filename { font-size: .73rem; color: #6b7280; margin-bottom: 10px; word-break: break-all; }
+.doc-card .doc-actions { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.doc-upload-btn { font-size: .8rem; }
+.doc-badge-uploaded {
+    position: absolute; top: 8px; right: 8px;
+    background: #10b981; color: #fff;
+    font-size: .65rem; padding: 2px 7px;
+    border-radius: 20px; font-weight: 700;
+}
+
+/* ── Actions Bar ── */
+.actions-bar {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    padding: 16px 24px;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    border-radius: 0 0 12px 12px;
+}
+
+/* ── Tabs ── */
+.emp-tabs { border-bottom: 2px solid #e5e7eb; display: flex; flex-wrap: wrap; gap: 4px; padding: 0 24px; background: #fff; }
+.emp-tab {
+    padding: 10px 18px; font-size: .87rem; font-weight: 600;
+    color: #6b7280; border: none; background: none;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    cursor: pointer; transition: all .15s;
+}
+.emp-tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+.emp-tab-pane { display: none; }
+.emp-tab-pane.active { display: block; }
+
+.card-outer {
+    border-radius: 12px;
+    box-shadow: 0 1px 8px rgba(0,0,0,.08);
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
 </style>
-@endsection
-
-@section('home')
-<a href="{{ route('employees.index') }}">{{ __('admin.emp_view_data') }}</a>
-@endsection
-
-@section('startpage')
-{{ __('admin.view') }}
 @endsection
 
 @section('content')
 <div class="col-12">
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title card_title_center">{{ __('admin.emp_view_data') }}</h3>
+
+  {{-- ── Profile Card ── --}}
+  <div class="card-outer mb-4">
+
+    {{-- Header --}}
+    <div class="emp-profile-header">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="emp-photo-wrap">
+          @php $photoDoc = $documents->get('photo'); @endphp
+          @if($photoDoc)
+            <img src="{{ asset($photoDoc->doc_path) }}" alt="">
+          @elseif(!empty($data['emp_photo']))
+            <img src="{{ asset('assets/admin/uploads/' . $data['emp_photo']) }}" alt="">
+          @elseif($data['emp_gender'] == 2)
+            <img src="{{ asset('assets/admin/uploads/woman.png') }}" alt="">
+          @else
+            <img src="{{ asset('assets/admin/uploads/man.png') }}" alt="">
+          @endif
         </div>
-        <div class="card-body">
-            <div class="card-body">
-                <ul class="nav nav-tabs" id="custom-content-below-tab" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="custom-content-below-baisc_data-tab" data-toggle="pill" href="#custom-content-below-baisc_data" role="tab" aria-controls="custom-content-below-baisc_data" aria-selected="true">{{ __('admin.emp_tab_basic') }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="custom-content-below-job_data-tab" data-toggle="pill" href="#custom-content-below-job_data" role="tab" aria-controls="custom-content-below-job_data" aria-selected="false">{{ __('admin.emp_tab_job') }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="custom-content-below-other_data-tab" data-toggle="pill" href="#custom-content-below-other_data" role="tab" aria-controls="custom-content-below-other_data" aria-selected="false">{{ __('admin.emp_tab_other') }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="custom-content-below-Salary_data-tab" data-toggle="pill" href="#custom-content-below-Salary_data" role="tab" aria-controls="custom-content-below-Salary_data" aria-selected="false">{{ __('admin.emp_tab_salary') }}</a>
-                    </li>
-                </ul>
-
-                <div class="tab-content" id="custom-content-below-tabContent">
-                    <div class="tab-pane fade show active" id="custom-content-below-baisc_data" role="tabpanel" aria-labelledby="custom-content-below-baisc_data-tab">
-                        <br>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="employee_id">{{ __('admin.emp_code') }}</label>
-                                    <input disabled type="text" class="form-control" name="employee_id" id="employee_id" value="{{ old('employee_id',$data['employee_id']) }}">
-                                    @error('employee_id')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="finger_id">{{ __('admin.emp_finger_code') }}</label>
-                                    <input disabled type="text" class="form-control" name="finger_id" id="finger_id" value="{{ old('finger_id',$data['finger_id']) }}">
-                                    @error('finger_id')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="employee_name_A">{{ __('admin.emp_name_ar') }}</label>
-                                    <input disabled type="text" class="form-control" name="employee_name_A" id="employee_name_A" value="{{ old('employee_name_A',$data['employee_name_A']) }}">
-                                    @error('employee_name_A')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="employee_name_E">{{ __('admin.emp_name_en') }}</label>
-                                    <input disabled type="text" class="form-control" name="employee_name_E" id="employee_name_E" value="{{ old('employee_name_E',$data['employee_name_E']) }}">
-                                    @error('employee_name_E')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="employee_address">{{ __('admin.emp_address') }}</label>
-                                    <input disabled type="text" class="form-control" name="employee_address" id="employee_address" value="{{ old('employee_address',$data['employee_address']) }}">
-                                    @error('employee_address')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="national_id">{{ __('admin.emp_national_id') }}</label>
-                                    <input disabled type="text" class="form-control" name="national_id" id="national_id" value="{{ old('national_id',$data['national_id']) }}">
-                                    @error('national_id')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="insurance_no">{{ __('admin.emp_insurance_no') }}</label>
-                                    <input disabled type="text" class="form-control" name="insurance_no" id="insurance_no" value="{{ old('insurance_no',$data['insurance_no']) }}">
-                                    @error('insurance_no')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_mobile">{{ __('admin.emp_mobile') }}</label>
-                                    <input disabled type="text" class="form-control" name="emp_mobile" id="emp_mobile" value="{{ old('emp_mobile',$data['emp_mobile']) }}">
-                                    @error('emp_mobile')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_home_tel">{{ __('admin.emp_home_phone') }}</label>
-                                    <input disabled type="text" class="form-control" name="emp_home_tel" id="emp_home_tel" value="{{ old('emp_home_tel',$data['emp_home_tel']) }}">
-                                    @error('emp_home_tel')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_email">Email</label>
-                                    <input disabled type="email" class="form-control" name="emp_email" id="emp_email" value="{{ old('emp_email',$data['emp_email']) }}">
-                                    @error('emp_email')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="birth_date">{{ __('admin.emp_birth_date') }}</label>
-                                    <input disabled type="date" class="form-control" name="birth_date" id="birth_date" value="{{ old('birth_date',$data['birth_date']) }}">
-                                    @error('birth_date')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_gender">{{ __('admin.emp_gender') }}</label>
-                                    <select disabled class="form-control" name="emp_gender" id="emp_gender">
-                                        <option value="">{{ __('admin.emp_gender_choose') }}</option>
-                                        <option value="1" @if(old('emp_gender',$data['emp_gender'])==1)selected @endif>{{ __('admin.male') }}</option>
-                                        <option value="2" @if(old('emp_gender',$data['emp_gender'])==2)selected @endif>{{ __('admin.female') }}</option>
-                                    </select>
-                                    @error('emp_gender')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_social_status">{{ __('admin.emp_marital_status') }}</label>
-                                    <select disabled class="form-control" name="emp_social_status" id="emp_social_status">
-                                        <option value="">{{ __('admin.emp_marital_choose') }}</option>
-                                        <option value="1" @if(old('emp_social_status',$data['emp_social_status'])==1)selected @endif>{{ __('admin.emp_single') }}</option>
-                                        <option value="2" @if(old('emp_social_status',$data['emp_social_status'])==2)selected @endif>{{ __('admin.emp_married') }}</option>
-                                        <option value="3" @if(old('emp_social_status',$data['emp_social_status'])==3)selected @endif>{{ __('admin.emp_married_dependent') }}</option>
-                                    </select>
-                                    @error('emp_social_status')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_photo">{{ __('admin.emp_photo') }}</label>
-                                    @if(!@empty($data['emp_photo']))
-                                        <img src="{{ asset('assets/admin/uploads/' . $data['emp_photo']) }}" style="width: 80px; height: 80px;" class="rounded-circle" alt="{{ __('admin.emp_photo') }}">
-                                    @else
-                                        @if(($data['emp_gender'])==2)
-                                        <img src="{{ asset('assets/admin/uploads/woman.png') }}" style="width: 80px; height: 80px;" class="rounded-circle" alt="{{ __('admin.emp_photo') }}">
-                                        @else
-                                        <img src="{{ asset('assets/admin/uploads/man.png') }}" style="width: 80px; height: 80px;" class="rounded-circle" alt="{{ __('admin.emp_photo') }}">
-                                        @endif
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_ؤر">{{ __('admin.emp_cv') }}</label>
-                                    <input disabled type="file" class="form-control" name="emp_ؤر" id="emp_ؤر" value="{{ old('emp_ؤر',$data['emp_ؤر']) }}">
-                                    @error('emp_ؤر')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="custom-content-below-job_data" role="tabpanel" aria-labelledby="custom-content-below-job_data-tab">
-                        <br>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_start_date">{{ __('admin.emp_join_date') }}</label>
-                                    <input disabled type="date" class="form-control" name="emp_start_date" id="emp_start_date" value="{{ old('emp_start_date',$data['emp_start_date']) }}">
-                                    @error('emp_start_date')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="functional_status">{{ __('admin.emp_status') }}</label>
-                                    <select disabled class="form-control" name="functional_status" id="functional_status">
-                                        <option value="1" @if(old('functional_status',$data['functional_status'])==1)selected @endif>{{ __('admin.emp_working') }}</option>
-                                        <option value="2" @if(old('functional_status',$data['functional_status'])==2)selected @endif>{{ __('admin.emp_not_working') }}</option>
-                                    </select>
-                                    @error('functional_status')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="insurance_status">{{ __('admin.emp_insurance_status') }}</label>
-                                    <select disabled class="form-control" name="insurance_status" id="insurance_status">
-                                        <option value="1" @if(old('insurance_status',$data['insurance_status'])==1)selected @endif>{{ __('admin.emp_insured') }}</option>
-                                        <option value="2" @if(old('insurance_status',$data['insurance_status'])==2)selected @endif>{{ __('admin.emp_not_insured') }}</option>
-                                        <option value="3" @if(old('insurance_status',$data['insurance_status'])==3)selected @endif>{{ __('admin.emp_training') }}</option>
-                                        <option value="4" @if(old('insurance_status',$data['insurance_status'])==4)selected @endif>{{ __('admin.emp_service_ended') }}</option>
-                                    </select>
-                                    @error('insurance_status')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_jobs_id">{{ __('admin.emp_job') }}</label>
-                                    <select disabled name="emp_jobs_id" id="emp_jobs_id" class="form-control">
-                                        <option value="">{{ __('admin.emp_job_choose') }}</option>
-                                        @foreach($jobs_categories as $job)
-                                            <option value="{{ $job->id }}" {{ old('emp_jobs_id',$data['emp_jobs_id']) == $job->id ? 'selected' : '' }}>
-                                                {{ $job->job_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('emp_jobs_id')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_departments_id">{{ __('admin.emp_dept') }}</label>
-                                    <select disabled name="emp_departments_id" id="emp_departments_id" class="form-control">
-                                        <option value="">{{ __('admin.emp_dept_choose') }}</option>
-                                        @foreach($departments as $department)
-                                            <option value="{{ $department->id }}" {{ old('emp_departments_id',$data['emp_departments_id']) == $department->id ? 'selected' : '' }}>
-                                                {{ $department->dep_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('emp_departments_id')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="shifts_types_id">{{ __('admin.emp_shift') }}</label>
-                                    <select disabled name="shifts_types_id" id="shifts_types_id" class="form-control">
-                                        <option value="">{{ __('admin.emp_shift_choose') }}</option>
-                                        @foreach($shifts_types as $shifts_type)
-                                            <option value="{{ $shifts_type->id }}" {{ old('shifts_types_id',$data['shifts_types_id']) == $shifts_type->id ? 'selected' : '' }}>
-                                                {{ $shifts_type->type }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('shifts_types_id')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="branches_id">{{ __('admin.emp_branch') }}</label>
-                                    <select disabled name="branches_id" id="branches_id" class="form-control">
-                                        <option value="">{{ __('admin.emp_branch_choose') }}</option>
-                                        @foreach($branches as $branche)
-                                            <option value="{{ $branche->id }}" {{ old('branches_id',$data['branches_id']) == $branche->id ? 'selected' : '' }}>
-                                                {{ $branche->branch_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('branches_id')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="daily_work_hours">{{ __('admin.emp_work_hours') }}</label>
-                                    <input disabled type="number" class="form-control" name="daily_work_hours" id="daily_work_hours" value="{{ old('daily_work_hours',$data['daily_work_hours']) }}">
-                                    @error('daily_work_hours')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="resignation_status">{{ __('admin.emp_leave_reason_label') }}</label>
-                                    <select disabled class="form-control" name="resignation_status" id="resignation_status">
-                                        <option value="">{{ __('admin.emp_marital_choose') }}</option>
-                                        <option value="1" @if(old('resignation_status',$data['resignation_status'])==1)selected @endif>{{ __('admin.emp_resignation') }}</option>
-                                        <option value="2" @if(old('resignation_status',$data['resignation_status'])==2)selected @endif>{{ __('admin.emp_fired') }}</option>
-                                        <option value="3" @if(old('resignation_status',$data['resignation_status'])==3)selected @endif>{{ __('admin.emp_left_work') }}</option>
-                                        <option value="4" @if(old('resignation_status',$data['resignation_status'])==4)selected @endif>{{ __('admin.emp_retirement_age') }}</option>
-                                        <option value="5" @if(old('resignation_status',$data['resignation_status'])==5)selected @endif>{{ __('admin.emp_death') }}</option>
-                                    </select>
-                                    @error('resignation_status')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="resignation_date">{{ __('admin.emp_leave_date') }}</label>
-                                    <input disabled type="date" class="form-control" name="resignation_date" id="resignation_date" value="{{ old('resignation_date',$data['resignation_date']) }}">
-                                    @error('resignation_date')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="resignation_cause">{{ __('admin.emp_leave_reason') }}</label>
-                                    <input disabled type="text" class="form-control" name="resignation_cause" id="resignation_cause" value="{{ old('resignation_cause',$data['resignation_cause']) }}">
-                                    @error('resignation_cause')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="custom-content-below-other_data" role="tabpanel" aria-labelledby="custom-content-below-other_data-tab">
-                        <br>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_military_status">{{ __('admin.emp_military') }}</label>
-                                    <select disabled class="form-control" name="emp_military_status" id="emp_military_status">
-                                        <option value="">{{ __('admin.emp_marital_choose') }}</option>
-                                        <option value="1" @if(old('emp_military_status',$data['emp_military_status'])==1)selected @endif>{{ __('admin.emp_military_served') }}</option>
-                                        <option value="2" @if(old('emp_military_status',$data['emp_military_status'])==2)selected @endif>{{ __('admin.emp_military_exempt') }}</option>
-                                        <option value="3" @if(old('emp_military_status',$data['emp_military_status'])==3)selected @endif>{{ __('admin.emp_military_deferred') }}</option>
-                                    </select>
-                                    @error('emp_military_status')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_qualification">{{ __('admin.emp_education') }}</label>
-                                    <input disabled type="text" class="form-control" name="emp_qualification" id="emp_qualification" value="{{ old('emp_qualification',$data['emp_qualification']) }}">
-                                    @error('emp_qualification')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="qualification_year">{{ __('admin.emp_edu_year') }}</label>
-                                    <input disabled type="text" class="form-control" name="qualification_year" id="qualification_year" value="{{ old('qualification_year',$data['qualification_year']) }}">
-                                    @error('qualification_year')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="qualification_grade">{{ __('admin.emp_edu_grade') }}</label>
-                                    <select disabled class="form-control" name="qualification_grade" id="qualification_grade">
-                                        <option value="">{{ __('admin.emp_marital_choose') }}</option>
-                                        <option value="1" @if(old('qualification_grade',$data['qualification_grade'])==1)selected @endif>{{ __('admin.emp_distinction') }}</option>
-                                        <option value="2" @if(old('qualification_grade',$data['qualification_grade'])==2)selected @endif>{{ __('admin.emp_very_good') }}</option>
-                                        <option value="3" @if(old('qualification_grade',$data['qualification_grade'])==3)selected @endif>{{ __('admin.emp_very_good_high') }}</option>
-                                        <option value="4" @if(old('qualification_grade',$data['qualification_grade'])==4)selected @endif>{{ __('admin.emp_good') }}</option>
-                                        <option value="5" @if(old('qualification_grade',$data['qualification_grade'])==5)selected @endif>{{ __('admin.emp_accepted') }}</option>
-                                    </select>
-                                    @error('qualification_grade')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tab-pane fade" id="custom-content-below-Salary_data" role="tabpanel" aria-labelledby="custom-content-below-Salary_data-tab">
-                        <br>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_sal">{{ __('admin.emp_basic_salary') }}</label>
-                                    <input disabled type="number" class="form-control" name="emp_sal" id="emp_sal" value="{{ old('emp_sal',$data['emp_sal']) }}">
-                                    @error('emp_sal')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_sal_insurance">{{ __('admin.emp_insurance_salary') }}</label>
-                                    <input disabled type="number" class="form-control" name="emp_sal_insurance" id="emp_sal_insurance" value="{{ old('emp_sal_insurance',$data['emp_sal_insurance']) }}">
-                                    @error('emp_sal_insurance')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="emp_fixed_allowances">{{ __('admin.emp_fixed_allowance') }}</label>
-                                    <input disabled type="number" class="form-control" name="emp_fixed_allowances" id="emp_fixed_allowances" value="{{ old('emp_fixed_allowances',$data['emp_fixed_allowances']) }}">
-                                    @error('emp_fixed_allowances')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="mtivation">{{ __('admin.emp_incentive') }}</label>
-                                    <input disabled type="number" class="form-control" name="mtivation" id="mtivation" value="{{ old('mtivation',$data['mtivation']) }}">
-                                    @error('mtivation')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="medical_insurance">{{ __('admin.emp_health_insurance') }}</label>
-                                    <input disabled type="number" class="form-control" name="medical_insurance" id="medical_insurance" value="{{ old('medical_insurance',$data['medical_insurance']) }}">
-                                    @error('medical_insurance')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="sal_cash_visa">{{ __('admin.emp_payment_method') }}</label>
-                                    <select disabled class="form-control" name="sal_cash_visa" id="sal_cash_visa">
-                                        <option value="">{{ __('admin.emp_marital_choose') }}</option>
-                                        <option value="1" @if(old('sal_cash_visa',$data['sal_cash_visa'])==1)selected @endif>{{ __('admin.emp_cash') }}</option>
-                                        <option value="2" @if(old('sal_cash_visa',$data['sal_cash_visa'])==2)selected @endif>{{ __('admin.emp_visa') }}</option>
-                                    </select>
-                                    @error('sal_cash_visa')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="bank_name">{{ __('admin.emp_bank_name') }}</label>
-                                    <input disabled type="text" class="form-control" name="bank_name" id="bank_name" value="{{ old('bank_name',$data['bank_name']) }}">
-                                    @error('bank_name')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="bank_account">{{ __('admin.emp_bank_account') }}</label>
-                                    <input disabled type="text" class="form-control" name="bank_account" id="bank_account" value="{{ old('bank_account',$data['bank_account']) }}">
-                                    @error('bank_account')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="bank_ID">bank ID</label>
-                                    <input disabled type="text" class="form-control" name="bank_ID" id="bank_ID" value="{{ old('bank_ID',$data['bank_ID']) }}">
-                                    @error('bank_ID')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="">
-                                    <label for="bank_branch">bank branch</label>
-                                    <input disabled type="text" class="form-control" name="bank_branch" id="bank_branch" value="{{ old('bank_branch',$data['bank_branch']) }}">
-                                    @error('bank_branch')<div class="text-danger">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="flex-grow-1">
+          <div class="emp-header-name">{{ $data['employee_name_A'] }}</div>
+          <div class="emp-header-sub mb-2">{{ $data['employee_name_E'] }}</div>
+          <div class="d-flex flex-wrap gap-1">
+            <span class="emp-badge {{ $data['functional_status'] == 1 ? 'badge-working' : 'badge-resigned' }}">
+              <i class="fas fa-circle" style="font-size:.5rem;vertical-align:middle;margin-{{ app()->isLocale('ar') ? 'left' : 'right' }}:4px"></i>
+              {{ $data['functional_status'] == 1 ? __('admin.emp_working') : __('admin.emp_not_working') }}
+            </span>
+            <span class="emp-badge {{ $data['emp_gender'] == 2 ? 'badge-female' : 'badge-male' }}">
+              <i class="fas {{ $data['emp_gender'] == 2 ? 'fa-venus' : 'fa-mars' }}"></i>
+              {{ $data['emp_gender'] == 2 ? __('admin.female') : __('admin.male') }}
+            </span>
+            @if($data['client_id'])
+            <span class="emp-badge badge-client">
+              <i class="fas fa-building"></i>
+              {{ $data->client->client_name ?? '' }}
+            </span>
+            @endif
+            @if($data['emp_jobs_id'])
+            <span class="emp-badge" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff">
+              <i class="fas fa-briefcase"></i>
+              {{ optional($data->jobs_categories)->job_name }}
+            </span>
+            @endif
+          </div>
         </div>
+        <div class="text-{{ app()->isLocale('ar') ? 'left' : 'right' }} ms-auto">
+          <div style="font-size:1.6rem;font-weight:800;opacity:.95">#{{ $data['employee_id'] }}</div>
+          @if($data['hrid'])
+          <div style="font-size:.8rem;opacity:.7">كود العميل: {{ $data['hrid'] }}</div>
+          @endif
+          <div style="font-size:.75rem;opacity:.6;margin-top:4px">{{ __('admin.emp_join_date') }}: {{ $data['emp_start_date'] ?? '—' }}</div>
+        </div>
+      </div>
     </div>
+
+    {{-- Tabs --}}
+    <div class="emp-tabs" id="empTabs">
+      <button class="emp-tab active" data-target="tab-basic"><i class="fas fa-user me-1"></i>{{ __('admin.emp_tab_basic') }}</button>
+      <button class="emp-tab" data-target="tab-job"><i class="fas fa-briefcase me-1"></i>{{ __('admin.emp_tab_job') }}</button>
+      <button class="emp-tab" data-target="tab-other"><i class="fas fa-info-circle me-1"></i>{{ __('admin.emp_tab_other') }}</button>
+      <button class="emp-tab" data-target="tab-salary"><i class="fas fa-money-bill-wave me-1"></i>{{ __('admin.emp_tab_salary') }}</button>
+      @if($data['client_id'])
+      <button class="emp-tab" data-target="tab-client"><i class="fas fa-building me-1"></i>بيانات العميل</button>
+      @endif
+      <button class="emp-tab" data-target="tab-docs"><i class="fas fa-folder-open me-1"></i>ملفات التعيين</button>
+    </div>
+
+    {{-- ── TAB: Basic Data ── --}}
+    <div class="emp-tab-pane active section-body" id="tab-basic">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>{{ __('admin.emp_code') }}</label>
+          <div class="info-val highlighted">{{ $data['employee_id'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_finger_code') }}</label>
+          <div class="info-val {{ empty($data['finger_id']) ? 'empty' : '' }}">{{ $data['finger_id'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_name_ar') }}</label>
+          <div class="info-val">{{ $data['employee_name_A'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_name_en') }}</label>
+          <div class="info-val">{{ $data['employee_name_E'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_national_id') }}</label>
+          <div class="info-val {{ empty($data['national_id']) ? 'empty' : '' }}">{{ $data['national_id'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_insurance_no') }}</label>
+          <div class="info-val {{ empty($data['insurance_no']) ? 'empty' : '' }}">{{ $data['insurance_no'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_mobile') }}</label>
+          <div class="info-val {{ empty($data['emp_mobile']) ? 'empty' : '' }}">{{ $data['emp_mobile'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_home_phone') }}</label>
+          <div class="info-val {{ empty($data['emp_home_tel']) ? 'empty' : '' }}">{{ $data['emp_home_tel'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>Email</label>
+          <div class="info-val {{ empty($data['emp_email']) ? 'empty' : '' }}">{{ $data['emp_email'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_birth_date') }}</label>
+          <div class="info-val {{ empty($data['birth_date']) ? 'empty' : '' }}">{{ $data['birth_date'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_gender') }}</label>
+          <div class="info-val">
+            @if($data['emp_gender'] == 1) {{ __('admin.male') }}
+            @elseif($data['emp_gender'] == 2) {{ __('admin.female') }}
+            @else —
+            @endif
+          </div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_marital_status') }}</label>
+          <div class="info-val">
+            @if($data['emp_social_status'] == 1) {{ __('admin.emp_single') }}
+            @elseif($data['emp_social_status'] == 2) {{ __('admin.emp_married') }}
+            @elseif($data['emp_social_status'] == 3) {{ __('admin.emp_married_dependent') }}
+            @else —
+            @endif
+          </div>
+        </div>
+        <div class="info-item" style="grid-column: span 2">
+          <label>{{ __('admin.emp_address') }}</label>
+          <div class="info-val {{ empty($data['employee_address']) ? 'empty' : '' }}">{{ $data['employee_address'] ?? '—' }}</div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ── TAB: Job Data ── --}}
+    <div class="emp-tab-pane section-body" id="tab-job">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>{{ __('admin.emp_join_date') }}</label>
+          <div class="info-val {{ empty($data['emp_start_date']) ? 'empty' : 'highlighted' }}">{{ $data['emp_start_date'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_status') }}</label>
+          <div class="info-val">
+            @if($data['functional_status'] == 1) <span style="color:#059669;font-weight:700">● {{ __('admin.emp_working') }}</span>
+            @elseif($data['functional_status'] == 2) <span style="color:#dc2626;font-weight:700">● {{ __('admin.emp_not_working') }}</span>
+            @else —
+            @endif
+          </div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_insurance_status') }}</label>
+          <div class="info-val">
+            @php $ins = [1=>__('admin.emp_insured'),2=>__('admin.emp_not_insured'),3=>__('admin.emp_training'),4=>__('admin.emp_service_ended')]; @endphp
+            {{ $ins[$data['insurance_status']] ?? '—' }}
+          </div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_job') }}</label>
+          <div class="info-val">{{ optional($data->jobs_categories)->job_name ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_dept') }}</label>
+          <div class="info-val">{{ optional($data->department)->dep_name ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_shift') }}</label>
+          <div class="info-val">{{ optional($data->shifts_type)->type ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_branch') }}</label>
+          <div class="info-val">{{ optional($data->branches)->branch_name ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_work_hours') }}</label>
+          <div class="info-val {{ empty($data['daily_work_hours']) ? 'empty' : '' }}">{{ $data['daily_work_hours'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_leave_reason_label') }}</label>
+          <div class="info-val">
+            @php $res = [1=>__('admin.emp_resignation'),2=>__('admin.emp_fired'),3=>__('admin.emp_left_work'),4=>__('admin.emp_retirement_age'),5=>__('admin.emp_death')]; @endphp
+            {{ $res[$data['resignation_status']] ?? '—' }}
+          </div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_leave_date') }}</label>
+          <div class="info-val {{ empty($data['resignation_date']) ? 'empty' : '' }}">{{ $data['resignation_date'] ?? '—' }}</div>
+        </div>
+        <div class="info-item" style="grid-column:span 2">
+          <label>{{ __('admin.emp_leave_reason') }}</label>
+          <div class="info-val {{ empty($data['resignation_cause']) ? 'empty' : '' }}">{{ $data['resignation_cause'] ?? '—' }}</div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ── TAB: Other Data ── --}}
+    <div class="emp-tab-pane section-body" id="tab-other">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>{{ __('admin.emp_military') }}</label>
+          <div class="info-val">
+            @php $mil=[1=>__('admin.emp_military_served'),2=>__('admin.emp_military_exempt'),3=>__('admin.emp_military_deferred'),4=>__('admin.emp_military_temp_exempt'),5=>__('admin.emp_military_not_required')]; @endphp
+            {{ $mil[$data['emp_military_status']] ?? '—' }}
+          </div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_education') }}</label>
+          <div class="info-val {{ empty($data['emp_qualification']) ? 'empty' : '' }}">{{ $data['emp_qualification'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_edu_year') }}</label>
+          <div class="info-val {{ empty($data['qualification_year']) ? 'empty' : '' }}">{{ $data['qualification_year'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_edu_grade') }}</label>
+          <div class="info-val">
+            @php $gr=[1=>__('admin.emp_distinction'),2=>__('admin.emp_very_good'),3=>__('admin.emp_very_good_high'),4=>__('admin.emp_good'),5=>__('admin.emp_accepted')]; @endphp
+            {{ $gr[$data['qualification_grade']] ?? '—' }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ── TAB: Salary ── --}}
+    <div class="emp-tab-pane section-body" id="tab-salary">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>{{ __('admin.emp_basic_salary') }}</label>
+          <div class="info-val highlighted">{{ number_format($data['emp_sal'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_insurance_salary') }}</label>
+          <div class="info-val">{{ number_format($data['emp_sal_insurance'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_fixed_allowance') }}</label>
+          <div class="info-val">{{ number_format($data['emp_fixed_allowances'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_incentive') }}</label>
+          <div class="info-val">{{ number_format($data['mtivation'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_health_insurance') }}</label>
+          <div class="info-val">{{ number_format($data['medical_insurance'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_payment_method') }}</label>
+          <div class="info-val">
+            @if($data['sal_cash_visa'] == 1) {{ __('admin.emp_cash') }}
+            @elseif($data['sal_cash_visa'] == 2) {{ __('admin.emp_visa') }}
+            @else — @endif
+          </div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_bank_name') }}</label>
+          <div class="info-val {{ empty($data['bank_name']) ? 'empty' : '' }}">{{ $data['bank_name'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_bank_account') }}</label>
+          <div class="info-val {{ empty($data['bank_account']) ? 'empty' : '' }}">{{ $data['bank_account'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>Bank ID</label>
+          <div class="info-val {{ empty($data['bank_ID']) ? 'empty' : '' }}">{{ $data['bank_ID'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>Bank Branch</label>
+          <div class="info-val {{ empty($data['bank_branch']) ? 'empty' : '' }}">{{ $data['bank_branch'] ?? '—' }}</div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ── TAB: Client Data ── --}}
+    @if($data['client_id'])
+    <div class="emp-tab-pane section-body" id="tab-client">
+      <div class="info-grid">
+        <div class="info-item">
+          <label>العميل</label>
+          <div class="info-val highlighted">{{ optional($data->client)->client_name ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>كود العميل (Custom ID)</label>
+          <div class="info-val highlighted">{{ $data['hrid'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>جهة الاتصال الطارئة (Reference)</label>
+          <div class="info-val {{ empty($data['reference_mobile']) ? 'empty' : '' }}">{{ $data['reference_mobile'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>صلة القرابة</label>
+          <div class="info-val {{ empty($data['relative_relation']) ? 'empty' : '' }}">{{ $data['relative_relation'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>حالة أوراق التعيين</label>
+          <div class="info-val {{ empty($data['hiring_documents_status']) ? 'empty' : '' }}">{{ $data['hiring_documents_status'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>تاريخ بداية التأمين الاجتماعي</label>
+          <div class="info-val {{ empty($data['insurance_start_date']) ? 'empty' : '' }}">{{ $data['insurance_start_date'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>تاريخ انتهاء التأمين الاجتماعي</label>
+          <div class="info-val {{ empty($data['insurance_end_date']) ? 'empty' : '' }}">{{ $data['insurance_end_date'] ?? '—' }}</div>
+        </div>
+        <div class="info-item" style="grid-column:span 2">
+          <label>ملاحظات نموذج 1 (Form 1)</label>
+          <div class="info-val {{ empty($data['form1_notes']) ? 'empty' : '' }}">{{ $data['form1_notes'] ?? '—' }}</div>
+        </div>
+        <div class="info-item" style="grid-column:span 2">
+          <label>ملاحظات نموذج 6 (Form 6)</label>
+          <div class="info-val {{ empty($data['form6_notes']) ? 'empty' : '' }}">{{ $data['form6_notes'] ?? '—' }}</div>
+        </div>
+        <div class="info-item" style="grid-column:span 3">
+          <label>ملاحظات</label>
+          <div class="info-val {{ empty($data['client_notes']) ? 'empty' : '' }}">{{ $data['client_notes'] ?? '—' }}</div>
+        </div>
+      </div>
+    </div>
+    @endif
+
+    {{-- ── TAB: Documents ── --}}
+    <div class="emp-tab-pane section-body" id="tab-docs">
+      <div class="doc-grid">
+        @foreach($docTypes as $type => $info)
+          @php $doc = $documents->get($type); @endphp
+          <div class="doc-card {{ $doc ? 'has-file' : '' }}">
+            @if($doc)
+              <span class="doc-badge-uploaded">✓ مرفوع</span>
+            @endif
+            <div class="doc-icon"><i class="fas {{ $info['icon'] }}"></i></div>
+            <div class="doc-name">{{ $info['ar'] }}</div>
+            @if($doc)
+              <div class="doc-filename">{{ Str::limit($doc->doc_original_name, 30) }}</div>
+              <div class="doc-actions">
+                <a href="{{ route('employees.document.download', [$data->id, $doc->id]) }}"
+                   class="btn btn-sm btn-primary doc-upload-btn">
+                  <i class="fas fa-download"></i> تنزيل
+                </a>
+                <a href="{{ route('employees.document.delete', [$data->id, $doc->id]) }}"
+                   class="btn btn-sm btn-outline-danger doc-upload-btn"
+                   onclick="return confirm('حذف هذا الملف؟')">
+                  <i class="fas fa-trash"></i>
+                </a>
+              </div>
+            @else
+              <div class="doc-filename" style="color:#9ca3af">لم يُرفع بعد</div>
+            @endif
+
+            {{-- Upload form --}}
+            <form action="{{ route('employees.document.upload', $data->id) }}" method="POST"
+                  enctype="multipart/form-data" class="mt-2">
+              @csrf
+              <input type="hidden" name="doc_type" value="{{ $type }}">
+              <label class="btn btn-sm {{ $doc ? 'btn-outline-secondary' : 'btn-outline-primary' }} doc-upload-btn w-100">
+                <i class="fas fa-upload"></i> {{ $doc ? 'استبدال' : 'رفع ملف' }}
+                <input type="file" name="doc_file" class="d-none"
+                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                       onchange="this.closest('form').submit()">
+              </label>
+            </form>
+          </div>
+        @endforeach
+      </div>
+      <div class="mt-3 p-3 rounded" style="background:#f0f9ff;border:1px solid #bae6fd;font-size:.82rem;color:#0369a1">
+        <i class="fas fa-info-circle me-1"></i>
+        الملفات المقبولة: PDF، صور (JPG/PNG)، مستندات Word — الحجم الأقصى 10MB لكل ملف
+      </div>
+    </div>
+
+    {{-- ── Actions Bar ── --}}
+    <div class="actions-bar">
+      <a href="{{ route('employees.edit', $data->id) }}" class="btn btn-primary">
+        <i class="fas fa-edit me-1"></i> {{ __('admin.emp_edit') }}
+      </a>
+      <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-right me-1"></i> {{ __('admin.back') }}
+      </a>
+    </div>
+
+  </div>{{-- card-outer --}}
+
 </div>
+@endsection
+
+@section('script')
+<script>
+document.querySelectorAll('.emp-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        document.querySelectorAll('.emp-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.emp-tab-pane').forEach(p => p.classList.remove('active'));
+        this.classList.add('active');
+        var target = document.getElementById(this.dataset.target);
+        if (target) target.classList.add('active');
+    });
+});
+</script>
 @endsection

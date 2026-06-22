@@ -154,7 +154,7 @@ class ClientsController extends Controller
         $header = array_map('trim', $header);
 
         $imported = 0;
-        $skipped  = 0;
+        $updated  = 0;
         $errors   = [];
         $rowNum   = 1;
 
@@ -163,16 +163,36 @@ class ClientsController extends Controller
             if (count($row) < 5) continue;
             $data = array_combine($header, array_pad($row, count($header), null));
 
-            // Skip empty rows (no name and no NID)
+            // Skip empty rows (no name)
             $englishName = trim($data['English Name'] ?? '');
             $arabicName  = trim($data['Arabic Name'] ?? '');
-            $nid         = trim($data['NID'] ?? '');
-
             if (empty($englishName) && empty($arabicName)) continue;
+
+            // ── Normalize NID (Excel may export large numbers as scientific notation) ──
+            $nid = trim($data['NID'] ?? '');
+            if (!empty($nid) && preg_match('/^[\d.]+[Ee][+\-]?\d+$/', $nid)) {
+                $nid = '';
+            }
+
+            // ── Identifiers ──
+            $fakeId = trim($data['Fake ID'] ?? '');
+            $hrid   = trim($data['HRID'] ?? '');
+
+            // ── Find existing employee: NID → Fake ID → HRID ──
+            $existingEmployee = null;
+            if (!empty($nid)) {
+                $existingEmployee = Employee::where('com_code', $com_code)->where('national_id', $nid)->first();
+            }
+            if (!$existingEmployee && !empty($fakeId)) {
+                $existingEmployee = Employee::where('employee_id', $fakeId)->first();
+            }
+            if (!$existingEmployee && !empty($hrid)) {
+                $existingEmployee = Employee::where('hrid', $hrid)->where('client_id', $client->id)->first();
+            }
 
             // ── Map status ──
             $statusRaw = strtolower(trim($data['Status'] ?? 'active'));
-            $functional_status = 1; // active
+            $functional_status  = 1;
             $resignation_status = null;
             if (in_array($statusRaw, ['resigned', 'terminated'])) {
                 $functional_status  = 2;
@@ -189,29 +209,31 @@ class ClientsController extends Controller
             if ($maritalRaw === 'married') $emp_social_status = 2;
             elseif (in_array($maritalRaw, ['divorced', 'widowed'])) $emp_social_status = 3;
 
-            // ── Map military certificate ──
+            // ── Map military certificate (temporary exempted BEFORE exempted) ──
             $militaryRaw = strtolower(trim($data['Military Certificate'] ?? ''));
             $emp_military_status = null;
             if ($emp_gender === 2) {
-                $emp_military_status = null; // female - not applicable
+                $emp_military_status = null;
             } elseif (str_contains($militaryRaw, 'serve completed')) {
                 $emp_military_status = 1;
-            } elseif (str_contains($militaryRaw, 'exempted') || $militaryRaw === 'exempted') {
+            } elseif (str_contains($militaryRaw, 'temporary exempted')) {
+                $emp_military_status = 4;
+            } elseif (str_contains($militaryRaw, 'exempted')) {
                 $emp_military_status = 2;
             } elseif (str_contains($militaryRaw, 'postponed')) {
                 $emp_military_status = 3;
-            } elseif (str_contains($militaryRaw, 'temporary exempted')) {
-                $emp_military_status = 2;
+            } elseif (str_contains($militaryRaw, 'not required')) {
+                $emp_military_status = 5;
             }
 
             // ── Parse dates ──
-            $emp_start_date    = $this->parseDate($data['Hiring Date'] ?? '');
-            $resignation_date  = $this->parseDate($data['Resignation Date'] ?? '');
-            $birth_date        = $this->parseDate($data['Date Of Birth'] ?? '');
-            $insurance_start   = $this->parseDate($data['Start Date Of Social'] ?? '');
-            $insurance_end     = $this->parseDate($data['End Date Of Social'] ?? '');
+            $emp_start_date   = $this->parseDate($data['Hiring Date'] ?? '');
+            $resignation_date = $this->parseDate($data['Resignation Date'] ?? '');
+            $birth_date       = $this->parseDate($data['Date Of Birth'] ?? '');
+            $insurance_start  = $this->parseDate($data['Start Date Of Social'] ?? '');
+            $insurance_end    = $this->parseDate($data['End Date Of Social'] ?? '');
 
-            // ── Get or create job category (required NOT NULL) ──
+            // ── Get or create job category ──
             $positionName = trim($data['Position'] ?? '') ?: 'General';
             $job = Jobs_categories::firstOrCreate(
                 ['job_name' => $positionName, 'com_code' => $com_code],
@@ -219,83 +241,91 @@ class ClientsController extends Controller
             );
             $job_id = $job->id;
 
-            // ── Check for duplicates by NID or HRID ──
-            $hrid    = trim($data['HRID'] ?? '');
-            $mobile  = trim($data['Mobile'] ?? '');
-            // Take only first mobile number if multiple are listed
-            $mobile  = trim(explode('/', $mobile)[0]);
-            $mobile  = trim(explode(' Whats', $mobile)[0]);
-            $mobile  = preg_replace('/\s+/', '', $mobile);
-
-            $existsQuery = Employee::where('com_code', $com_code);
-            if (!empty($nid)) {
-                $existsQuery->where('national_id', $nid);
-            } elseif (!empty($hrid)) {
-                $existsQuery->where('hrid', $hrid)->where('client_id', $client->id);
+            // ── Mobile: take first number only; skip if used by a different employee ──
+            $mobile = trim($data['Mobile'] ?? '');
+            $mobile = trim(explode('/', $mobile)[0]);
+            $mobile = trim(explode(' Whats', $mobile)[0]);
+            $mobile = preg_replace('/\s+/', '', $mobile);
+            if (!empty($mobile)) {
+                $mobileQuery = Employee::where('emp_mobile', $mobile)->where('com_code', $com_code);
+                if ($existingEmployee) $mobileQuery->where('id', '!=', $existingEmployee->id);
+                if ($mobileQuery->exists()) $mobile = null;
             }
 
-            if (!empty($nid) || !empty($hrid)) {
-                if ($existsQuery->exists()) {
-                    $skipped++;
-                    $errors[] = "صف $rowNum ({$englishName}): موجود مسبقاً - تم تخطيه";
-                    continue;
-                }
-            }
-
-            // ── Check mobile uniqueness ──
-            if (!empty($mobile) && Employee::where('emp_mobile', $mobile)->where('com_code', $com_code)->exists()) {
-                $mobile = null; // clear to avoid duplicate constraint
-            }
-
-            // ── Check insurance_no uniqueness ──
+            // ── Insurance number: skip if used by a different employee ──
             $insuranceNo = trim($data['Social Number'] ?? '');
             if (!empty($insuranceNo) && (strtolower($insuranceNo) === 'n/a' || !is_numeric($insuranceNo))) {
                 $insuranceNo = null;
             }
-            if (!empty($insuranceNo) && Employee::where('insurance_no', $insuranceNo)->where('com_code', $com_code)->exists()) {
-                $insuranceNo = null;
+            if (!empty($insuranceNo)) {
+                $insQuery = Employee::where('insurance_no', $insuranceNo)->where('com_code', $com_code);
+                if ($existingEmployee) $insQuery->where('id', '!=', $existingEmployee->id);
+                if ($insQuery->exists()) $insuranceNo = null;
             }
 
-            // ── Generate unique employee_id ──
-            $employee_id = $this->generateEmployeeId($com_code, $client->id, $hrid);
+            // ── Fields shared between insert and update ──
+            $fields = [
+                'employee_name_E'         => $englishName ?: '-',
+                'employee_name_A'         => $arabicName ?: $englishName ?: '-',
+                'employee_address'        => trim($data['Address'] ?? ''),
+                'emp_gender'              => $emp_gender,
+                'emp_social_status'       => $emp_social_status,
+                'emp_military_status'     => $emp_military_status,
+                'emp_start_date'          => $emp_start_date,
+                'functional_status'       => $functional_status,
+                'resignation_status'      => $resignation_status,
+                'resignation_date'        => $resignation_date,
+                'birth_date'              => $birth_date,
+                'national_id'             => !empty($nid) ? $nid : null,
+                'insurance_no'            => $insuranceNo,
+                'emp_mobile'              => $mobile ?: null,
+                'emp_jobs_id'             => $job_id,
+                'client_id'               => $client->id,
+                'hrid'                    => $hrid ?: null,
+                'reference_mobile'        => trim($data['Reference Number'] ?? '') ?: null,
+                'relative_relation'       => trim($data['Relative'] ?? '') ?: null,
+                'hiring_documents_status' => trim($data['Hiring Documents'] ?? '') ?: null,
+                'insurance_start_date'    => $insurance_start,
+                'insurance_end_date'      => $insurance_end,
+                'form1_notes'             => trim($data['Form 1 Comments'] ?? '') ?: null,
+                'form6_notes'             => trim($data['Form 6 Comments'] ?? '') ?: null,
+                'client_notes'            => trim($data['Comments'] ?? '') ?: null,
+            ];
 
             try {
-                Employee::create([
-                    'employee_id'              => $employee_id,
-                    'finger_id'                => null,
-                    'employee_name_E'          => $englishName ?: '-',
-                    'employee_name_A'          => $arabicName ?: $englishName ?: '-',
-                    'employee_address'         => trim($data['Address'] ?? ''),
-                    'emp_gender'               => $emp_gender,
-                    'emp_social_status'        => $emp_social_status,
-                    'emp_military_status'      => $emp_military_status,
-                    'emp_start_date'           => $emp_start_date,
-                    'functional_status'        => $functional_status,
-                    'resignation_status'       => $resignation_status,
-                    'resignation_date'         => $resignation_date,
-                    'birth_date'               => $birth_date,
-                    'national_id'              => !empty($nid) ? $nid : null,
-                    'insurance_no'             => $insuranceNo,
-                    'emp_mobile'               => $mobile ?: null,
-                    'emp_jobs_id'              => $job_id,
-                    'shifts_types_id'          => $defaultShift->id,
-                    'is_has_finger'            => 2,
-                    'branches_id'              => null,
-                    'client_id'                => $client->id,
-                    'hrid'                     => $hrid ?: null,
-                    'client_fake_id'           => trim($data['Fake ID'] ?? '') ?: null,
-                    'reference_mobile'         => trim($data['Reference Number'] ?? '') ?: null,
-                    'relative_relation'        => trim($data['Relative'] ?? '') ?: null,
-                    'hiring_documents_status'  => trim($data['Hiring Documents'] ?? '') ?: null,
-                    'insurance_start_date'     => $insurance_start,
-                    'insurance_end_date'       => $insurance_end,
-                    'form1_notes'              => trim($data['Form 1 Comments'] ?? '') ?: null,
-                    'form6_notes'              => trim($data['Form 6 Comments'] ?? '') ?: null,
-                    'client_notes'             => trim($data['Comments'] ?? '') ?: null,
-                    'com_code'                 => $com_code,
-                    'added_by'                 => $admin_id,
-                ]);
-                $imported++;
+                if ($existingEmployee) {
+                    // ── UPDATE existing employee ──
+                    // Sync employee_id to Fake ID if provided and not taken by another record
+                    if (!empty($fakeId) && $existingEmployee->employee_id !== $fakeId) {
+                        $idTaken = Employee::where('employee_id', $fakeId)
+                            ->where('id', '!=', $existingEmployee->id)
+                            ->exists();
+                        if (!$idTaken) {
+                            $fields['employee_id'] = $fakeId;
+                        }
+                    }
+                    $fields['updated_by'] = $admin_id;
+                    $existingEmployee->update($fields);
+                    $updated++;
+                } else {
+                    // ── INSERT new employee ──
+                    if (!empty($fakeId)) {
+                        $employee_id = $fakeId;
+                    } else {
+                        $last = Employee::where('com_code', $com_code)->max('id') ?? 0;
+                        $employee_id = 'EMP-' . str_pad($last + 1, 5, '0', STR_PAD_LEFT);
+                    }
+                    Employee::create(array_merge($fields, [
+                        'employee_id'     => $employee_id,
+                        'finger_id'       => null,
+                        'shifts_types_id' => $defaultShift->id,
+                        'is_has_finger'   => 2,
+                        'branches_id'     => null,
+                        'com_code'        => $com_code,
+                        'added_by'        => $admin_id,
+                    ]));
+                    $imported++;
+                }
             } catch (\Exception $ex) {
                 $errors[] = "صف $rowNum ({$englishName}): " . $ex->getMessage();
                 Log::error("CSV import row $rowNum error: " . $ex->getMessage());
@@ -304,7 +334,7 @@ class ClientsController extends Controller
 
         fclose($handle);
 
-        $message = "تم استيراد {$imported} موظف بنجاح. تم تخطي {$skipped} موظف (موجود مسبقاً).";
+        $message = "تم إضافة {$imported} موظف جديد. تم تحديث {$updated} موظف موجود.";
         if (!empty($errors)) {
             $message .= ' أخطاء: ' . implode(' | ', array_slice($errors, 0, 5));
             if (count($errors) > 5) $message .= ' ... و ' . (count($errors) - 5) . ' أخطاء أخرى';
@@ -315,14 +345,27 @@ class ClientsController extends Controller
 
     // ── Helpers ──────────────────────────────────────────────────
 
+    private const ARABIC_MONTHS = [
+        'يناير' => 'January', 'فبراير' => 'February', 'مارس'    => 'March',
+        'أبريل' => 'April',   'مايو'   => 'May',       'يونيو'   => 'June',
+        'يوليو' => 'July',    'أغسطس'  => 'August',    'سبتمبر' => 'September',
+        'أكتوبر' => 'October', 'نوفمبر' => 'November', 'ديسمبر' => 'December',
+    ];
+
     private function parseDate(?string $raw): ?string
     {
-        if (empty($raw) || strtolower(trim($raw)) === 'n/a') return null;
-        $raw = trim($raw);
-        // formats: 4/May/2025 | 21-May-98 | 1-Jan-89
+        if (empty($raw)) return null;
+        $raw   = trim($raw);
+        $lower = strtolower($raw);
+        // Reject non-date strings
+        if (in_array($lower, ['n/a', 'in process', '-', '']) || !preg_match('/\d/', $raw)) return null;
+
+        // Translate Arabic month names to English
+        $raw = str_replace(array_keys(self::ARABIC_MONTHS), array_values(self::ARABIC_MONTHS), $raw);
+
         try {
             $date = \Carbon\Carbon::parse($raw);
-            // Handle 2-digit years: 98 → 1998
+            // 2-digit years > current year mean previous century (e.g. 98 → 1998)
             if ($date->year > now()->year) {
                 $date->subYears(100);
             }
@@ -330,17 +373,5 @@ class ClientsController extends Controller
         } catch (\Exception $e) {
             return null;
         }
-    }
-
-    private function generateEmployeeId(int $com_code, int $client_id, string $hrid): string
-    {
-        if (!empty($hrid)) {
-            $base = 'C' . $client_id . '-' . $hrid;
-            if (!Employee::where('employee_id', $base)->exists()) {
-                return $base;
-            }
-        }
-        $last = Employee::where('com_code', $com_code)->max('id') ?? 0;
-        return 'EMP-' . str_pad($last + 1, 5, '0', STR_PAD_LEFT);
     }
 }

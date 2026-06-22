@@ -17,6 +17,24 @@
         border-bottom: 1px solid #dee2e6;
         border-radius: 0 0 0.25rem 0.25rem;
     }
+    .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .doc-card {
+        border: 2px dashed #e5e7eb; border-radius: 12px;
+        padding: 18px 14px; text-align: center;
+        transition: all .2s; position: relative;
+    }
+    .doc-card.has-file { border-style: solid; border-color: #3b82f6; background: #eff6ff; }
+    .doc-card .doc-icon { font-size: 2rem; margin-bottom: 8px; color: #9ca3af; }
+    .doc-card.has-file .doc-icon { color: #3b82f6; }
+    .doc-card .doc-name { font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
+    .doc-card .doc-filename { font-size: .73rem; color: #6b7280; margin-bottom: 10px; word-break: break-all; }
+    .doc-card .doc-actions { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+    .doc-badge-uploaded {
+        position: absolute; top: 8px; right: 8px;
+        background: #10b981; color: #fff;
+        font-size: .65rem; padding: 2px 7px;
+        border-radius: 20px; font-weight: 700;
+    }
 </style>
 @endsection
 
@@ -50,6 +68,9 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" id="custom-content-below-Salary_data-tab" data-toggle="pill" href="#custom-content-below-Salary_data" role="tab" aria-controls="custom-content-below-Salary_data" aria-selected="false">{{ __('admin.emp_tab_salary') }}</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="custom-content-below-client_data-tab" data-toggle="pill" href="#custom-content-below-client_data" role="tab" aria-controls="custom-content-below-client_data" aria-selected="false"><i class="fas fa-building mr-1"></i>بيانات العميل</a>
                         </li>
                     </ul>
 
@@ -157,27 +178,10 @@
                                         @error('emp_social_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="">
-                                        <label for="emp_photo">{{ __('admin.emp_choose_photo') }}</label>
-                                        <input type="file" class="form-control" name="emp_photo" id="emp_photo">
-                                        @if(!@empty($data['emp_photo']))
-                                            <img src="{{ asset('assets/admin/uploads/' . $data['emp_photo']) }}" style="width: 80px; height: 80px;" class="rounded-circle" alt="{{ __('admin.emp_photo') }}">
-                                        @else
-                                            @if(($data['emp_gender'])==2)
-                                            <img src="{{ asset('assets/admin/uploads/woman.png')}}" style="width: 80px; height: 80px;" class="rounded-circle" alt="{{ __('admin.emp_photo') }}">
-                                            @else
-                                            <img src="{{ asset('assets/admin/uploads/man.png')}}" style="width: 80px; height: 80px;" class="rounded-circle" alt="{{ __('admin.emp_photo') }}">
-                                            @endif
-                                        @endif
-                                        @error('emp_photo')<div class="text-danger">{{ $message }}</div>@enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="">
-                                        <label for="emp_ؤر">{{ __('admin.emp_choose_cv') }}</label>
-                                        <input type="file" class="form-control" name="emp_ؤر" id="emp_ؤر" value="{{ old('emp_ؤر',$data['emp_ؤر']) }}">
-                                        @error('emp_ؤر')<div class="text-danger">{{ $message }}</div>@enderror
+                                <div class="col-md-8">
+                                    <div class="alert alert-info py-2 mt-2 mb-0">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        يمكنك رفع <strong>الصورة الشخصية</strong> والسيرة الذاتية وجميع ملفات التعيين من قسم <strong>ملفات التعيين</strong> أدناه
                                     </div>
                                 </div>
                             </div>
@@ -347,6 +351,8 @@
                                             <option value="1" @if (old('emp_military_status',$data['emp_military_status'])==1)selected @endif>{{ __('admin.emp_military_served') }}</option>
                                             <option value="2" @if (old('emp_military_status',$data['emp_military_status'])==2)selected @endif>{{ __('admin.emp_military_exempt') }}</option>
                                             <option value="3" @if (old('emp_military_status',$data['emp_military_status'])==3)selected @endif>{{ __('admin.emp_military_deferred') }}</option>
+                                            <option value="4" @if (old('emp_military_status',$data['emp_military_status'])==4)selected @endif>{{ __('admin.emp_military_temp_exempt') }}</option>
+                                            <option value="5" @if (old('emp_military_status',$data['emp_military_status'])==5)selected @endif>{{ __('admin.emp_military_not_required') }}</option>
                                         </select>
                                         @error('emp_military_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
@@ -511,6 +517,84 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- ── TAB: Client Data ── --}}
+                        <div class="tab-pane fade" id="custom-content-below-client_data" role="tabpanel" aria-labelledby="custom-content-below-client_data-tab">
+                            <br>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>العميل</label>
+                                        <select class="form-control" name="client_id" id="client_id">
+                                            <option value="">— بدون عميل —</option>
+                                            @foreach($clients as $client)
+                                                <option value="{{ $client->id }}" {{ old('client_id', $data['client_id']) == $client->id ? 'selected' : '' }}>{{ $client->client_name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>كود العميل (Custom ID / HRID)</label>
+                                        <input type="text" class="form-control" name="hrid" value="{{ old('hrid', $data['hrid']) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>جهة الاتصال الطارئة (Reference Number)</label>
+                                        <input type="text" class="form-control" name="reference_mobile" value="{{ old('reference_mobile', $data['reference_mobile']) }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>صلة القرابة (Relative)</label>
+                                        <input type="text" class="form-control" name="relative_relation" value="{{ old('relative_relation', $data['relative_relation']) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>حالة أوراق التعيين (Hiring Documents)</label>
+                                        <input type="text" class="form-control" name="hiring_documents_status" value="{{ old('hiring_documents_status', $data['hiring_documents_status']) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>تاريخ بداية التأمين (Start Date Of Social)</label>
+                                        <input type="date" class="form-control" name="insurance_start_date" value="{{ old('insurance_start_date', $data['insurance_start_date']) }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>تاريخ انتهاء التأمين (End Date Of Social)</label>
+                                        <input type="date" class="form-control" name="insurance_end_date" value="{{ old('insurance_end_date', $data['insurance_end_date']) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>ملاحظات نموذج 1 (Form 1 Comments)</label>
+                                        <textarea class="form-control" name="form1_notes" rows="3">{{ old('form1_notes', $data['form1_notes']) }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label>ملاحظات نموذج 6 (Form 6 Comments)</label>
+                                        <textarea class="form-control" name="form6_notes" rows="3">{{ old('form6_notes', $data['form6_notes']) }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="">
+                                        <label>ملاحظات (Comments)</label>
+                                        <textarea class="form-control" name="client_notes" rows="3">{{ old('client_notes', $data['client_notes']) }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="text-center mt-4">
@@ -521,6 +605,57 @@
             </form>
         </div>
     </div>
+
+    {{-- ── Documents Section ── --}}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-folder-open mr-2"></i>ملفات التعيين</h5>
+        </div>
+        <div class="card-body">
+            <div class="doc-grid">
+                @foreach($docTypes as $type => $info)
+                    @php $doc = $documents->get($type); @endphp
+                    <div class="doc-card {{ $doc ? 'has-file' : '' }}">
+                        @if($doc)<span class="doc-badge-uploaded">✓ مرفوع</span>@endif
+                        <div class="doc-icon"><i class="fas {{ $info['icon'] }}"></i></div>
+                        <div class="doc-name">{{ $info['ar'] }}</div>
+                        @if($doc)
+                            <div class="doc-filename">{{ Str::limit($doc->doc_original_name, 30) }}</div>
+                            <div class="doc-actions">
+                                <a href="{{ route('employees.document.download', [$data['id'], $doc->id]) }}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-download"></i> تنزيل
+                                </a>
+                                <a href="{{ route('employees.document.delete', [$data['id'], $doc->id]) }}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('حذف هذا الملف؟')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        @else
+                            <div class="doc-filename" style="color:#9ca3af">لم يُرفع بعد</div>
+                        @endif
+                        <form action="{{ route('employees.document.upload', $data['id']) }}" method="POST"
+                              enctype="multipart/form-data" class="mt-2">
+                            @csrf
+                            <input type="hidden" name="doc_type" value="{{ $type }}">
+                            <label class="btn btn-sm {{ $doc ? 'btn-outline-secondary' : 'btn-outline-primary' }} w-100">
+                                <i class="fas fa-upload"></i> {{ $doc ? 'استبدال' : 'رفع ملف' }}
+                                <input type="file" name="doc_file" class="d-none"
+                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                       onchange="this.closest('form').submit()">
+                            </label>
+                        </form>
+                    </div>
+                @endforeach
+            </div>
+            <div class="mt-3 p-3 rounded" style="background:#f0f9ff;border:1px solid #bae6fd;font-size:.82rem;color:#0369a1">
+                <i class="fas fa-info-circle mr-1"></i>
+                الملفات المقبولة: PDF، صور (JPG/PNG)، مستندات Word — الحجم الأقصى 10MB لكل ملف
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 

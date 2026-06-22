@@ -13,9 +13,12 @@ use App\Models\Shifts_type;
 use App\Models\Branche;
 use App\Models\Client;
 use App\Models\NameDictionary;
+use App\Models\EmployeeDocument;
 use App\Imports\EmployeeImport;
+use App\Imports\EmployeeNidImport;
 use App\Exports\EmployeeExport;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
@@ -101,7 +104,8 @@ class EmployeesConroller extends Controller
         $sortDir = $request->sort_dir === 'desc' ? 'desc' : 'asc';
         $perPage = in_array((int)$request->per_page,[10,20,50,100]) ? (int)$request->per_page : 20;
 
-        $data = $query->orderBy($sortBy,$sortDir)->paginate($perPage)->appends($request->except('page'));
+        $data = $query->with(['documents' => fn($q) => $q->where('doc_type','photo')])
+                     ->orderBy($sortBy,$sortDir)->paginate($perPage)->appends($request->except('page'));
 
         if ($request->ajax()) {
             return view('admin.employees.ajaxsearch', compact('data'))->render();
@@ -144,19 +148,47 @@ class EmployeesConroller extends Controller
                     ->with('success', 'تم الإضافة بنجاح')->withInput();
     }
 
-    public function create()
-   
+    public function updateNidFromExcel(Request $request)
     {
-    // جلب جميع الأقسام من جدول departments بناءً على كود الشركة
-    $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
-                            ->get(['id', 'dep_name']);
-    $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'job_name']);
-    $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'type', 'from_time', 'to_time', 'total_hour']);
-    $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'branch_name']);
-    return view('admin.employees.create', compact('shifts_types','departments','jobs_categories','branches'));
+        $request->validate([
+            'nid_file' => 'required|mimes:xlsx,xls,csv',
+        ], [
+            'nid_file.required' => 'اختر ملف Excel أو CSV',
+            'nid_file.mimes'    => 'يجب أن يكون الملف بصيغة xlsx أو xls أو csv',
+        ]);
+
+        try {
+            $comCode = (int) auth()->guard('admin')->user()->com_code;
+            $import  = new EmployeeNidImport($comCode);
+            Excel::import($import, $request->file('nid_file'));
+
+            $msg = "تم تحديث {$import->updated} موظف | غير موجود: {$import->notFound} | صفوف فارغة: {$import->skipped}";
+
+            if ($import->errors > 0) {
+                $msg .= " | أخطاء: {$import->errors}";
+                if (!empty($import->errorDetails)) {
+                    $msg .= ' (' . implode(' / ', array_slice($import->errorDetails, 0, 3)) . ')';
+                }
+                return redirect()->route('employees.uploadexcel')->with('error', $msg);
+            }
+
+            return redirect()->route('employees.uploadexcel')->with('success', $msg);
+        } catch (\Exception $e) {
+            Log::error('NID import error: ' . $e->getMessage());
+            return redirect()->route('employees.uploadexcel')
+                ->with('error', 'فشل استيراد الملف: ' . $e->getMessage());
+        }
+    }
+
+    public function create()
+    {
+        $com_code        = auth()->guard('admin')->user()->com_code;
+        $departments     = Department::where('com_code', $com_code)->get(['id', 'dep_name']);
+        $jobs_categories = Jobs_categories::where('com_code', $com_code)->get(['id', 'job_name']);
+        $shifts_types    = Shifts_type::where('com_code', $com_code)->get(['id', 'type', 'from_time', 'to_time', 'total_hour']);
+        $branches        = Branche::where('com_code', $com_code)->get(['id', 'branch_name']);
+        $clients         = Client::where('com_code', $com_code)->where('active', 1)->get(['id', 'client_name']);
+        return view('admin.employees.create', compact('shifts_types', 'departments', 'jobs_categories', 'branches', 'clients'));
     }
     /**
      * Store a newly created resource in storage.
@@ -170,7 +202,7 @@ public function store(Request $request)
         'employee_name_A' => 'required|string',
         'employee_name_E' => 'nullable|string',
         'employee_id' => 'required|unique:employees,employee_id',
-        'national_id' => 'required|unique:employees,national_id',
+        'national_id' => 'nullable|unique:employees,national_id',
         'insurance_no' => 'nullable|unique:employees,insurance_no',
         'bank_account' => 'nullable|unique:employees,bank_account',
         'emp_departments_id' => 'required|exists:departments,id',
@@ -193,12 +225,10 @@ public function store(Request $request)
         'bank_name' => 'nullable|string',
         'bank_ID' => 'nullable|string',
         'bank_branch' => 'nullable|string',
-        'emp_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
     ], [
         'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
         'employee_id.required' => 'حقل كود الموظف مطلوب',
         'employee_id.unique' => 'كود الموظف تم إدخاله مسبقًا',
-        'national_id.required' => 'حقل الرقم القومي مطلوب',
         'national_id.unique' => 'هذا الرقم القومي تم إدخاله مسبقًا',
         'bank_account.unique' => 'هذا الحساب البنكي تم إدخاله مسبقًا',
         'branches_id.required' => 'حقل الفرع مطلوب',
@@ -216,16 +246,6 @@ public function store(Request $request)
     DB::beginTransaction();
 
     try {
-        $imageName = null;
-
-        // ✅ معالجة الصورة
-        if ($request->hasFile('emp_photo')) {
-            $image = $request->file('emp_photo');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-            // $destinationPath = public_path('assets/admin/uploads');
-            $image->move('assets/admin/uploads', $imageName);
-        }
-
         // ✅ تجهيز البيانات للحفظ
         $employeeData = [
             'added_by' => auth()->guard('admin')->user()->id,
@@ -249,8 +269,7 @@ public function store(Request $request)
             'emp_home_tel' => $request->emp_home_tel,
             'emp_mobile' => $request->emp_mobile,
             'emp_email' => $request->emp_email,
-            'emp_photo' => $imageName, // حفظ الصورة
-            'emp_cv' => $request->emp_cv,
+            'emp_photo' => null,
             'birth_date' => $request->birth_date,
             'emp_sal' => $request->emp_sal,
             'emp_sal_insurance' => $request->emp_sal_insurance,
@@ -265,21 +284,32 @@ public function store(Request $request)
             'bank_account' => $request->bank_account,
             'bank_ID' => $request->bank_ID,
             'bank_branch' => $request->bank_branch,
-            'daily_work_hours' => $request->daily_work_hours,
-            'emp_departments_id' => $request->emp_departments_id,
-            'emp_jobs_id' => $request->emp_jobs_id,
-            'shifts_types_id' => $request->shifts_types_id,
-            'branches_id' => $request->branches_id,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'daily_work_hours'        => $request->daily_work_hours,
+            'emp_departments_id'       => $request->emp_departments_id ?: null,
+            'emp_jobs_id'              => $request->emp_jobs_id,
+            'shifts_types_id'          => $request->shifts_types_id,
+            'branches_id'              => $request->branches_id ?: null,
+            // Client-specific fields
+            'client_id'               => $request->client_id ?: null,
+            'hrid'                    => $request->hrid ?: null,
+            'reference_mobile'        => $request->reference_mobile ?: null,
+            'relative_relation'       => $request->relative_relation ?: null,
+            'hiring_documents_status' => $request->hiring_documents_status ?: null,
+            'insurance_start_date'    => $request->insurance_start_date ?: null,
+            'insurance_end_date'      => $request->insurance_end_date ?: null,
+            'form1_notes'             => $request->form1_notes ?: null,
+            'form6_notes'             => $request->form6_notes ?: null,
+            'client_notes'            => $request->client_notes ?: null,
+            'created_at'               => now(),
+            'updated_at'               => now(),
         ];
 
         // ✅ حفظ البيانات
-        Employee::create($employeeData);
+        $newEmployee = Employee::create($employeeData);
 
         DB::commit();
-        return redirect()->route('employees.index')
-            ->with('success', 'تم إضافة الموظف بنجاح');
+        return redirect()->route('employees.edit', $newEmployee->id)
+            ->with('success', 'تم إضافة الموظف بنجاح — يمكنك الآن رفع ملفات التعيين من الأسفل');
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error('Error during employee save: ' . $e->getMessage());
@@ -294,20 +324,18 @@ public function store(Request $request)
      */
     public function show($id)
     {
-        $data=Employee::select('*')->where(['id'=>$id])->first();
-        if(empty($data)){
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
-        }else{
-            $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
-                                    ->get(['id', 'dep_name']);
-            $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
-                                ->get(['id', 'job_name']);
-            $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
-                                ->get(['id', 'type']);
-            $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'branch_name']);
-            return view('admin.employees.show',['data'=>$data],compact('shifts_types','departments','jobs_categories','branches'));
+        $data = Employee::with(['client', 'documents'])->where(['id' => $id])->first();
+        if (empty($data)) {
+            return redirect()->back()->with(['error' => 'عفوا حدث خطأ '])->withInput();
         }
+        $com_code        = auth()->guard('admin')->user()->com_code;
+        $departments     = Department::where('com_code', $com_code)->get(['id', 'dep_name']);
+        $jobs_categories = Jobs_categories::where('com_code', $com_code)->get(['id', 'job_name']);
+        $shifts_types    = Shifts_type::where('com_code', $com_code)->get(['id', 'type']);
+        $branches        = Branche::where('com_code', $com_code)->get(['id', 'branch_name']);
+        $documents       = $data->documents->keyBy('doc_type');
+        $docTypes        = EmployeeDocument::TYPES;
+        return view('admin.employees.show', compact('data', 'shifts_types', 'departments', 'jobs_categories', 'branches', 'documents', 'docTypes'));
     }
 
     /**
@@ -315,20 +343,19 @@ public function store(Request $request)
      */
     public function edit($id)
     {
-        $data=Employee::select('*')->where(['id'=>$id])->first();
-        if(empty($data)){
-            return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
-        }else{
-            $departments = Department::where('com_code', auth()->guard('admin')->user()->com_code)
-                                    ->get(['id', 'dep_name']);
-            $jobs_categories = Jobs_categories::where('com_code', auth()->guard('admin')->user()->com_code)
-                                ->get(['id', 'job_name']);
-            $shifts_types = Shifts_type::where('com_code', auth()->guard('admin')->user()->com_code)
-                                ->get(['id', 'type']);
-            $branches = Branche::where('com_code', auth()->guard('admin')->user()->com_code)
-                        ->get(['id', 'branch_name']);
-            return view('admin.employees.update',['data'=>$data],compact('shifts_types','departments','jobs_categories','branches'));
+        $data = Employee::with('documents')->where(['id' => $id])->first();
+        if (empty($data)) {
+            return redirect()->back()->with(['error' => 'عفوا حدث خطأ '])->withInput();
         }
+        $com_code        = auth()->guard('admin')->user()->com_code;
+        $departments     = Department::where('com_code', $com_code)->get(['id', 'dep_name']);
+        $jobs_categories = Jobs_categories::where('com_code', $com_code)->get(['id', 'job_name']);
+        $shifts_types    = Shifts_type::where('com_code', $com_code)->get(['id', 'type']);
+        $branches        = Branche::where('com_code', $com_code)->get(['id', 'branch_name']);
+        $clients         = Client::where('com_code', $com_code)->where('active', 1)->get(['id', 'client_name']);
+        $documents       = $data->documents->keyBy('doc_type');
+        $docTypes        = EmployeeDocument::TYPES;
+        return view('admin.employees.update', compact('data', 'shifts_types', 'departments', 'jobs_categories', 'branches', 'clients', 'documents', 'docTypes'));
     }
 
     /**
@@ -345,7 +372,7 @@ public function store(Request $request)
     }
 
     $validator2 = Validator::make($request->all(), [
-        'national_id' => ['required', Rule::unique('employees')->ignore($id)],
+        'national_id' => ['nullable', Rule::unique('employees')->ignore($id)->whereNotNull('national_id')],
     ]);
     if ($validator2->fails()) {
         return redirect()->back()->with(['error' => 'قد تم إدخال الرقم القومي هذا لموظف آخر'])->withInput();
@@ -370,7 +397,7 @@ public function store(Request $request)
         'employee_name_A' => 'required|string',
         'employee_name_E' => 'required|string',
         'employee_id' => 'required',
-        'national_id' => 'required',
+        'national_id' => 'nullable',
         'emp_departments_id' => 'required|exists:departments,id',
         'shifts_types_id' => 'required|exists:shifts_types,id',
         'branches_id' => 'required|exists:branches,id',
@@ -391,7 +418,6 @@ public function store(Request $request)
         'bank_name' => 'nullable|string',
         'bank_ID' => 'nullable|string',
         'bank_branch' => 'nullable|string',
-        'emp_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5048',
     ], [
         'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
         'employee_name_E.required' => 'حقل اسم الموظف مطلوب',
@@ -413,22 +439,6 @@ public function store(Request $request)
 
     try {
         $employee = Employee::findOrFail($id);
-
-        // الاحتفاظ بالاسم القديم
-        $imageName = $employee->emp_photo;
-
-        // معالجة رفع صورة جديدة
-        if ($request->hasFile('emp_photo')) {
-            $image = $request->file('emp_photo');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-            // $destinationPath = public_path('assets/admin/uploads');
-            $image->move('assets/admin/uploads', $imageName);
-
-            // حذف الصورة القديمة إن وجدت
-            if ($employee->emp_photo && file_exists('assets/admin/uploads' . '/' . $employee->emp_photo)) {
-                unlink('assets/admin/uploads'. '/' . $employee->emp_photo);
-            }
-        }
 
         // بيانات التحديث
         $dataupdate = [
@@ -453,8 +463,7 @@ public function store(Request $request)
             'emp_home_tel' => $request->emp_home_tel,
             'emp_mobile' => $request->emp_mobile,
             'emp_email' => $request->emp_email,
-            'emp_photo' => $imageName, // ✅ نستخدم اسم الصورة الصحيح
-            'emp_cv' => $request->emp_cv,
+            'emp_photo' => $employee->emp_photo,
             'birth_date' => $request->birth_date,
             'emp_sal' => $request->emp_sal,
             'emp_sal_insurance' => $request->emp_sal_insurance,
@@ -478,7 +487,18 @@ public function store(Request $request)
             'overtime_enabled'            => $request->overtime_enabled           ?? 1,
             'late_deduction_enabled'      => $request->late_deduction_enabled     ?? 1,
             'weekly_off_day'              => $request->weekly_off_day !== '' && $request->filled('weekly_off_day') ? (int)$request->weekly_off_day : null,
-            'updated_at' => now(),
+            // Client-specific fields
+            'client_id'               => $request->client_id ?: null,
+            'hrid'                    => $request->hrid ?: null,
+            'reference_mobile'        => $request->reference_mobile ?: null,
+            'relative_relation'       => $request->relative_relation ?: null,
+            'hiring_documents_status' => $request->hiring_documents_status ?: null,
+            'insurance_start_date'    => $request->insurance_start_date ?: null,
+            'insurance_end_date'      => $request->insurance_end_date ?: null,
+            'form1_notes'             => $request->form1_notes ?: null,
+            'form6_notes'             => $request->form6_notes ?: null,
+            'client_notes'            => $request->client_notes ?: null,
+            'updated_at'              => now(),
         ];
 
         // تحديث البيانات
@@ -493,6 +513,61 @@ public function store(Request $request)
     }
 }
 
+    public function deleteFiltered(Request $request)
+    {
+        $comCode = (int) Auth::guard('admin')->user()->com_code;
+
+        $query = Employee::where('com_code', $comCode);
+
+        if ($request->filled('search_name')) {
+            $q = '%'.$request->search_name.'%';
+            $query->where(function($sq) use ($q) {
+                $sq->where('employee_name_A','like',$q)->orWhere('employee_name_E','like',$q);
+            });
+        }
+        if ($request->filled('search_code'))        $query->where('employee_id','like','%'.$request->search_code.'%');
+        if ($request->filled('search_national'))    $query->where('national_id','like','%'.$request->search_national.'%');
+        if ($request->filled('search_phone'))       $query->where('phone','like','%'.$request->search_phone.'%');
+        if ($request->filled('search_finger'))      $query->where('finger_id',$request->search_finger);
+        if ($request->filled('search_branch'))      $query->where('branches_id',$request->search_branch);
+        if ($request->filled('search_dept'))        $query->where('emp_departments_id',$request->search_dept);
+        if ($request->filled('search_job'))         $query->where('emp_jobs_id',$request->search_job);
+        if ($request->filled('search_shift'))       $query->where('shifts_types_id',$request->search_shift);
+        if ($request->filled('search_func_status')) $query->where('functional_status',$request->search_func_status);
+        if ($request->filled('search_gender'))      $query->where('emp_gender',$request->search_gender);
+        if ($request->filled('search_insurance'))   $query->where('insurance_status',$request->search_insurance);
+        if ($request->filled('search_has_finger'))  $query->where('is_has_finger',$request->search_has_finger);
+        if ($request->filled('client_id'))          $query->where('client_id',$request->client_id);
+        if ($request->filled('search_hrid'))        $query->where('hrid','like','%'.$request->search_hrid.'%');
+        if ($request->filled('sal_from'))           $query->where('emp_sal','>=',$request->sal_from);
+        if ($request->filled('sal_to'))             $query->where('emp_sal','<=',$request->sal_to);
+        if ($request->filled('hire_from'))          $query->where('emp_start_date','>=',$request->hire_from);
+        if ($request->filled('hire_to'))            $query->where('emp_start_date','<=',$request->hire_to);
+
+        // منع الحذف بدون أي فلتر مفعّل (لتجنب حذف جميع الموظفين بالخطأ)
+        $filterKeys = ['search_name','search_code','search_national','search_phone','search_finger',
+                       'search_branch','search_dept','search_job','search_shift','search_func_status',
+                       'search_gender','search_insurance','search_has_finger','client_id','search_hrid',
+                       'sal_from','sal_to','hire_from','hire_to'];
+        $hasFilter = collect($filterKeys)->some(fn($k) => $request->filled($k));
+
+        if (!$hasFilter) {
+            return redirect()->route('employees.index')->with('error', 'يجب تطبيق فلتر واحد على الأقل قبل الحذف الجماعي');
+        }
+
+        try {
+            DB::beginTransaction();
+            $count = $query->count();
+            $query->delete();
+            DB::commit();
+            return redirect()->route('employees.index')->with('success', "تم حذف {$count} موظف بنجاح");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('deleteFiltered: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'حدث خطأ أثناء الحذف: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -501,7 +576,7 @@ public function store(Request $request)
         try{
             $data=Employee::select('*')->where(['id'=>$id])->first();
             if(empty($data)){
-                return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput(); 
+                return redirect()->back()->with(['error'=>'عفوا حدث خطأ '])->withInput();
             }
             Employee::where(['id'=>$id])->delete();
             return redirect()->route('employees.index')->with(['success' => 'تم حذف الوظيفة بنجاح'])->withInput();
@@ -509,7 +584,78 @@ public function store(Request $request)
         }catch(\Exception $ex){
             return redirect()->back()->with(['error'=>' عفوا حدث خطأ ما '.$ex->getMessage()])->withInput();
         }
-        
+    }
+
+    // ── Document Management ─────────────────────────────────────
+
+    public function uploadDocument(Request $request, $id)
+    {
+        $isPhoto = $request->doc_type === 'photo';
+        $request->validate([
+            'doc_type' => 'required|in:' . implode(',', array_keys(EmployeeDocument::TYPES)),
+            'doc_file' => ['required', 'file', 'max:10240',
+                $isPhoto ? 'mimes:jpg,jpeg,png,gif' : 'mimes:pdf,jpg,jpeg,png,doc,docx'],
+        ], [
+            'doc_file.required' => 'يجب اختيار ملف',
+            'doc_file.mimes'    => $isPhoto ? 'يجب أن تكون الصورة من نوع JPG أو PNG' : 'يجب أن يكون الملف من نوع PDF، صورة، أو Word',
+            'doc_file.max'      => 'حجم الملف يجب ألا يتجاوز 10 ميجابايت',
+        ]);
+
+        $employee = Employee::findOrFail($id);
+        $com_code = auth()->guard('admin')->user()->com_code;
+        $admin_id = auth()->guard('admin')->user()->id;
+
+        $file     = $request->file('doc_file');
+        $docType  = $request->doc_type;
+        $origName = $file->getClientOriginalName();
+        $ext      = $file->getClientOriginalExtension();
+        $fileName = 'emp_' . $id . '_' . $docType . '_' . time() . '.' . $ext;
+        $destPath = public_path('assets/admin/employee_docs');
+
+        if (!is_dir($destPath)) mkdir($destPath, 0755, true);
+        $file->move($destPath, $fileName);
+
+        // Replace existing doc of same type
+        $existing = EmployeeDocument::where('employee_id', $id)->where('doc_type', $docType)->first();
+        if ($existing) {
+            $oldPath = public_path('assets/admin/employee_docs/' . basename($existing->doc_path));
+            if (file_exists($oldPath)) @unlink($oldPath);
+            $existing->update([
+                'doc_original_name' => $origName,
+                'doc_path'          => 'assets/admin/employee_docs/' . $fileName,
+                'added_by'          => $admin_id,
+            ]);
+        } else {
+            EmployeeDocument::create([
+                'employee_id'       => $id,
+                'doc_type'          => $docType,
+                'doc_original_name' => $origName,
+                'doc_path'          => 'assets/admin/employee_docs/' . $fileName,
+                'com_code'          => $com_code,
+                'added_by'          => $admin_id,
+            ]);
+        }
+
+        return redirect()->route('employees.show', $id)->with(['success' => 'تم رفع الملف بنجاح']);
+    }
+
+    public function downloadDocument($id, $docId)
+    {
+        $doc = EmployeeDocument::where('id', $docId)->where('employee_id', $id)->firstOrFail();
+        $path = public_path($doc->doc_path);
+        if (!file_exists($path)) {
+            return redirect()->back()->with(['error' => 'الملف غير موجود']);
+        }
+        return response()->download($path, $doc->doc_original_name);
+    }
+
+    public function deleteDocument($id, $docId)
+    {
+        $doc = EmployeeDocument::where('id', $docId)->where('employee_id', $id)->firstOrFail();
+        $path = public_path($doc->doc_path);
+        if (file_exists($path)) @unlink($path);
+        $doc->delete();
+        return redirect()->route('employees.show', $id)->with(['success' => 'تم حذف الملف بنجاح']);
     }
     
     // public function ajaxsearch(Request $request){
