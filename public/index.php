@@ -5,26 +5,6 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Fix REQUEST_URI for subdirectory installations (e.g. XAMPP: localhost/NEXA/)
-// Symfony determines route path by stripping SCRIPT_NAME directory from REQUEST_URI.
-// When Apache rewrites internally, REQUEST_URI keeps the full /NEXA/... prefix
-// but SCRIPT_NAME points to /NEXA/public/index.php — Symfony can't align them.
-// We adjust SCRIPT_NAME to /NEXA/index.php so Symfony strips /NEXA correctly.
-if (PHP_SAPI !== 'cli' && isset($_SERVER['SCRIPT_FILENAME'], $_SERVER['DOCUMENT_ROOT'])) {
-    $scriptDir  = str_replace('\\', '/', dirname($_SERVER['SCRIPT_FILENAME']));
-    $docRoot    = rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/');
-    $prefix     = substr($scriptDir, strlen($docRoot));   // e.g. /NEXA/public
-    $parentDir  = dirname($prefix);                       // e.g. /NEXA
-
-    if ($parentDir !== '/' && $parentDir !== '.'
-        && isset($_SERVER['REQUEST_URI'])
-        && str_starts_with($_SERVER['REQUEST_URI'], $parentDir . '/')
-    ) {
-        $_SERVER['SCRIPT_NAME'] = $parentDir . '/index.php';
-        $_SERVER['PHP_SELF']    = $parentDir . '/index.php';
-    }
-}
-
 /*
 |--------------------------------------------------------------------------
 | Check If The Application Is Under Maintenance
