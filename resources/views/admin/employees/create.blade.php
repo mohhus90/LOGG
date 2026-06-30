@@ -58,6 +58,12 @@
                         <li class="nav-item">
                             <a class="nav-link" id="custom-content-below-Salary_data-tab" data-toggle="pill" href="#custom-content-below-Salary_data" role="tab" aria-controls="custom-content-below-Salary_data" aria-selected="false">{{ __('admin.emp_tab_salary') }}</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="custom-content-below-client_data-tab" data-toggle="pill" href="#custom-content-below-client_data" role="tab" aria-controls="custom-content-below-client_data" aria-selected="false"><i class="fas fa-building mr-1"></i>بيانات العميل</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="custom-content-below-docs-tab" data-toggle="pill" href="#custom-content-below-docs" role="tab" aria-controls="custom-content-below-docs" aria-selected="false"><i class="fas fa-folder-open mr-1"></i>ملفات التعيين</a>
+                        </li>
                     </ul>
 
                     <div class="tab-content" id="custom-content-below-tabContent">
@@ -172,20 +178,6 @@
                                             <option value="3" @if (old('emp_social_status')==3)selected @endif>{{ __('admin.emp_married_dependent') }}</option>
                                         </select>
                                         @error('emp_social_status')<div class="text-danger">{{ $message }}</div>@enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="">
-                                        <label for="emp_photo">{{ __('admin.emp_choose_photo') }}</label>
-                                        <input type="file" class="form-control" name="emp_photo" id="emp_photo" value="{{ old('emp_photo') }}">
-                                        @error('emp_photo')<div class="text-danger">{{ $message }}</div>@enderror
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="">
-                                        <label for="emp_cv">{{ __('admin.emp_choose_cv') }}</label>
-                                        <input type="file" class="form-control" name="emp_cv" id="emp_cv" value="{{ old('emp_cv') }}">
-                                        @error('emp_cv')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
                             </div>
@@ -341,6 +333,8 @@
                                             <option value="1" @if (old('emp_military_status')==1)selected @endif>{{ __('admin.emp_military_served') }}</option>
                                             <option value="2" @if (old('emp_military_status')==2)selected @endif>{{ __('admin.emp_military_exempt') }}</option>
                                             <option value="3" @if (old('emp_military_status')==3)selected @endif>{{ __('admin.emp_military_deferred') }}</option>
+                                            <option value="4" @if (old('emp_military_status')==4)selected @endif>{{ __('admin.emp_military_temp_exempt') }}</option>
+                                            <option value="5" @if (old('emp_military_status')==5)selected @endif>{{ __('admin.emp_military_not_required') }}</option>
                                         </select>
                                         @error('emp_military_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
@@ -464,6 +458,84 @@
                                         <input type="text" class="form-control" name="bank_branch" id="bank_branch" value="{{ old('bank_branch') }}">
                                         @error('bank_branch')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ── TAB: Documents ── --}}
+                        <div class="tab-pane fade" id="custom-content-below-docs" role="tabpanel" aria-labelledby="custom-content-below-docs-tab">
+                            <br>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <strong>ملفات التعيين:</strong>
+                                يمكنك رفع الملفات <strong>بعد حفظ بيانات الموظف</strong> — بعد الضغط على زر "إضافة" ستنتقل تلقائياً لصفحة التعديل حيث يمكنك رفع جميع الملفات.
+                            </div>
+                            <div class="doc-grid-preview row">
+                                @foreach(\App\Models\EmployeeDocument::TYPES as $type => $info)
+                                <div class="col-md-2 col-4 mb-3 text-center">
+                                    <div style="border:2px dashed #dee2e6;border-radius:10px;padding:16px 8px;color:#9ca3af;">
+                                        <i class="fas {{ $info['icon'] }}" style="font-size:1.8rem;"></i>
+                                        <div style="font-size:.78rem;font-weight:600;margin-top:6px;">{{ $info['ar'] }}</div>
+                                    </div>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- ── TAB: Client Data ── --}}
+                        <div class="tab-pane fade" id="custom-content-below-client_data" role="tabpanel" aria-labelledby="custom-content-below-client_data-tab">
+                            <br>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label>العميل</label>
+                                    <select class="form-control" name="client_id">
+                                        <option value="">— بدون عميل —</option>
+                                        @foreach($clients as $client)
+                                            <option value="{{ $client->id }}" {{ old('client_id') == $client->id ? 'selected' : '' }}>{{ $client->client_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>كود العميل (Custom ID / HRID)</label>
+                                    <input type="text" class="form-control" name="hrid" value="{{ old('hrid') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label>جهة الاتصال الطارئة (Reference Number)</label>
+                                    <input type="text" class="form-control" name="reference_mobile" value="{{ old('reference_mobile') }}">
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <label>صلة القرابة (Relative)</label>
+                                    <input type="text" class="form-control" name="relative_relation" value="{{ old('relative_relation') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label>حالة أوراق التعيين (Hiring Documents)</label>
+                                    <input type="text" class="form-control" name="hiring_documents_status" value="{{ old('hiring_documents_status') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label>تاريخ بداية التأمين (Start Date Of Social)</label>
+                                    <input type="date" class="form-control" name="insurance_start_date" value="{{ old('insurance_start_date') }}">
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <label>تاريخ انتهاء التأمين (End Date Of Social)</label>
+                                    <input type="date" class="form-control" name="insurance_end_date" value="{{ old('insurance_end_date') }}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label>ملاحظات نموذج 1 (Form 1 Comments)</label>
+                                    <textarea class="form-control" name="form1_notes" rows="3">{{ old('form1_notes') }}</textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>ملاحظات نموذج 6 (Form 6 Comments)</label>
+                                    <textarea class="form-control" name="form6_notes" rows="3">{{ old('form6_notes') }}</textarea>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <label>ملاحظات (Comments)</label>
+                                    <textarea class="form-control" name="client_notes" rows="3">{{ old('client_notes') }}</textarea>
                                 </div>
                             </div>
                         </div>

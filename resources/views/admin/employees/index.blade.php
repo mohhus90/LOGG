@@ -31,8 +31,8 @@
       <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleAdv">
         <i class="fas fa-sliders-h ml-1"></i>{{ __('admin.emp_extra_filters') }}
       </button>
-      <a href="{{ route('employees.index') }}" class="btn btn-sm btn-outline-danger mr-1">
-        <i class="fas fa-times"></i>
+      <a href="{{ route('employees.index') }}" class="btn btn-sm btn-danger mr-1">
+        <i class="fas fa-times ml-1"></i>مسح الفلتر
       </a>
     </div>
   </div>
@@ -49,7 +49,10 @@
           <option value="2" {{ request('search_func_status')=='2'?'selected':'' }}>{{ __('admin.emp_not_working') }}</option>
         </select>
       </div>
-      <div class="col-md-2 mb-2"><button type="submit" class="btn btn-primary btn-sm btn-block"><i class="fas fa-search ml-1"></i>{{ __('admin.search') }}</button></div>
+      <div class="col-md-2 mb-2">
+        <button type="submit" class="btn btn-primary btn-sm btn-block mb-1"><i class="fas fa-search ml-1"></i>{{ __('admin.search') }}</button>
+        <a href="{{ route('employees.index') }}" class="btn btn-outline-danger btn-sm btn-block"><i class="fas fa-eraser ml-1"></i>مسح الفلتر</a>
+      </div>
     </div>
 
     <div id="advFilters" style="display:none">
@@ -161,6 +164,15 @@
   </form>
 </div>
 
+@php
+$activeFilters = array_filter(request()->only([
+    'search_name','search_code','search_national','search_phone','search_finger',
+    'search_branch','search_dept','search_job','search_shift','search_func_status',
+    'search_gender','search_insurance','search_has_finger','client_id','search_hrid',
+    'sal_from','sal_to','hire_from','hire_to'
+]), fn($v) => $v !== null && $v !== '');
+@endphp
+
 <div class="card">
   <div class="card-header">
     <h3 class="card-title card_title_center">
@@ -168,6 +180,18 @@
       <span class="badge badge-light mr-1">{{ $data->total() }}</span>
       <a href="{{ route('employees.create') }}" class="btn btn-sm btn-success mr-2"><i class="fas fa-plus"></i> {{ __('admin.add') }}</a>
       <a href="{{ route('employees.uploadexcel') }}" class="btn btn-sm btn-info mr-1"><i class="fas fa-file-excel"></i> Excel</a>
+      @if(count($activeFilters) > 0)
+      <button type="button" class="btn btn-sm btn-danger mr-1" id="btnDeleteFiltered"
+              data-count="{{ $data->total() }}">
+        <i class="fas fa-trash ml-1"></i>حذف المفلتر ({{ $data->total() }})
+      </button>
+      <form id="formDeleteFiltered" action="{{ route('employees.deleteFiltered') }}" method="POST" class="d-none">
+        @csrf
+        @foreach($activeFilters as $key => $value)
+          <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+        @endforeach
+      </form>
+      @endif
     </h3>
   </div>
 
@@ -200,18 +224,19 @@
       @forelse($data as $emp)
       <tr>
         <td>{{ $data->firstItem() + $loop->index }}</td>
-        <td><code style="font-size:.85em">{{ $emp->employee_id }}</code></td>
+        <td class="ltr-text"><code class="ltr-text" style="font-size:.85em">{{ $emp->employee_id }}</code></td>
         <td>
-          <div class="d-flex align-items-center gap-2">
-            <div class="emp-avatar-sm me-2">
-              @if($emp->emp_photo && file_exists(public_path('assets/admin/uploads/' . $emp->emp_photo)))
-                <img src="{{ asset('assets/admin/uploads/' . $emp->emp_photo) }}"
+          @php $photoDoc = $emp->documents->firstWhere('doc_type','photo'); @endphp
+          <div class="d-flex align-items-center">
+            <div class="mr-2" style="flex-shrink:0;">
+              @if($photoDoc && file_exists(public_path($photoDoc->doc_path)))
+                <img src="{{ asset($photoDoc->doc_path) }}"
                      alt="{{ $emp->employee_name_A }}"
                      class="rounded-circle"
                      style="width:38px;height:38px;object-fit:cover;border:2px solid #dee2e6;">
               @else
                 <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
-                     style="width:38px;height:38px;font-size:.85em;font-weight:bold;flex-shrink:0;">
+                     style="width:38px;height:38px;font-size:.85em;font-weight:bold;">
                   {{ mb_substr($emp->employee_name_A ?? '?', 0, 1) }}
                 </div>
               @endif
@@ -224,7 +249,7 @@
         </td>
         <td><small>{{ $emp->national_id ?? '—' }}</small></td>
         <td class="text-center">
-          @if($emp->is_has_finger == 1)<code>{{ $emp->finger_id }}</code>
+          @if($emp->is_has_finger == 1)<code class="ltr-text">{{ $emp->finger_id }}</code>
           @else<span class="text-muted">—</span>@endif
         </td>
         <td>
@@ -295,5 +320,15 @@ document.getElementById('toggleAdv').addEventListener('click', function() {
     if(params.get(adv[i])) { document.getElementById('advFilters').style.display=''; break; }
   }
 })();
+
+var btnDel = document.getElementById('btnDeleteFiltered');
+if (btnDel) {
+  btnDel.addEventListener('click', function() {
+    var count = this.dataset.count;
+    if (confirm('تحذير! سيتم حذف ' + count + ' موظف نهائياً بناءً على الفلتر الحالي.\n\nهذا الإجراء لا يمكن التراجع عنه.\n\nهل أنت متأكد؟')) {
+      document.getElementById('formDeleteFiltered').submit();
+    }
+  });
+}
 </script>
 @endsection

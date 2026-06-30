@@ -27,7 +27,7 @@
                     <li>يجب أن يكون الملف بصيغة <code>.csv</code></li>
                     <li>يجب أن يحتوي الملف على الأعمدة التالية في الصف الأول (Header):</li>
                 </ul>
-                <code class="d-block mt-1 small">
+                <code class="ltr-text d-block mt-1 small" style="text-align:left; padding:8px; background:#f8f9fa; border-radius:4px;">
                     SR, Fake ID, HRID, English Name, Arabic Name, Position, Mobile, Reference Number,
                     Relative, Address, NID, Gender, Date Of Birth, Age, Marital Status, Status,
                     Hiring Date, Resignation Date, Hiring Documents, Military Certificate,

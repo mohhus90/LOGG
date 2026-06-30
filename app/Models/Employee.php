@@ -51,4 +51,8 @@ class Employee extends Model
         return $this->hasMany(EmployeeVacationBalance::class, 'employee_id');
     }
 
+    public function documents()
+    {
+        return $this->hasMany(EmployeeDocument::class, 'employee_id');
+    }
 }

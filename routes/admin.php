@@ -200,9 +200,15 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     Route::middleware(['auth:admin', 'admin.permission:employees,can_update'])->group(function () {
         Route::get('employees/{id}/edit',    [EmployeesConroller::class, 'edit'])->name('employees.edit');
         Route::post('employees/update/{id}', [EmployeesConroller::class, 'update'])->name('employees.update');
+        Route::post('employees/{id}/documents/upload', [EmployeesConroller::class, 'uploadDocument'])->name('employees.document.upload');
+        Route::get('employees/{id}/documents/{docId}/download', [EmployeesConroller::class, 'downloadDocument'])->name('employees.document.download');
+        Route::get('employees/{id}/documents/{docId}/delete', [EmployeesConroller::class, 'deleteDocument'])->name('employees.document.delete');
+        Route::post('employees/update-nid-excel', [EmployeesConroller::class, 'updateNidFromExcel'])->name('employees.update.nid.excel');
     });
     Route::get('employees/delete/{id}', [EmployeesConroller::class, 'delete'])
         ->name('employees.delete')->middleware(['auth:admin', 'admin.permission:employees,can_delete']);
+    Route::post('employees/delete-filtered', [EmployeesConroller::class, 'deleteFiltered'])
+        ->name('employees.deleteFiltered')->middleware(['auth:admin', 'admin.permission:employees,can_delete']);
     Route::middleware('auth:admin')->group(function () {
         Route::get('employees/dictionary',       [EmployeesConroller::class, 'getDictionary'])->name('employees.dictionary.get');
         Route::post('employees/dictionary/save', [EmployeesConroller::class, 'saveDictionary'])->name('employees.dictionary.save');
