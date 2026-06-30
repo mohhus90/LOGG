@@ -1,7 +1,7 @@
 @extends('admin.layouts.admin')
 @section('title') تعديل سلفة @endsection
 @section('start') الرواتب والمؤثرات @endsection
-@section('home') <a href="{{ route('advances.index') }}">السلف</a> @endsection
+@section('home') <a href="{{ $backUrl ?? route('advances.index') }}">السلف</a> @endsection
 @section('startpage') تعديل @endsection
 
 @section('content')
@@ -84,7 +84,7 @@
                 <button type="submit" class="btn btn-warning">
                     <i class="fas fa-save ml-1"></i> حفظ التعديلات
                 </button>
-                <a href="{{ route('advances.index') }}" class="btn btn-secondary mr-2">رجوع</a>
+                <a href="{{ $backUrl ?? route('advances.index') }}" class="btn btn-secondary mr-2">رجوع</a>
             </div>
         </form>
     </div>

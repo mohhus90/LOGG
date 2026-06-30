@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\TaxController;
 use App\Http\Controllers\Admin\EtaFreeZoneController;
 use App\Http\Controllers\Admin\ClientsController;
+use App\Http\Controllers\Admin\BranchCommissionsController;
 
 defined('paginate_counter') || define('paginate_counter', 20);
 
@@ -301,8 +302,10 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('advances', [AdvancesController::class, 'index'])->name('advances.index');
     });
     Route::middleware(['auth:admin', 'admin.permission:advances,can_create'])->group(function () {
-        Route::get('advances/create',  [AdvancesController::class, 'create'])->name('advances.create');
-        Route::post('advances/store',  [AdvancesController::class, 'store'])->name('advances.store');
+        Route::get('advances/create',      [AdvancesController::class, 'create'])->name('advances.create');
+        Route::post('advances/store',      [AdvancesController::class, 'store'])->name('advances.store');
+        Route::get('advances/copy-month',  [AdvancesController::class, 'copyMonthForm'])->name('advances.copy_month_form');
+        Route::post('advances/copy-month', [AdvancesController::class, 'copyMonth'])->name('advances.copy_month');
     });
     Route::middleware(['auth:admin', 'admin.permission:advances,can_update'])->group(function () {
         Route::get('advances/{id}/edit',    [AdvancesController::class, 'edit'])->name('advances.edit');
@@ -325,17 +328,48 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('commissions/store',  [CommissionsController::class, 'store'])->name('commissions.store');
         Route::get('commissions_v2/rules/create', [CommissionsV2Controller::class, 'createRule'])->name('commissions_v2.create_rule');
         Route::post('commissions_v2/rules/store', [CommissionsV2Controller::class, 'storeRule'])->name('commissions_v2.store_rule');
-        Route::post('commissions_v2/sales/save',  [CommissionsV2Controller::class, 'saveSales'])->name('commissions_v2.save_sales');
-        Route::post('commissions_v2/confirm',     [CommissionsV2Controller::class, 'confirmCalculate'])->name('commissions_v2.confirm');
+        Route::post('commissions_v2/sales/save',         [CommissionsV2Controller::class, 'saveSales'])->name('commissions_v2.save_sales');
+        Route::post('commissions_v2/sales/store',        [CommissionsV2Controller::class, 'storeSaleRecord'])->name('commissions_v2.store_sale');
+        Route::post('commissions_v2/confirm',            [CommissionsV2Controller::class, 'confirmCalculate'])->name('commissions_v2.confirm');
     });
     Route::middleware(['auth:admin', 'admin.permission:commissions,can_update'])->group(function () {
         Route::get('commissions/{id}/edit',    [CommissionsController::class, 'edit'])->name('commissions.edit');
         Route::post('commissions/update/{id}', [CommissionsController::class, 'update'])->name('commissions.update');
+        Route::post('commissions_v2/sales/update/{id}',  [CommissionsV2Controller::class, 'updateSaleRecord'])->name('commissions_v2.update_sale');
     });
     Route::get('commissions/delete/{id}', [CommissionsController::class, 'delete'])
         ->name('commissions.delete')->middleware(['auth:admin', 'admin.permission:commissions,can_delete']);
     Route::get('commissions_v2/rules/delete/{id}', [CommissionsV2Controller::class, 'deleteRule'])
         ->name('commissions_v2.delete_rule')->middleware(['auth:admin', 'admin.permission:commissions,can_delete']);
+    Route::get('commissions_v2/sales/delete/{id}', [CommissionsV2Controller::class, 'deleteSaleRecord'])
+        ->name('commissions_v2.delete_sale')->middleware(['auth:admin', 'admin.permission:commissions,can_delete']);
+
+    // ─────────────────────────────────────────────
+    //  عمولات الفروع (مبنية على نسبة تحقيق التارجت)
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin', 'admin.permission:commissions,can_read'])->group(function () {
+        Route::get('branch_commissions',                    [BranchCommissionsController::class, 'index'])->name('branch_commissions.index');
+        Route::get('branch_commissions/targets',            [BranchCommissionsController::class, 'targets'])->name('branch_commissions.targets');
+        Route::get('branch_commissions/employee-targets',   [BranchCommissionsController::class, 'employeeTargets'])->name('branch_commissions.employee_targets');
+        Route::get('branch_commissions/events',             [BranchCommissionsController::class, 'events'])->name('branch_commissions.events');
+        Route::get('branch_commissions/calculate',          [BranchCommissionsController::class, 'calculate'])->name('branch_commissions.calculate');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:commissions,can_create'])->group(function () {
+        Route::get('branch_commissions/create',        [BranchCommissionsController::class, 'create'])->name('branch_commissions.create');
+        Route::post('branch_commissions/store',        [BranchCommissionsController::class, 'store'])->name('branch_commissions.store');
+        Route::post('branch_commissions/targets/save',          [BranchCommissionsController::class, 'saveTargets'])->name('branch_commissions.save_targets');
+        Route::post('branch_commissions/employee-targets/save', [BranchCommissionsController::class, 'saveEmployeeTargets'])->name('branch_commissions.save_employee_targets');
+        Route::post('branch_commissions/events/save',           [BranchCommissionsController::class, 'saveEvent'])->name('branch_commissions.save_event');
+        Route::post('branch_commissions/confirm',               [BranchCommissionsController::class, 'confirmCalculate'])->name('branch_commissions.confirm');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:commissions,can_update'])->group(function () {
+        Route::get('branch_commissions/{id}/edit',    [BranchCommissionsController::class, 'edit'])->name('branch_commissions.edit');
+        Route::post('branch_commissions/update/{id}', [BranchCommissionsController::class, 'update'])->name('branch_commissions.update');
+    });
+    Route::get('branch_commissions/delete/{id}', [BranchCommissionsController::class, 'delete'])
+        ->name('branch_commissions.delete')->middleware(['auth:admin', 'admin.permission:commissions,can_delete']);
+    Route::get('branch_commissions/events/delete/{id}', [BranchCommissionsController::class, 'deleteEvent'])
+        ->name('branch_commissions.delete_event')->middleware(['auth:admin', 'admin.permission:commissions,can_delete']);
 
     // ─────────────────────────────────────────────
     //  الخصومات — deductions
@@ -361,11 +395,14 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('kpi/definitions',   [KpiController::class, 'definitions'])->name('kpi.definitions');
         Route::get('kpi/scores',        [KpiController::class, 'scores'])->name('kpi.scores');
         Route::get('kpi/report',        [KpiController::class, 'report'])->name('kpi.report');
+        Route::get('kpi/guide',         [KpiController::class, 'guide'])->name('kpi.guide');
+        Route::get('kpi/export-template', [KpiController::class, 'exportTemplate'])->name('kpi.export_template');
     });
     Route::middleware(['auth:admin', 'admin.permission:attendance,can_create'])->group(function () {
         Route::get('kpi/definitions/create',    [KpiController::class, 'createDefinition'])->name('kpi.create_definition');
         Route::post('kpi/definitions/store',    [KpiController::class, 'storeDefinition'])->name('kpi.store_definition');
         Route::post('kpi/scores/save',          [KpiController::class, 'saveScores'])->name('kpi.save_scores');
+        Route::post('kpi/import-scores',        [KpiController::class, 'importScores'])->name('kpi.import_scores');
     });
     Route::middleware(['auth:admin', 'admin.permission:attendance,can_update'])->group(function () {
         Route::get('kpi/definitions/{id}/edit', [KpiController::class, 'editDefinition'])->name('kpi.edit_definition');

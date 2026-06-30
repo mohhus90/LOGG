@@ -211,7 +211,7 @@
 
       {{-- Payroll --}}
       @php
-        $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*');
+        $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/branch_commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*');
       @endphp
       <li class="nav-item has-treeview {{ $payrollOpen ? 'menu-open' : '' }}">
         <a href="#" class="nav-link {{ $payrollOpen ? 'active' : '' }}">
@@ -225,7 +225,7 @@
             </a>
           </li>
 
-          @php $commOpen = request()->is('admin/dashboard/commissions*'); @endphp
+          @php $commOpen = request()->is('admin/dashboard/commissions*','admin/dashboard/branch_commissions*'); @endphp
           <li class="nav-item has-treeview {{ $commOpen ? 'menu-open' : '' }}">
             <a href="#" class="nav-link {{ $commOpen ? 'active' : '' }}">
               <i class="nav-icon fas fa-percentage"></i>
@@ -251,6 +251,40 @@
                 <a href="{{ route('commissions_v2.calculate') }}" class="nav-link {{ request()->is('admin/dashboard/commissions_v2/calculate*') ? 'active' : '' }}">
                   <i class="nav-icon fas fa-calculator"></i><p>{{ __('admin.calculate_commissions') }}</p>
                 </a>
+              </li>
+              @php $bcOpen = request()->is('admin/dashboard/branch_commissions*'); @endphp
+              <li class="nav-item has-treeview {{ $bcOpen ? 'menu-open' : '' }}">
+                <a href="#" class="nav-link {{ $bcOpen ? 'active' : '' }}">
+                  <i class="nav-icon fas fa-store"></i>
+                  <p>عمولات الفروع (التارجت) <i class="right fas fa-angle-left"></i></p>
+                </a>
+                <ul class="nav nav-treeview">
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.index') }}" class="nav-link {{ request()->routeIs('branch_commissions.index') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-list"></i><p>الخطط</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.targets') }}" class="nav-link {{ request()->routeIs('branch_commissions.targets') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-bullseye"></i><p>تارجت الفروع</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.employee_targets') }}" class="nav-link {{ request()->routeIs('branch_commissions.employee_targets') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-user-tag"></i><p>تارجت الموظفين</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.events') }}" class="nav-link {{ request()->routeIs('branch_commissions.events') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-exchange-alt"></i><p>أحداث منتصف الشهر</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.calculate') }}" class="nav-link {{ request()->routeIs('branch_commissions.calculate') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-calculator"></i><p>احتساب العمولات</p>
+                    </a>
+                  </li>
+                </ul>
               </li>
             </ul>
           </li>

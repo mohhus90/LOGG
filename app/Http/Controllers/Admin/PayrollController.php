@@ -59,6 +59,17 @@ class PayrollController extends Controller
         $employee = Employee::where('com_code', $this->comCode())
             ->findOrFail($request->employee_id);
 
+        // منع احتساب راتب لموظف غير نشط في شهر لاحق لشهر استقالته
+        if ($employee->functional_status == 2 && $employee->resignation_date) {
+            $resignYear  = (int) Carbon::parse($employee->resignation_date)->year;
+            $resignMonth = (int) Carbon::parse($employee->resignation_date)->month;
+            $reqYear     = (int) $request->year;
+            $reqMonth    = (int) $request->month;
+            if ($reqYear > $resignYear || ($reqYear === $resignYear && $reqMonth > $resignMonth)) {
+                return back()->with('error', 'لا يمكن احتساب راتب موظف ترك العمل في شهر سابق للمسير المحدد');
+            }
+        }
+
         $periodFrom = Carbon::parse($request->period_from);
         $periodTo   = Carbon::parse($request->period_to);
 
@@ -103,7 +114,19 @@ class PayrollController extends Controller
             'period_to'   => 'required|date|after:period_from',
         ]);
 
-        $employees  = Employee::where('com_code', $this->comCode())->get();
+        $payMonth  = (int) $request->month;
+        $payYear   = (int) $request->year;
+        $employees = Employee::where('com_code', $this->comCode())
+            ->where(function ($q) use ($payMonth, $payYear) {
+                $q->where('functional_status', 1)
+                  ->orWhere(function ($q2) use ($payMonth, $payYear) {
+                      $q2->where('functional_status', 2)
+                         ->whereNotNull('resignation_date')
+                         ->whereYear('resignation_date', $payYear)
+                         ->whereMonth('resignation_date', $payMonth);
+                  });
+            })
+            ->get();
         $periodFrom = Carbon::parse($request->period_from);
         $periodTo   = Carbon::parse($request->period_to);
         $count      = 0;

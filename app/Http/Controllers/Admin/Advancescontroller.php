@@ -10,8 +10,17 @@ use Illuminate\Support\Facades\Auth;
 
 class AdvancesController extends Controller
 {
+    private function backToIndex(): \Illuminate\Http\RedirectResponse
+    {
+        $qs  = session('advances_filters_qs', '');
+        $url = route('advances.index') . ($qs ? '?' . $qs : '');
+        return redirect($url);
+    }
+
     public function index(Request $request)
     {
+        session(['advances_filters_qs' => $request->getQueryString() ?? '']);
+
         $employees = Employee::orderBy('employee_name_A')->get();
         $query = Advance::with('employee');
 
@@ -23,7 +32,18 @@ class AdvancesController extends Controller
         }
 
         $data = $query->orderByDesc('advance_date')->paginate(20);
-        return view('admin.advances.index', compact('data', 'employees'));
+
+        // مجموع السلف المفلترة (كل النتائج لا الصفحة الحالية فقط)
+        $filteredTotal = (clone $query)->sum('amount');
+
+        // مجموع سلف الشهر الحالي
+        $comCode = Auth::guard('admin')->user()->com_code;
+        $monthTotal = Advance::where('com_code', $comCode)
+            ->whereYear('advance_date', now()->year)
+            ->whereMonth('advance_date', now()->month)
+            ->sum('amount');
+
+        return view('admin.advances.index', compact('data', 'employees', 'filteredTotal', 'monthTotal'));
     }
 
     public function create()
@@ -35,39 +55,50 @@ class AdvancesController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'employee_id'  => 'required|exists:employees,id',
-            'advance_date' => 'required|date',
-            'amount'       => 'required|numeric|min:1',
-            'installments' => 'required|integer|min:1',
+            'rows'                       => 'required|array|min:1',
+            'rows.*.employee_id'         => 'required|exists:employees,id',
+            'rows.*.advance_date'        => 'required|date',
+            'rows.*.amount'              => 'required|numeric|min:1',
+            'rows.*.installments'        => 'required|integer|min:1',
         ], [
-            'employee_id.required' => 'اختر الموظف',
-            'amount.required'      => 'أدخل قيمة السلفة',
-            'installments.required'=> 'أدخل عدد الأقساط',
+            'rows.required'                    => 'أضف سلفة واحدة على الأقل',
+            'rows.*.employee_id.required'      => 'اختر الموظف في كل سطر',
+            'rows.*.amount.required'           => 'أدخل قيمة السلفة',
+            'rows.*.installments.required'     => 'أدخل عدد الأقساط',
         ]);
 
-        $monthlyInstallment = round($request->amount / $request->installments, 2);
+        $comCode  = Auth::guard('admin')->user()->com_code;
+        $adminId  = Auth::guard('admin')->id();
+        $count    = 0;
 
-        Advance::create([
-            'employee_id'          => $request->employee_id,
-            'advance_date'         => $request->advance_date,
-            'amount'               => $request->amount,
-            'installments'         => $request->installments,
-            'monthly_installment'  => $monthlyInstallment,
-            'remaining_amount'     => $request->amount,
-            'status'               => 1,
-            'notes'                => $request->notes,
-            'com_code'             => Auth::guard('admin')->user()->com_code,
-            'added_by'             => Auth::guard('admin')->id(),
-        ]);
+        foreach ($request->rows as $row) {
+            $amount      = $row['amount'];
+            $installments = $row['installments'];
+            Advance::create([
+                'employee_id'         => $row['employee_id'],
+                'advance_date'        => $row['advance_date'],
+                'amount'              => $amount,
+                'installments'        => $installments,
+                'monthly_installment' => round($amount / $installments, 2),
+                'remaining_amount'    => $amount,
+                'status'              => 1,
+                'notes'               => $row['notes'] ?? null,
+                'com_code'            => $comCode,
+                'added_by'            => $adminId,
+            ]);
+            $count++;
+        }
 
-        return redirect()->route('advances.index')->with('success', 'تم إضافة السلفة بنجاح');
+        return $this->backToIndex()->with('success', "تم إضافة {$count} سلفة بنجاح");
     }
 
     public function edit(int $id)
     {
         $advance   = Advance::findOrFail($id);
         $employees = Employee::orderBy('employee_name_A')->get();
-        return view('admin.advances.edit', compact('advance', 'employees'));
+        $qs        = session('advances_filters_qs', '');
+        $backUrl   = route('advances.index') . ($qs ? '?' . $qs : '');
+        return view('admin.advances.edit', compact('advance', 'employees', 'backUrl'));
     }
 
     public function update(Request $request, int $id)
@@ -87,12 +118,69 @@ class AdvancesController extends Controller
             'updated_by'           => Auth::guard('admin')->id(),
         ]);
 
-        return redirect()->route('advances.index')->with('success', 'تم تحديث السلفة بنجاح');
+        return $this->backToIndex()->with('success', 'تم تحديث السلفة بنجاح');
     }
 
     public function delete(int $id)
     {
         Advance::findOrFail($id)->delete();
-        return redirect()->route('advances.index')->with('success', 'تم حذف السلفة بنجاح');
+        return $this->backToIndex()->with('success', 'تم حذف السلفة بنجاح');
+    }
+
+    public function copyMonthForm()
+    {
+        // الحصول على الأشهر التي يوجد فيها سلف مسجلة
+        $months = Advance::where('com_code', Auth::guard('admin')->user()->com_code)
+            ->selectRaw("DATE_FORMAT(advance_date, '%Y-%m') as ym, DATE_FORMAT(advance_date, '%m/%Y') as label")
+            ->groupBy('ym', 'label')
+            ->orderByDesc('ym')
+            ->pluck('label', 'ym');
+
+        return view('admin.advances.copy_month', compact('months'));
+    }
+
+    public function copyMonth(Request $request)
+    {
+        $request->validate([
+            'source_month' => 'required|date_format:Y-m',
+            'target_date'  => 'required|date',
+        ], [
+            'source_month.required' => 'اختر الشهر المصدر',
+            'target_date.required'  => 'اختر تاريخ السلف الجديدة',
+        ]);
+
+        $comCode = Auth::guard('admin')->user()->com_code;
+        $adminId = Auth::guard('admin')->id();
+
+        [$year, $month] = explode('-', $request->source_month);
+
+        $source = Advance::where('com_code', $comCode)
+            ->whereYear('advance_date', $year)
+            ->whereMonth('advance_date', $month)
+            ->where('status', '!=', 3)
+            ->get();
+
+        if ($source->isEmpty()) {
+            return back()->with('error', 'لا توجد سلف في الشهر المختار');
+        }
+
+        $count = 0;
+        foreach ($source as $adv) {
+            Advance::create([
+                'employee_id'         => $adv->employee_id,
+                'advance_date'        => $request->target_date,
+                'amount'              => $adv->amount,
+                'installments'        => $adv->installments,
+                'monthly_installment' => $adv->monthly_installment,
+                'remaining_amount'    => $adv->amount,
+                'status'              => 1,
+                'notes'               => $adv->notes,
+                'com_code'            => $comCode,
+                'added_by'            => $adminId,
+            ]);
+            $count++;
+        }
+
+        return $this->backToIndex()->with('success', "تم نسخ {$count} سلفة من شهر {$request->source_month} بنجاح");
     }
 }

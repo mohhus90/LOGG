@@ -12,7 +12,10 @@
                 <i class="fas fa-hand-holding-usd ml-2"></i>
                 سجل السلف
                 <a href="{{ route('advances.create') }}" class="btn btn-sm btn-success mr-2">
-                    <i class="fas fa-plus"></i> إضافة سلفة
+                    <i class="fas fa-plus"></i> إضافة سلف
+                </a>
+                <a href="{{ route('advances.copy_month_form') }}" class="btn btn-sm btn-info mr-2">
+                    <i class="fas fa-copy"></i> نسخ من شهر سابق
                 </a>
             </h3>
         </div>
@@ -36,6 +39,28 @@
                 <button type="submit" class="btn btn-primary ml-2"><i class="fas fa-search"></i> بحث</button>
                 <a href="{{ route('advances.index') }}" class="btn btn-secondary">مسح</a>
             </form>
+        </div>
+
+        {{-- مجاميع السلف --}}
+        <div class="row mx-3 mb-3">
+            <div class="col-sm-6 col-md-4">
+                <div class="info-box shadow-sm mb-2">
+                    <span class="info-box-icon bg-warning"><i class="fas fa-filter"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">إجمالي السلف المعروضة</span>
+                        <span class="info-box-number">{{ number_format($filteredTotal, 2) }} <small>ج.م</small></span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="info-box shadow-sm mb-2">
+                    <span class="info-box-icon bg-success"><i class="fas fa-calendar-alt"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">سلف شهر {{ now()->translatedFormat('F Y') }}</span>
+                        <span class="info-box-number">{{ number_format($monthTotal, 2) }} <small>ج.م</small></span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         @if(session('success'))

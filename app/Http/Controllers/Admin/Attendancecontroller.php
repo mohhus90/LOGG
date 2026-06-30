@@ -585,6 +585,7 @@ class AttendanceController extends Controller
         $noFinger  = 0;
         $weeklyOff = 0;
         $locked    = 0;
+        $resigned  = 0;
 
         foreach ($records as $att) {
             // سجل مثبَّت يدوياً — لا تُعيد معالجته
@@ -597,6 +598,24 @@ class AttendanceController extends Controller
             $dayOfWeek   = $att->attendance_date->dayOfWeek; // Carbon: 0=الأحد...6=السبت
             $isWeeklyOff = $employee->weekly_off_day !== null
                            && (int)$employee->weekly_off_day === $dayOfWeek;
+
+            // موظف غير نشط وتاريخ بعد الاستقالة → تحويل السجل لغياب إجباري بيوم واحد ثابت
+            if ($employee->functional_status == 2 && $employee->resignation_date && $date > $employee->resignation_date) {
+                $att->check_in_time          = null;
+                $att->check_out_time         = null;
+                $att->missing_punch          = null;
+                $att->status                 = 2;
+                $att->late_minutes           = 0;
+                $att->overtime_hours         = 0;
+                $att->overtime_amount        = 0;
+                $att->late_deduction         = 0;
+                $att->absence_deduction_days = 1.0;
+                $att->notes                  = 'غياب بعد ترك العمل';
+                $att->updated_by             = $updatedBy;
+                $att->save();
+                $resigned++;
+                continue;
+            }
 
             // موظف بدون رقم بصمة — لا يمكن إعادة المعالجة، لكن نصحح يوم الراحة
             if (!$employee->finger_id) {
@@ -650,6 +669,7 @@ class AttendanceController extends Controller
 
         $msg = "✅ تم إعادة معالجة {$success} سجل بنجاح.";
         if ($weeklyOff) $msg .= " | 📅 تحويل إجازة أسبوعية: {$weeklyOff}.";
+        if ($resigned)  $msg .= " | 🚫 غياب بعد ترك العمل: {$resigned}.";
         if ($failed)    $msg .= " | ❌ فشل (لا بصمة): {$failed}.";
         if ($noShift)   $msg .= " | ⚠️ بدون شيفت: {$noShift}.";
         if ($noFinger)  $msg .= " | ⚠️ بدون رقم بصمة: {$noFinger}.";

@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\KpiDefinition;
 use App\Models\KpiEmployeeScore;
 use App\Models\Employee;
+use App\Exports\KpiTemplateExport;
+use App\Imports\KpiScoresImport;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KpiController extends Controller
 {
@@ -186,6 +189,64 @@ class KpiController extends Controller
 
         return redirect()->route('kpi.scores', ['month' => $month, 'year' => $year])
             ->with('success', "تم حفظ تقييمات {$month}/{$year}");
+    }
+
+    // ─────────────────────────────────────────────
+    // دليل KPI (طباعة / PDF)
+    // ─────────────────────────────────────────────
+    public function guide()
+    {
+        return view('admin.kpi.guide');
+    }
+
+    // ─────────────────────────────────────────────
+    // تصدير نموذج Excel للمديرين
+    // ─────────────────────────────────────────────
+    public function exportTemplate(Request $request)
+    {
+        $month   = (int) ($request->month ?? now()->month);
+        $year    = (int) ($request->year  ?? now()->year);
+        $admin   = Auth::guard('admin')->user();
+
+        $monthName = \Carbon\Carbon::create($year, $month, 1)->locale('ar')->monthName;
+        $filename  = "kpi_template_{$year}_{$month}.xlsx";
+
+        return Excel::download(
+            new KpiTemplateExport($month, $year, (int)$admin->com_code, $admin->id),
+            $filename
+        );
+    }
+
+    // ─────────────────────────────────────────────
+    // استيراد ملف Excel المملوء من المديرين
+    // ─────────────────────────────────────────────
+    public function importScores(Request $request)
+    {
+        $request->validate([
+            'kpi_file' => 'required|file|mimes:xlsx,xls',
+            'month'    => 'required|integer|between:1,12',
+            'year'     => 'required|integer|min:2020',
+        ], [
+            'kpi_file.required' => 'يرجى اختيار ملف Excel',
+            'kpi_file.mimes'    => 'الملف يجب أن يكون بصيغة xlsx أو xls',
+        ]);
+
+        $admin  = Auth::guard('admin')->user();
+        $month  = (int) $request->month;
+        $year   = (int) $request->year;
+
+        $import = new KpiScoresImport($month, $year, (int)$admin->com_code, $admin->id);
+        Excel::import($import, $request->file('kpi_file'));
+
+        if (!empty($import->errors)) {
+            return back()->with('warning',
+                "تم الاستيراد جزئياً — تم: {$import->imported} | تجاهل: {$import->skipped}<br>" .
+                implode('<br>', $import->errors)
+            );
+        }
+
+        return redirect()->route('kpi.scores', ['month' => $month, 'year' => $year])
+            ->with('success', "✅ تم استيراد {$import->imported} قراءة من ملف Excel بنجاح.");
     }
 
     // ─────────────────────────────────────────────

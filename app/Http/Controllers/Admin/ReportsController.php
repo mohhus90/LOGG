@@ -16,6 +16,7 @@ use App\Models\Advance;
 use App\Models\EmployeeVacationBalance;
 use App\Models\Finance_calender;
 use App\Models\Department;
+use App\Models\Branche;
 use App\Models\Admin_panel_setting;
 
 class ReportsController extends Controller
@@ -32,9 +33,10 @@ class ReportsController extends Controller
     {
         $employees   = Employee::where('com_code', $this->comCode())->orderBy('employee_name_A')->get();
         $departments = Department::where('com_code', $this->comCode())->get();
+        $branches    = Branche::where('com_code', $this->comCode())->get();
         $years       = Finance_calender::where('com_code', $this->comCode())->orderBy('finance_yr','desc')->get();
 
-        return view('admin.reports.index', compact('employees', 'departments', 'years'));
+        return view('admin.reports.index', compact('employees', 'departments', 'branches', 'years'));
     }
 
     // ─────────────────────────────────────────────
@@ -91,21 +93,39 @@ class ReportsController extends Controller
     // ─────────────────────────────────────────────
     public function advances(Request $request)
     {
-        $filters = $request->only(['employee_id','from_date','to_date']);
+        $filters = $request->only(['employee_id','from_date','to_date','branch_id','sort_by','status']);
         $format  = $request->input('format', 'excel');
+        $sortBy  = $request->input('sort_by', 'date_desc');
 
         if ($format === 'excel') {
             $filename = 'advances_' . now()->format('Ymd_His') . '.xlsx';
             return Excel::download(new AdvancesExport($filters), $filename);
         }
 
-        $query = Advance::with('employee')->where('com_code', $this->comCode());
-        if (!empty($filters['employee_id'])) $query->where('employee_id', $filters['employee_id']);
-        if (!empty($filters['from_date']))   $query->where('advance_date', '>=', $filters['from_date']);
-        if (!empty($filters['to_date']))     $query->where('advance_date', '<=', $filters['to_date']);
-        $data = $query->orderBy('advance_date','desc')->get();
+        $query = Advance::with(['employee.branches'])->where('advances.com_code', $this->comCode());
+        if (!empty($filters['employee_id'])) $query->where('advances.employee_id', $filters['employee_id']);
+        if (!empty($filters['from_date']))   $query->where('advances.advance_date', '>=', $filters['from_date']);
+        if (!empty($filters['to_date']))     $query->where('advances.advance_date', '<=', $filters['to_date']);
+        if (!empty($filters['status']))      $query->where('advances.status', $filters['status']);
+        if (!empty($filters['branch_id'])) {
+            $query->whereHas('employee', fn($q) => $q->where('branches_id', $filters['branch_id']));
+        }
 
-        return view('admin.reports.advances_print', compact('data', 'filters'));
+        if (in_array($sortBy, ['name_asc', 'name_desc'])) {
+            $dir = $sortBy === 'name_asc' ? 'asc' : 'desc';
+            $query->join('employees', 'advances.employee_id', '=', 'employees.id')
+                  ->orderBy('employees.employee_name_A', $dir)
+                  ->select('advances.*');
+        } elseif ($sortBy === 'date_asc') {
+            $query->orderBy('advances.advance_date', 'asc');
+        } else {
+            $query->orderBy('advances.advance_date', 'desc');
+        }
+
+        $data     = $query->get();
+        $branches = Branche::where('com_code', $this->comCode())->get();
+
+        return view('admin.reports.advances_print', compact('data', 'filters', 'sortBy', 'branches'));
     }
 
     // ─────────────────────────────────────────────
