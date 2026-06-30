@@ -397,25 +397,25 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ─────────────────────────────────────────────
     //  مؤشرات الأداء KPIs
     // ─────────────────────────────────────────────
-    Route::middleware(['auth:admin', 'admin.permission:attendance,can_read'])->group(function () {
+    Route::middleware(['auth:admin', 'admin.permission:kpi,can_read'])->group(function () {
         Route::get('kpi/definitions',   [KpiController::class, 'definitions'])->name('kpi.definitions');
         Route::get('kpi/scores',        [KpiController::class, 'scores'])->name('kpi.scores');
         Route::get('kpi/report',        [KpiController::class, 'report'])->name('kpi.report');
         Route::get('kpi/guide',         [KpiController::class, 'guide'])->name('kpi.guide');
         Route::get('kpi/export-template', [KpiController::class, 'exportTemplate'])->name('kpi.export_template');
     });
-    Route::middleware(['auth:admin', 'admin.permission:attendance,can_create'])->group(function () {
+    Route::middleware(['auth:admin', 'admin.permission:kpi,can_create'])->group(function () {
         Route::get('kpi/definitions/create',    [KpiController::class, 'createDefinition'])->name('kpi.create_definition');
         Route::post('kpi/definitions/store',    [KpiController::class, 'storeDefinition'])->name('kpi.store_definition');
         Route::post('kpi/scores/save',          [KpiController::class, 'saveScores'])->name('kpi.save_scores');
         Route::post('kpi/import-scores',        [KpiController::class, 'importScores'])->name('kpi.import_scores');
     });
-    Route::middleware(['auth:admin', 'admin.permission:attendance,can_update'])->group(function () {
+    Route::middleware(['auth:admin', 'admin.permission:kpi,can_update'])->group(function () {
         Route::get('kpi/definitions/{id}/edit', [KpiController::class, 'editDefinition'])->name('kpi.edit_definition');
         Route::put('kpi/definitions/{id}',      [KpiController::class, 'updateDefinition'])->name('kpi.update_definition');
     });
     Route::get('kpi/definitions/{id}/delete', [KpiController::class, 'deleteDefinition'])
-        ->name('kpi.delete_definition')->middleware(['auth:admin', 'admin.permission:attendance,can_delete']);
+        ->name('kpi.delete_definition')->middleware(['auth:admin', 'admin.permission:kpi,can_delete']);
 
     // ─────────────────────────────────────────────
     //  مسير الرواتب — payroll
