@@ -35,7 +35,7 @@
       ①&nbsp;أضف قواعد عمولات ↓
       ②&nbsp;<a href="{{ route('commissions_v2.sales') }}">أدخل مبيعات الشهر</a> ↓
       ③&nbsp;<a href="{{ route('commissions_v2.calculate') }}">احتسب العمولات تلقائياً</a> ↓
-      ④ اعتمادها → تدخل مسير الرواتب تلقائياً
+      ④ اعتمادها → تدخل كشف الرواتب تلقائياً
     </div>
 
     @if($rules->isEmpty())

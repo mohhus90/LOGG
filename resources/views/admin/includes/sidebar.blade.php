@@ -147,6 +147,11 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="{{ route('attendance.range_batch_create') }}" class="nav-link {{ request()->routeIs('attendance.range_batch_create') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-calendar-alt"></i><p>{{ __('admin.att_range_batch_entry') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="{{ route('attendance.excel_import_form') }}" class="nav-link {{ request()->routeIs('attendance.excel_import_form') ? 'active' : '' }}">
               <i class="nav-icon fas fa-file-excel"></i>
               <p>{{ __('admin.excel_import') }} <small class="badge badge-warning mr-1">Finger ID</small></p>
@@ -211,7 +216,7 @@
 
       {{-- Payroll --}}
       @php
-        $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/branch_commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*');
+        $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/branch_commissions*','admin/dashboard/deductions*','admin/dashboard/bonuses*','admin/dashboard/payroll*');
       @endphp
       <li class="nav-item has-treeview {{ $payrollOpen ? 'menu-open' : '' }}">
         <a href="#" class="nav-link {{ $payrollOpen ? 'active' : '' }}">
@@ -292,6 +297,11 @@
           <li class="nav-item">
             <a href="{{ route('deductions.index') }}" class="nav-link {{ request()->is('admin/dashboard/deductions*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-minus-circle"></i><p>{{ __('admin.deductions') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('bonuses.index') }}" class="nav-link {{ request()->is('admin/dashboard/bonuses*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-gift"></i><p>المكافآت</p>
             </a>
           </li>
           <li class="nav-item">

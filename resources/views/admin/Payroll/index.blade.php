@@ -1,8 +1,8 @@
 {{-- resources/views/admin/payroll/index.blade.php --}}
 @extends('admin.layouts.admin')
-@section('title') مسير الرواتب @endsection
+@section('title') كشف الرواتب @endsection
 @section('start') الرواتب @endsection
-@section('home') <a href="{{ route('payroll.index') }}">مسير الرواتب</a> @endsection
+@section('home') <a href="{{ route('payroll.index') }}">كشف الرواتب</a> @endsection
 @section('startpage') عرض @endsection
 
 @section('content')
@@ -11,7 +11,7 @@
         <div class="card-header">
             <h3 class="card-title card_title_center">
                 <i class="fas fa-money-check-alt ml-2"></i>
-                مسير الرواتب الشهري
+                كشف الرواتب الشهري
                 <a href="{{ route('payroll.create') }}" class="btn btn-sm btn-success mr-2">
                     <i class="fas fa-calculator"></i> احتساب رواتب
                 </a>
@@ -89,12 +89,12 @@
                                 @if($p->status == 1)
                                 <a href="{{ route('payroll.approve', $p->id) }}"
                                    class="btn btn-xs btn-success"
-                                   onclick="return confirm('اعتماد هذا المسير؟')" title="اعتماد">
+                                   onclick="return confirm('اعتماد هذا الكشف؟')" title="اعتماد">
                                     <i class="fas fa-check"></i>
                                 </a>
                                 <a href="{{ route('payroll.delete', $p->id) }}"
                                    class="btn btn-xs btn-danger"
-                                   onclick="return confirm('حذف هذا المسير؟')" title="حذف">
+                                   onclick="return confirm('حذف هذا الكشف؟')" title="حذف">
                                     <i class="fas fa-trash"></i>
                                 </a>
                                 @endif

@@ -235,6 +235,267 @@
       </div>
     </div>
 
+    {{-- ══ العمولات ══ --}}
+    <div class="col-md-6 col-lg-5 mb-4">
+      <div class="card report-card" data-toggle="collapse" data-target="#commissionsForm" style="border-color:#1a6f3c">
+        <div class="card-body">
+          <i class="fas fa-percentage text-success"></i>
+          <h5 class="mt-2 mb-0">العمولات</h5>
+          <small class="text-muted">Excel / طباعة PDF — مع فلترة وترتيب</small>
+        </div>
+      </div>
+      <div class="collapse mt-2" id="commissionsForm">
+        <div class="card export-form border-success">
+          <div class="card-header bg-success text-white py-1 px-2" style="font-size:.82rem">
+            <i class="fas fa-filter ml-1"></i> فلاتر تقرير العمولات
+          </div>
+          <div class="card-body py-2">
+            <form action="{{ route('reports.commissions') }}" method="GET" target="_blank">
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">الموظف</label>
+              <select name="employee_id" class="form-control form-control-sm mb-2">
+                <option value="">-- جميع الموظفين --</option>
+                @foreach($employees as $e)
+                  <option value="{{ $e->id }}">{{ $e->employee_name_A }}</option>
+                @endforeach
+              </select>
+
+              <div class="row mx-0">
+                <div class="col-6 pl-1 pr-0">
+                  <label class="mb-0" style="font-size:.78rem;color:#555">الشهر</label>
+                  <select name="month" class="form-control form-control-sm mb-2">
+                    <option value="">-- الكل --</option>
+                    @foreach(['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] as $mi => $mn)
+                      <option value="{{ $mi+1 }}">{{ $mn }}</option>
+                    @endforeach
+                  </select>
+                </div>
+                <div class="col-6 pr-1 pl-0">
+                  <label class="mb-0" style="font-size:.78rem;color:#555">السنة</label>
+                  <input type="number" name="year" class="form-control form-control-sm mb-2"
+                    placeholder="السنة" value="{{ now()->year }}">
+                </div>
+              </div>
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">الحالة</label>
+              <select name="status" class="form-control form-control-sm mb-2">
+                <option value="">-- الكل --</option>
+                <option value="1">معتمدة</option>
+                <option value="2">معلقة</option>
+                <option value="3">ملغاة</option>
+              </select>
+
+              @if(isset($commissionTypes) && $commissionTypes->count())
+              <label class="mb-0" style="font-size:.78rem;color:#555">نوع العمولة</label>
+              <select name="commission_type" class="form-control form-control-sm mb-2">
+                <option value="">-- الكل --</option>
+                @foreach($commissionTypes as $ct)
+                  <option value="{{ $ct }}">{{ $ct }}</option>
+                @endforeach
+              </select>
+              @endif
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">
+                <i class="fas fa-sort ml-1"></i>ترتيب النتائج
+              </label>
+              <select name="sort_by" class="form-control form-control-sm mb-3">
+                <option value="date_desc">التاريخ — الأحدث أولاً</option>
+                <option value="date_asc">التاريخ — الأقدم أولاً</option>
+                <option value="amount_desc">المبلغ — الأعلى أولاً</option>
+                <option value="amount_asc">المبلغ — الأقل أولاً</option>
+                <option value="month_desc">الشهر — الأحدث أولاً</option>
+                <option value="month_asc">الشهر — الأقدم أولاً</option>
+              </select>
+
+              <div class="btn-group w-100">
+                <button class="btn btn-sm btn-success" name="format" value="excel">
+                  <i class="fas fa-file-excel ml-1"></i> Excel
+                </button>
+                <button class="btn btn-sm btn-danger" name="format" value="pdf">
+                  <i class="fas fa-print ml-1"></i> طباعة PDF
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ══ مؤشرات الأداء KPI ══ --}}
+    <div class="col-md-6 col-lg-5 mb-4">
+      <div class="card report-card" data-toggle="collapse" data-target="#kpiForm" style="border-color:#4e1f88">
+        <div class="card-body">
+          <i class="fas fa-chart-line" style="color:#4e1f88"></i>
+          <h5 class="mt-2 mb-0">مؤشرات الأداء KPI</h5>
+          <small class="text-muted">Excel / طباعة PDF — تفصيلي مع ترتيب</small>
+        </div>
+      </div>
+      <div class="collapse mt-2" id="kpiForm">
+        <div class="card export-form" style="border-color:#4e1f88">
+          <div class="card-header text-white py-1 px-2" style="background:#4e1f88;font-size:.82rem">
+            <i class="fas fa-filter ml-1"></i> فلاتر تقرير الأداء
+          </div>
+          <div class="card-body py-2">
+            <form action="{{ route('reports.kpi') }}" method="GET" target="_blank">
+
+              <div class="row mx-0">
+                <div class="col-6 pl-1 pr-0">
+                  <label class="mb-0" style="font-size:.78rem;color:#555">الشهر</label>
+                  <select name="month" class="form-control form-control-sm mb-2">
+                    @foreach(['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] as $mi => $mn)
+                      <option value="{{ $mi+1 }}" {{ now()->month == $mi+1 ? 'selected' : '' }}>{{ $mn }}</option>
+                    @endforeach
+                  </select>
+                </div>
+                <div class="col-6 pr-1 pl-0">
+                  <label class="mb-0" style="font-size:.78rem;color:#555">السنة</label>
+                  <input type="number" name="year" class="form-control form-control-sm mb-2"
+                    value="{{ now()->year }}">
+                </div>
+              </div>
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">الموظف</label>
+              <select name="employee_id" class="form-control form-control-sm mb-2">
+                <option value="">-- جميع الموظفين --</option>
+                @foreach($employees as $e)
+                  <option value="{{ $e->id }}">{{ $e->employee_name_A }}</option>
+                @endforeach
+              </select>
+
+              @if(isset($kpiDefs) && $kpiDefs->count())
+              <label class="mb-0" style="font-size:.78rem;color:#555">مؤشر محدد</label>
+              <select name="kpi_id" class="form-control form-control-sm mb-2">
+                <option value="">-- كل المؤشرات --</option>
+                @foreach($kpiDefs as $kpi)
+                  <option value="{{ $kpi->id }}">{{ $kpi->name }}</option>
+                @endforeach
+              </select>
+              @endif
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">الفئة</label>
+              <select name="category" class="form-control form-control-sm mb-2">
+                <option value="">-- كل الفئات --</option>
+                <option value="performance">أداء</option>
+                <option value="quality">جودة</option>
+                <option value="attendance">حضور</option>
+                <option value="sales">مبيعات</option>
+                <option value="custom">مخصص</option>
+              </select>
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">
+                <i class="fas fa-sort ml-1"></i>ترتيب النتائج
+              </label>
+              <select name="sort_by" class="form-control form-control-sm mb-3">
+                <option value="score_desc">النقاط — الأعلى أولاً</option>
+                <option value="score_asc">النقاط — الأقل أولاً</option>
+                <option value="achievement_desc">التحقق % — الأعلى أولاً</option>
+                <option value="achievement_asc">التحقق % — الأقل أولاً</option>
+                <option value="name_asc">الاسم — أ إلى ي</option>
+                <option value="name_desc">الاسم — ي إلى أ</option>
+              </select>
+
+              <div class="btn-group w-100">
+                <button class="btn btn-sm btn-success" name="format" value="excel">
+                  <i class="fas fa-file-excel ml-1"></i> Excel
+                </button>
+                <button class="btn btn-sm btn-danger" name="format" value="pdf">
+                  <i class="fas fa-print ml-1"></i> طباعة PDF
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ══ الرواتب ══ --}}
+    <div class="col-md-6 col-lg-6 mb-4">
+      <div class="card report-card" data-toggle="collapse" data-target="#payrollForm" style="border-color:#1a3c6e">
+        <div class="card-body">
+          <i class="fas fa-money-check-alt" style="color:#1a3c6e"></i>
+          <h5 class="mt-2 mb-0">كشف الرواتب</h5>
+          <small class="text-muted">Excel / طباعة PDF — تفصيلي بكل مكونات الراتب</small>
+        </div>
+      </div>
+      <div class="collapse mt-2" id="payrollForm">
+        <div class="card export-form" style="border-color:#1a3c6e">
+          <div class="card-header text-white py-1 px-2" style="background:#1a3c6e;font-size:.82rem">
+            <i class="fas fa-filter ml-1"></i> فلاتر تقرير الرواتب
+          </div>
+          <div class="card-body py-2">
+            <form action="{{ route('reports.payroll') }}" method="GET" target="_blank">
+
+              <div class="row mx-0">
+                <div class="col-6 pl-1 pr-0">
+                  <label class="mb-0" style="font-size:.78rem;color:#555">الشهر</label>
+                  <select name="month" class="form-control form-control-sm mb-2">
+                    <option value="">-- الكل --</option>
+                    @foreach(['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] as $mi => $mn)
+                      <option value="{{ $mi+1 }}" {{ now()->month == $mi+1 ? 'selected' : '' }}>{{ $mn }}</option>
+                    @endforeach
+                  </select>
+                </div>
+                <div class="col-6 pr-1 pl-0">
+                  <label class="mb-0" style="font-size:.78rem;color:#555">السنة</label>
+                  <input type="number" name="year" class="form-control form-control-sm mb-2"
+                    value="{{ now()->year }}">
+                </div>
+              </div>
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">الموظف</label>
+              <select name="employee_id" class="form-control form-control-sm mb-2">
+                <option value="">-- جميع الموظفين --</option>
+                @foreach($employees as $e)
+                  <option value="{{ $e->id }}">{{ $e->employee_name_A }}</option>
+                @endforeach
+              </select>
+
+              @if(isset($branches) && $branches->count())
+              <label class="mb-0" style="font-size:.78rem;color:#555">الفرع</label>
+              <select name="branch_id" class="form-control form-control-sm mb-2">
+                <option value="">-- جميع الفروع --</option>
+                @foreach($branches as $br)
+                  <option value="{{ $br->id }}">{{ $br->branch_name }}</option>
+                @endforeach
+              </select>
+              @endif
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">الحالة</label>
+              <select name="status" class="form-control form-control-sm mb-2">
+                <option value="">-- الكل --</option>
+                <option value="1">مسودة</option>
+                <option value="2">معتمد</option>
+                <option value="3">مدفوع</option>
+              </select>
+
+              <label class="mb-0" style="font-size:.78rem;color:#555">
+                <i class="fas fa-sort ml-1"></i>ترتيب النتائج
+              </label>
+              <select name="sort_by" class="form-control form-control-sm mb-3">
+                <option value="name_asc">الاسم — أ إلى ي</option>
+                <option value="name_desc">الاسم — ي إلى أ</option>
+                <option value="net_desc">الراتب الصافي — الأعلى أولاً</option>
+                <option value="net_asc">الراتب الصافي — الأقل أولاً</option>
+                <option value="gross_desc">الراتب الإجمالي — الأعلى أولاً</option>
+                <option value="gross_asc">الراتب الإجمالي — الأقل أولاً</option>
+                <option value="month_desc">الشهر — الأحدث أولاً</option>
+                <option value="month_asc">الشهر — الأقدم أولاً</option>
+              </select>
+
+              <div class="btn-group w-100">
+                <button class="btn btn-sm btn-success" name="format" value="excel">
+                  <i class="fas fa-file-excel ml-1"></i> Excel
+                </button>
+                <button class="btn btn-sm btn-danger" name="format" value="pdf">
+                  <i class="fas fa-print ml-1"></i> طباعة PDF
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 @endsection

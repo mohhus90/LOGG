@@ -263,18 +263,24 @@ class CommissionsV2Controller extends Controller
             foreach ($request->approve ?? [] as $empId => $commissions) {
                 foreach ($commissions as $commissionData) {
                     if (!($commissionData['approved'] ?? false)) continue;
-                    Commission::create([
-                        'employee_id'      => $empId,
-                        'commission_date'  => now()->format('Y-m-d'),
-                        'commission_type'  => $commissionData['rule'],
-                        'amount'           => $commissionData['amount'],
-                        'month'            => $month,
-                        'year'             => $year,
-                        'status'           => 1,
-                        'notes'            => 'محتسبة تلقائياً من قاعدة: ' . $commissionData['rule'],
-                        'com_code'         => $admin->com_code,
-                        'added_by'         => $admin->id,
-                    ]);
+                    // updateOrCreate بدل create: لو العمولة دي (نفس الموظف/الشهر/القاعدة)
+                    // معتمدة بالفعل من قبل، تُحدَّث قيمتها فقط بدل تكرارها كسجل جديد
+                    Commission::updateOrCreate(
+                        [
+                            'employee_id'     => $empId,
+                            'month'           => $month,
+                            'year'            => $year,
+                            'commission_type' => $commissionData['rule'],
+                            'com_code'        => $admin->com_code,
+                        ],
+                        [
+                            'commission_date' => now()->format('Y-m-d'),
+                            'amount'          => $commissionData['amount'],
+                            'status'          => 1,
+                            'notes'           => 'محتسبة تلقائياً من قاعدة: ' . $commissionData['rule'],
+                            'added_by'        => $admin->id,
+                        ]
+                    );
                 }
             }
             DB::commit();
@@ -284,7 +290,7 @@ class CommissionsV2Controller extends Controller
         }
 
         return redirect()->route('commissions.index', ['month' => $month, 'year' => $year])
-            ->with('success', 'تم اعتماد العمولات وإضافتها لمسير الرواتب');
+            ->with('success', 'تم اعتماد العمولات وإضافتها لكشف الرواتب');
     }
 
     private function getSalesForRule(CommissionRule $rule, Employee $emp, $salesData): float

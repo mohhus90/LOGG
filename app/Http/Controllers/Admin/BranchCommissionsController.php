@@ -401,7 +401,7 @@ class BranchCommissionsController extends Controller
         return $daysInMonth;
     }
 
-    // ── اعتماد العمولات وإضافتها لمسير الرواتب ──
+    // ── اعتماد العمولات وإضافتها لكشف الرواتب ──
     public function confirmCalculate(Request $request)
     {
         $month = $request->month;
@@ -414,18 +414,24 @@ class BranchCommissionsController extends Controller
                 if (empty($entry['approved'])) {
                     continue;
                 }
-                Commission::create([
-                    'employee_id'     => $entry['employee_id'],
-                    'commission_date' => now()->format('Y-m-d'),
-                    'commission_type' => $entry['rule_name'],
-                    'amount'          => $entry['amount'],
-                    'month'           => $month,
-                    'year'            => $year,
-                    'status'          => 1, // معتمدة
-                    'notes'           => 'عمولة فرع: ' . $entry['plan_name'],
-                    'com_code'        => $admin->com_code,
-                    'added_by'        => $admin->id,
-                ]);
+                // updateOrCreate بدل create: لو العمولة دي (نفس الموظف/الشهر/النوع/الخطة)
+                // معتمدة بالفعل من قبل، تُحدَّث قيمتها فقط بدل تكرارها كسجل جديد
+                Commission::updateOrCreate(
+                    [
+                        'employee_id'     => $entry['employee_id'],
+                        'month'           => $month,
+                        'year'            => $year,
+                        'commission_type' => $entry['rule_name'],
+                        'notes'           => 'عمولة فرع: ' . $entry['plan_name'],
+                        'com_code'        => $admin->com_code,
+                    ],
+                    [
+                        'commission_date' => now()->format('Y-m-d'),
+                        'amount'          => $entry['amount'],
+                        'status'          => 1, // معتمدة
+                        'added_by'        => $admin->id,
+                    ]
+                );
             }
             DB::commit();
         } catch (\Exception $e) {
@@ -434,7 +440,7 @@ class BranchCommissionsController extends Controller
         }
 
         return redirect()->route('commissions.index', ['month' => $month, 'year' => $year])
-            ->with('success', 'تم اعتماد العمولات وإضافتها لمسير الرواتب');
+            ->with('success', 'تم اعتماد العمولات وإضافتها لكشف الرواتب');
     }
 
     // ── التارجت الفردي للموظفين ──

@@ -42,7 +42,7 @@ class Advance extends Model
 // class Deduction extends Model { ... }
 
 // ============================================================
-// نموذج مسير الرواتب — في ملف منفصل: app/Models/MonthlyPayroll.php
+// نموذج كشف الرواتب — في ملف منفصل: app/Models/MonthlyPayroll.php
 // ============================================================
 // namespace App\Models;
 // class MonthlyPayroll extends Model { ... }

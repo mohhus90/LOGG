@@ -36,6 +36,14 @@
                     <option value="2" {{ request('status')==2?'selected':'' }}>مسددة</option>
                     <option value="3" {{ request('status')==3?'selected':'' }}>ملغاة</option>
                 </select>
+                <select name="month" class="form-control ml-2">
+                    <option value="">-- كل الشهور --</option>
+                    @foreach(['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] as $i=>$m)
+                    <option value="{{ $i+1 }}" {{ request('month')==$i+1?'selected':'' }}>{{ $m }}</option>
+                    @endforeach
+                </select>
+                <input type="number" name="year" class="form-control ml-2" style="width:90px"
+                    placeholder="السنة" value="{{ request('year') }}">
                 <button type="submit" class="btn btn-primary ml-2"><i class="fas fa-search"></i> بحث</button>
                 <a href="{{ route('advances.index') }}" class="btn btn-secondary">مسح</a>
             </form>

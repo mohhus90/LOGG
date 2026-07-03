@@ -189,7 +189,7 @@
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="emp_start_date">{{ __('admin.emp_join_date') }}</label>
-                                        <input type="date" class="form-control" name="emp_start_date" id="emp_start_date" value="{{ old('emp_start_date') }}">
+                                        <input type="date" class="form-control" name="emp_start_date" id="emp_start_date" value="{{ old('emp_start_date', today()->format('Y-m-d')) }}">
                                         @error('emp_start_date')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
@@ -559,6 +559,24 @@
             $('#shifts_types_id').on('change', function() {
                 var hours = $(this).find(':selected').data('hours');
                 $('#daily_work_hours').val(hours ? hours : '');
+            });
+
+            // استخراج تاريخ الميلاد تلقائياً من الرقم القومي المصري (14 رقم)
+            $('#national_id').on('input', function() {
+                var nid = $(this).val().trim();
+                if (!/^[123]\d{13}$/.test(nid)) return;
+
+                var centuryDigit = nid.charAt(0);
+                var centuryPrefix = centuryDigit === '3' ? '20' : (centuryDigit === '2' ? '19' : '18');
+                var yy = nid.substr(1, 2);
+                var mm = nid.substr(3, 2);
+                var dd = nid.substr(5, 2);
+
+                var month = parseInt(mm, 10);
+                var day   = parseInt(dd, 10);
+                if (month < 1 || month > 12 || day < 1 || day > 31) return;
+
+                $('#birth_date').val(centuryPrefix + yy + '-' + mm + '-' + dd);
             });
 
             const arToEnNames = {

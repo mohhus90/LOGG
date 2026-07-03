@@ -1,7 +1,7 @@
 @extends('admin.layouts.admin')
-@section('title') احتساب مسير الرواتب @endsection
+@section('title') احتساب كشف الرواتب @endsection
 @section('start') الرواتب @endsection
-@section('home') <a href="{{ route('payroll.index') }}">مسير الرواتب</a> @endsection
+@section('home') <a href="{{ route('payroll.index') }}">كشف الرواتب</a> @endsection
 @section('startpage') احتساب @endsection
 
 @section('content')
@@ -30,24 +30,24 @@
                         <label>الشهر <span class="text-danger">*</span></label>
                         <select name="month" class="form-control" required>
                             @foreach(['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] as $i=>$m)
-                            <option value="{{ $i+1 }}" {{ now()->month==$i+1?'selected':'' }}>{{ $m }}</option>
+                            <option value="{{ $i+1 }}" {{ $default['month']==$i+1?'selected':'' }}>{{ $m }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2 form-group">
                         <label>السنة <span class="text-danger">*</span></label>
-                        <input type="number" name="year" class="form-control" value="{{ now()->year }}" required>
+                        <input type="number" name="year" class="form-control" value="{{ $default['year'] }}" required>
                     </div>
                     <div class="col-md-3 form-group">
                         <label>بداية الفترة <span class="text-danger">*</span></label>
                         <input type="date" name="period_from" class="form-control" required
-                            value="{{ now()->startOfMonth()->format('Y-m-d') }}">
+                            value="{{ $default['period_from'] }}">
                         <small class="text-muted">مثال: من 26 الشهر السابق</small>
                     </div>
                     <div class="col-md-3 form-group">
                         <label>نهاية الفترة <span class="text-danger">*</span></label>
                         <input type="date" name="period_to" class="form-control" required
-                            value="{{ now()->endOfMonth()->format('Y-m-d') }}">
+                            value="{{ $default['period_to'] }}">
                         <small class="text-muted">مثال: إلى 25 الشهر الحالي</small>
                     </div>
                     <div class="col-md-2 form-group d-flex align-items-end">
@@ -93,23 +93,23 @@
                         <label>الشهر</label>
                         <select name="month" class="form-control" required>
                             @foreach(['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] as $i=>$m)
-                            <option value="{{ $i+1 }}" {{ now()->month==$i+1?'selected':'' }}>{{ $m }}</option>
+                            <option value="{{ $i+1 }}" {{ $default['month']==$i+1?'selected':'' }}>{{ $m }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2 form-group">
                         <label>السنة</label>
-                        <input type="number" name="year" class="form-control" value="{{ now()->year }}" required>
+                        <input type="number" name="year" class="form-control" value="{{ $default['year'] }}" required>
                     </div>
                     <div class="col-md-2 form-group">
                         <label>بداية الفترة</label>
                         <input type="date" name="period_from" class="form-control" required
-                            value="{{ now()->startOfMonth()->format('Y-m-d') }}">
+                            value="{{ $default['period_from'] }}">
                     </div>
                     <div class="col-md-2 form-group">
                         <label>نهاية الفترة</label>
                         <input type="date" name="period_to" class="form-control" required
-                            value="{{ now()->endOfMonth()->format('Y-m-d') }}">
+                            value="{{ $default['period_to'] }}">
                     </div>
                     <div class="col-md-1 form-group d-flex align-items-end">
                         <button type="submit" class="btn btn-primary">

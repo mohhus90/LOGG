@@ -57,7 +57,7 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping,
             ->where('com_code', $this->comCode);
 
         if (!empty($this->filters['employee_id']))
-            $q->where('employee_id', $this->filters['employee_id']);
+            $q->where('attendances.employee_id', $this->filters['employee_id']);
         if (!empty($this->filters['from_date']))
             $q->where('attendance_date', '>=', $this->filters['from_date']);
         if (!empty($this->filters['to_date']))

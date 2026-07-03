@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\TaxController;
 use App\Http\Controllers\Admin\EtaFreeZoneController;
 use App\Http\Controllers\Admin\ClientsController;
 use App\Http\Controllers\Admin\BranchCommissionsController;
+use App\Http\Controllers\Admin\BonusesController;
 
 defined('paginate_counter') || define('paginate_counter', 20);
 
@@ -257,6 +258,8 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('attendance/store',          [AttendanceController::class, 'store'])->name('attendance.store');
         Route::get('attendance/bulk',            [AttendanceController::class, 'bulkCreate'])->name('attendance.bulk_create');
         Route::post('attendance/bulk',           [AttendanceController::class, 'bulkStore'])->name('attendance.bulk_store');
+        Route::get('attendance/range-batch',     [AttendanceController::class, 'rangeBatchCreate'])->name('attendance.range_batch_create');
+        Route::post('attendance/range-batch',    [AttendanceController::class, 'rangeBatchStore'])->name('attendance.range_batch_store');
         Route::get('attendance/excel-import',    [AttendanceController::class, 'excelImportForm'])->name('attendance.excel_import_form');
         Route::post('attendance/excel-import',   [AttendanceController::class, 'excelImport'])->name('attendance.excel_import');
         Route::get('attendance/excel-template',  [AttendanceController::class, 'excelTemplate'])->name('attendance.excel_template');
@@ -274,6 +277,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('attendance/{id}/resolve-missing',   [AttendanceController::class, 'resolveMissingPunch'])->name('attendance.resolve_missing');
         Route::post('attendance/{id}/update-shift',        [AttendanceController::class, 'updateShift'])->name('attendance.update_shift');
         Route::post('attendance/{id}/reprocess-fingerprint', [AttendanceController::class, 'reprocessFingerprint'])->name('attendance.reprocess_fingerprint');
+        Route::post('attendance/{id}/toggle-weekly-off',    [AttendanceController::class, 'toggleWeeklyOff'])->name('attendance.toggle_weekly_off');
         Route::get('fingerprint_devices/{id}/edit',        [FingerprintDevicesController::class, 'edit'])->name('fingerprint_devices.edit');
         Route::put('fingerprint_devices/{id}',             [FingerprintDevicesController::class, 'update'])->name('fingerprint_devices.update');
         Route::post('fingerprint_devices/{id}/generate-token', [FingerprintDevicesController::class, 'generateToken'])->name('fingerprint_devices.generate_token');
@@ -325,6 +329,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ─────────────────────────────────────────────
     Route::middleware(['auth:admin', 'admin.permission:commissions,can_read'])->group(function () {
         Route::get('commissions', [CommissionsController::class, 'index'])->name('commissions.index');
+        Route::get('commissions/report', [CommissionsController::class, 'report'])->name('commissions.report');
         Route::get('commissions_v2/rules',    [CommissionsV2Controller::class, 'rules'])->name('commissions_v2.rules');
         Route::get('commissions_v2/sales',    [CommissionsV2Controller::class, 'sales'])->name('commissions_v2.sales');
         Route::get('commissions_v2/calculate', [CommissionsV2Controller::class, 'calculate'])->name('commissions_v2.calculate');
@@ -378,6 +383,23 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         ->name('branch_commissions.delete_event')->middleware(['auth:admin', 'admin.permission:commissions,can_delete']);
 
     // ─────────────────────────────────────────────
+    //  المكافآت — bonuses
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin', 'admin.permission:bonuses,can_read'])->group(function () {
+        Route::get('bonuses', [BonusesController::class, 'index'])->name('bonuses.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bonuses,can_create'])->group(function () {
+        Route::get('bonuses/create',  [BonusesController::class, 'create'])->name('bonuses.create');
+        Route::post('bonuses/store',  [BonusesController::class, 'store'])->name('bonuses.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bonuses,can_update'])->group(function () {
+        Route::get('bonuses/{id}/edit',    [BonusesController::class, 'edit'])->name('bonuses.edit');
+        Route::post('bonuses/update/{id}', [BonusesController::class, 'update'])->name('bonuses.update');
+    });
+    Route::get('bonuses/delete/{id}', [BonusesController::class, 'delete'])
+        ->name('bonuses.delete')->middleware(['auth:admin', 'admin.permission:bonuses,can_delete']);
+
+    // ─────────────────────────────────────────────
     //  الخصومات — deductions
     // ─────────────────────────────────────────────
     Route::middleware(['auth:admin', 'admin.permission:deductions,can_read'])->group(function () {
@@ -418,7 +440,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         ->name('kpi.delete_definition')->middleware(['auth:admin', 'admin.permission:kpi,can_delete']);
 
     // ─────────────────────────────────────────────
-    //  مسير الرواتب — payroll
+    //  كشف الرواتب — payroll
     //  ⚠️ الـ routes الثابتة يجب أن تكون قبل payroll/{id}
     // ─────────────────────────────────────────────
     Route::middleware(['auth:admin', 'admin.permission:payroll,can_read'])->group(function () {
@@ -431,6 +453,8 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     });
     Route::get('payroll/approve/{id}', [PayrollController::class, 'approve'])
         ->name('payroll.approve')->middleware(['auth:admin', 'admin.permission:payroll,can_update']);
+    Route::get('payroll/unapprove/{id}', [PayrollController::class, 'unapprove'])
+        ->name('payroll.unapprove')->middleware(['auth:admin', 'admin.permission:payroll,can_update']);
     Route::get('payroll/delete/{id}', [PayrollController::class, 'delete'])
         ->name('payroll.delete')->middleware(['auth:admin', 'admin.permission:payroll,can_delete']);
     // payroll/{id} يجب أن يكون آخراً لأنه wildcard يلتقط أي نص
@@ -475,8 +499,11 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('reports',            [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports.index');
         Route::get('reports/attendance', [\App\Http\Controllers\Admin\ReportsController::class, 'attendance'])->name('reports.attendance');
         Route::get('reports/employees',  [\App\Http\Controllers\Admin\ReportsController::class, 'employees'])->name('reports.employees');
-        Route::get('reports/advances',   [\App\Http\Controllers\Admin\ReportsController::class, 'advances'])->name('reports.advances');
-        Route::get('reports/vacations',  [\App\Http\Controllers\Admin\ReportsController::class, 'vacations'])->name('reports.vacations');
+        Route::get('reports/advances',     [\App\Http\Controllers\Admin\ReportsController::class, 'advances'])->name('reports.advances');
+        Route::get('reports/vacations',    [\App\Http\Controllers\Admin\ReportsController::class, 'vacations'])->name('reports.vacations');
+        Route::get('reports/commissions',  [\App\Http\Controllers\Admin\ReportsController::class, 'commissions'])->name('reports.commissions');
+        Route::get('reports/kpi',          [\App\Http\Controllers\Admin\ReportsController::class, 'kpiReport'])->name('reports.kpi');
+        Route::get('reports/payroll',      [\App\Http\Controllers\Admin\ReportsController::class, 'payroll'])->name('reports.payroll');
     });
 
     // ─────────────────────────────────────────────

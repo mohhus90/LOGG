@@ -254,28 +254,59 @@ class KpiController extends Controller
     // ─────────────────────────────────────────────
     public function report(Request $request)
     {
-        $month  = $request->month ?? now()->month;
-        $year   = $request->year  ?? now()->year;
+        $month      = $request->month      ?? now()->month;
+        $year       = $request->year       ?? now()->year;
+        $employeeId = $request->employee_id ?? null;
+        $kpiId      = $request->kpi_id      ?? null;
+        $category   = $request->category    ?? null;
+        $sort       = in_array($request->sort, ['score','achievement','bonus','name']) ? $request->sort : 'score';
+        $dir        = $request->dir === 'asc' ? 'asc' : 'desc';
 
-        $scores = KpiEmployeeScore::with(['employee', 'kpi'])
+        $orderColumn = Schema::hasColumn('kpi_definitions', 'sort_order') ? 'sort_order' : 'id';
+        $employees = Employee::where('com_code', $this->comCode())->orderBy('employee_name_A')->get();
+        $kpiDefs   = KpiDefinition::where('com_code', $this->comCode())->where('is_active', 1)->orderBy($orderColumn)->get();
+
+        $query = KpiEmployeeScore::with(['employee', 'kpi'])
             ->where('com_code', $this->comCode())
-            ->where('month', $month)->where('year', $year)
-            ->get();
+            ->where('month', $month)->where('year', $year);
+
+        if ($employeeId) $query->where('employee_id', $employeeId);
+        if ($kpiId)      $query->where('kpi_id', $kpiId);
+        if ($category) {
+            $catKpiIds = KpiDefinition::where('com_code', $this->comCode())
+                ->where('category', $category)->pluck('id');
+            $query->whereIn('kpi_id', $catKpiIds);
+        }
+
+        $scores = $query->get();
 
         $byEmployee = $scores->groupBy('employee_id')->map(function ($empScores) {
             $emp = $empScores->first()->employee;
             return [
                 'employee'        => $emp,
-                'total_score'     => $empScores->sum('score'),
-                'avg_achievement' => $empScores->avg('achievement_pct'),
+                'total_score'     => round($empScores->sum('score'), 2),
+                'avg_achievement' => round($empScores->avg('achievement_pct'), 1),
                 'total_bonus'     => $empScores->where('effect_direction', 1)->sum('salary_effect_amount'),
                 'total_deduction' => $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
                 'net_effect'      => $empScores->where('effect_direction', 1)->sum('salary_effect_amount')
                                    - $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
                 'scores'          => $empScores,
             ];
-        })->sortByDesc('total_score');
+        });
 
-        return view('admin.kpi.report', compact('byEmployee', 'month', 'year'));
+        $byEmployee = match ($sort) {
+            'achievement' => $dir === 'desc' ? $byEmployee->sortByDesc('avg_achievement') : $byEmployee->sortBy('avg_achievement'),
+            'bonus'       => $dir === 'desc' ? $byEmployee->sortByDesc('net_effect')      : $byEmployee->sortBy('net_effect'),
+            'name'        => $dir === 'desc'
+                ? $byEmployee->sortByDesc(fn($d) => $d['employee']->employee_name_A ?? '')
+                : $byEmployee->sortBy(fn($d) => $d['employee']->employee_name_A ?? ''),
+            default       => $dir === 'desc' ? $byEmployee->sortByDesc('total_score')     : $byEmployee->sortBy('total_score'),
+        };
+
+        return view('admin.kpi.report', compact(
+            'byEmployee', 'month', 'year',
+            'employees', 'kpiDefs',
+            'sort', 'dir', 'employeeId', 'kpiId', 'category'
+        ));
     }
 }

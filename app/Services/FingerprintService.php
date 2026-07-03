@@ -696,10 +696,11 @@ class FingerprintService
 
                     // إذا وصلت بصمة واحدة جديدة لموظف عنده حضور مُسجل مع انصراف مفقود
                     // → البصمة الجديدة هي الانصراف وليست حضوراً جديداً، ويجب الحفاظ على وقت الحضور المُخزن
+                    // ملاحظة: يشترط فارق لا يقل عن 5 دقائق لتمييز الانصراف الفعلي عن إعادة معالجة نفس بصمة الحضور
                     if ($isSinglePunch && $att->exists && $att->check_in_time && $att->missing_punch === 'out') {
                         $newPunchTime  = $firstPunch->punch_time;
                         $storedCheckIn = Carbon::parse($dateStr . ' ' . $att->check_in_time);
-                        if ($newPunchTime->gt($storedCheckIn)) {
+                        if ($newPunchTime->diffInMinutes($storedCheckIn, true) >= 5 && $newPunchTime->gt($storedCheckIn)) {
                             $checkIn      = $att->check_in_time;
                             $checkOut     = $newPunchTime->format('H:i');
                             $isSinglePunch = false;

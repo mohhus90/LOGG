@@ -40,7 +40,7 @@
     ② <a href="{{ route('branch_commissions.targets') }}">تحديد التارجت الشهري لكل فرع</a> →
     ③ <a href="{{ route('commissions_v2.sales') }}">إدخال مبيعات الموظفين</a> →
     ④ <a href="{{ route('branch_commissions.calculate') }}">احتساب العمولات تلقائياً</a> →
-    ⑤ الاعتماد → تدخل مسير الرواتب
+    ⑤ الاعتماد → تدخل كشف الرواتب
   </div>
 
   <div class="card-body">

@@ -845,7 +845,7 @@
           </div>
           <div class="example-step">
             <div class="step-num">4</div>
-            <div class="step-content">عند احتساب الراتب، سيُضاف KPI تلقائياً في <strong>مسير الرواتب</strong></div>
+            <div class="step-content">عند احتساب الراتب، سيُضاف KPI تلقائياً في <strong>كشف الرواتب</strong></div>
           </div>
         </div>
       </div>
@@ -869,7 +869,7 @@
 
       <div class="info-box">
         <div class="box-title">❓ هل المؤشرات المحددة "للإحصاء فقط" تؤثر على الدرجة الإجمالية؟</div>
-        نعم — تؤثر على الدرجة والترتيب في التقرير، لكن لا تُضاف أي مبالغ لمسير الرواتب.
+        نعم — تؤثر على الدرجة والترتيب في التقرير، لكن لا تُضاف أي مبالغ لكشف الرواتب.
       </div>
 
       <div class="info-box">
@@ -879,7 +879,7 @@
 
       <div class="info-box">
         <div class="box-title">❓ كيف يُضاف مبلغ KPI في الراتب بالضبط؟</div>
-        في مسير الرواتب: <br>
+        في كشف الرواتب: <br>
         <code>الراتب الصافي = الأساسي + البدلات + الأوفرتايم + العمولات + مكافآت KPI − خصومات KPI</code>
       </div>
     </div>

@@ -89,7 +89,7 @@
                 placeholder="مثال: 0.5 = نصف يوم">
               <div class="input-group-append"><span class="input-group-text">يوم</span></div>
             </div>
-            <small class="text-muted">يُحسب التأثير المالي من راتب الموظف في مسير الرواتب</small>
+            <small class="text-muted">يُحسب التأثير المالي من راتب الموظف في كشف الرواتب</small>
           </div>
           <div class="col-md-4 form-group">
             <label>شهر الاستقطاع من الراتب</label>

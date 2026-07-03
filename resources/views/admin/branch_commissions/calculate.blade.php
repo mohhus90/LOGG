@@ -213,12 +213,13 @@
                       value="{{ $bItem['type'] }}">
                     <input type="hidden" name="entries[{{ $entryIndex }}][plan_name]"
                       value="{{ $item['plan']->name }}">
-                    @if($bIdx === 0)
-                    <input type="checkbox" name="entries[{{ $entryIndex }}][approved]"
-                      value="1"
-                      class="com-check plan-{{ $item['plan']->id }}"
-                      {{ $memberData['commission'] > 0 ? 'checked' : 'disabled' }}>
-                    @endif
+                    <div>
+                      <input type="checkbox" name="entries[{{ $entryIndex }}][approved]"
+                        value="1"
+                        class="com-check plan-{{ $item['plan']->id }}"
+                        title="{{ $bItem['type'] }}: {{ number_format($bItem['amount'], 2) }} ج.م"
+                        {{ $bItem['amount'] > 0 ? 'checked' : 'disabled' }}>
+                    </div>
                     @php $entryIndex++; @endphp
                   @endforeach
                 @else

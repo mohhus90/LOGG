@@ -24,7 +24,7 @@ class AdminModulesSeeder extends Seeder
             ['module_key' => 'advances',          'module_name' => 'السلف',                'module_icon' => 'fas fa-hand-holding-usd', 'sort_order' => 8],
             ['module_key' => 'commissions',       'module_name' => 'العمولات',             'module_icon' => 'fas fa-percentage',    'sort_order' => 9],
             ['module_key' => 'deductions',        'module_name' => 'الخصومات',             'module_icon' => 'fas fa-minus-circle',  'sort_order' => 10],
-            ['module_key' => 'payroll',           'module_name' => 'مسير الرواتب',         'module_icon' => 'fas fa-money-check-alt', 'sort_order' => 11],
+            ['module_key' => 'payroll',           'module_name' => 'كشف الرواتب',          'module_icon' => 'fas fa-money-check-alt', 'sort_order' => 11],
             ['module_key' => 'kpi',               'module_name' => 'مؤشرات الأداء',        'module_icon' => 'fas fa-chart-line',    'sort_order' => 12],
             ['module_key' => 'branch_commissions','module_name' => 'عمولات الفروع',        'module_icon' => 'fas fa-code-branch',   'sort_order' => 13],
             ['module_key' => 'finance_calender',  'module_name' => 'السنوات المالية',      'module_icon' => 'fas fa-calendar-alt', 'sort_order' => 14],
