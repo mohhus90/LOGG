@@ -801,23 +801,23 @@
 
             {{-- 10. Quality --}}
             <div class="col-xl-3 col-lg-4 col-md-6 reveal">
-                <div class="module-card coming-soon mod-qual">
+                <a href="{{ route('quality_reports.index') }}" class="module-card active-module mod-qual">
                     <div class="module-icon-wrap icon-qual">
                         <i class="fas fa-certificate"></i>
                     </div>
                     <div class="module-title">ضبط الجودة</div>
                     <div class="module-subtitle">Quality Control</div>
-                    <span class="module-badge badge-soon">
-                        <i class="fas fa-clock" style="font-size:9px; margin-left:5px;"></i>
-                        قريباً
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
                     </span>
                     <div class="module-features">
-                        <span class="feature-tag">معايير الجودة</span>
+                        <span class="feature-tag">قوالب الفحص</span>
                         <span class="feature-tag">الفحص</span>
-                        <span class="feature-tag">المرتجعات</span>
+                        <span class="feature-tag">أوامر الإنتاج</span>
                         <span class="feature-tag">التقارير</span>
                     </div>
-                </div>
+                </a>
             </div>
 
             {{-- 11. BI & Analytics --}}

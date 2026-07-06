@@ -1172,6 +1172,45 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('manufacturing/reports/cost-summary',  [\App\Http\Controllers\Admin\Manufacturing\ManufacturingReportsController::class, 'costSummary'])->name('manufacturing_reports.cost_summary');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول ضبط الجودة — Quality Control Module
+    // ═════════════════════════════════════════════
+
+    // ── قوالب الفحص ──
+    Route::middleware(['auth:admin', 'admin.permission:quality_checklists,can_read'])->group(function () {
+        Route::get('quality/checklists',            [\App\Http\Controllers\Admin\Quality\QualityChecklistsController::class, 'index'])->name('quality_checklists.index');
+        Route::get('quality/checklists/{id}',       [\App\Http\Controllers\Admin\Quality\QualityChecklistsController::class, 'show'])->where('id', '[0-9]+')->name('quality_checklists.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:quality_checklists,can_create'])->group(function () {
+        Route::get('quality/checklists/create',     [\App\Http\Controllers\Admin\Quality\QualityChecklistsController::class, 'create'])->name('quality_checklists.create');
+        Route::post('quality/checklists/store',     [\App\Http\Controllers\Admin\Quality\QualityChecklistsController::class, 'store'])->name('quality_checklists.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:quality_checklists,can_update'])->group(function () {
+        Route::get('quality/checklists/{id}/edit',  [\App\Http\Controllers\Admin\Quality\QualityChecklistsController::class, 'edit'])->where('id', '[0-9]+')->name('quality_checklists.edit');
+        Route::post('quality/checklists/{id}',      [\App\Http\Controllers\Admin\Quality\QualityChecklistsController::class, 'update'])->where('id', '[0-9]+')->name('quality_checklists.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:quality_checklists,can_delete'])->group(function () {
+        Route::get('quality/checklists/{id}/delete',[\App\Http\Controllers\Admin\Quality\QualityChecklistsController::class, 'delete'])->where('id', '[0-9]+')->name('quality_checklists.delete');
+    });
+
+    // ── فحوصات الجودة ──
+    Route::middleware(['auth:admin', 'admin.permission:quality_inspections,can_read'])->group(function () {
+        Route::get('quality/inspections',            [\App\Http\Controllers\Admin\Quality\QualityInspectionsController::class, 'index'])->name('quality_inspections.index');
+        Route::get('quality/inspections/{id}',       [\App\Http\Controllers\Admin\Quality\QualityInspectionsController::class, 'show'])->where('id', '[0-9]+')->name('quality_inspections.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:quality_inspections,can_create'])->group(function () {
+        Route::get('quality/inspections/create',     [\App\Http\Controllers\Admin\Quality\QualityInspectionsController::class, 'create'])->name('quality_inspections.create');
+        Route::post('quality/inspections/store',     [\App\Http\Controllers\Admin\Quality\QualityInspectionsController::class, 'store'])->name('quality_inspections.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:quality_inspections,can_delete'])->group(function () {
+        Route::get('quality/inspections/{id}/delete',[\App\Http\Controllers\Admin\Quality\QualityInspectionsController::class, 'delete'])->where('id', '[0-9]+')->name('quality_inspections.delete');
+    });
+
+    // ── تقارير الجودة ──
+    Route::middleware(['auth:admin', 'admin.permission:quality_reports,can_read'])->group(function () {
+        Route::get('quality/reports',                [\App\Http\Controllers\Admin\Quality\QualityReportsController::class, 'index'])->name('quality_reports.index');
+    });
+
 });
 
 // ─────────────────────────────────────────────
