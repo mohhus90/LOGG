@@ -26,6 +26,16 @@
       <i class="fas fa-edit ml-2"></i>إدخال قراءات الأداء الشهرية
     </h3>
     <div class="card-tools">
+      <a href="{{ route('kpi.guide') }}" class="btn btn-sm btn-secondary" target="_blank">
+        <i class="fas fa-book ml-1"></i>دليل KPI
+      </a>
+      <a href="{{ route('kpi.export_template', ['month'=>request('month',now()->month),'year'=>request('year',now()->year)]) }}"
+         class="btn btn-sm btn-success mx-1">
+        <i class="fas fa-file-excel ml-1"></i>تحميل شيت Excel
+      </a>
+      <button type="button" class="btn btn-sm btn-warning mx-1" data-toggle="modal" data-target="#importModal">
+        <i class="fas fa-file-import ml-1"></i>استيراد Excel
+      </button>
       <a href="{{ route('kpi.report') }}" class="btn btn-sm btn-info">
         <i class="fas fa-chart-bar ml-1"></i>عرض التقرير
       </a>
@@ -155,6 +165,69 @@
   @endif
 </div>
 </div>
+
+{{-- ═══ Modal: استيراد Excel ═══ --}}
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title"><i class="fas fa-file-import ml-2"></i>استيراد قراءات KPI من Excel</h5>
+        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+      </div>
+      <form action="{{ route('kpi.import_scores') }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle ml-1"></i>
+            قم بتحميل النموذج أولاً، أدخل القيم الفعلية في الخلايا الصفراء، ثم ارفع الملف هنا.
+          </div>
+
+          <div class="form-group">
+            <label>الشهر</label>
+            <select name="month" class="form-control">
+              @foreach(range(1,12) as $m)
+                <option value="{{ $m }}" {{ $m == $month ? 'selected' : '' }}>
+                  {{ \Carbon\Carbon::create(null,$m)->locale('ar')->monthName }}
+                </option>
+              @endforeach
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>السنة</label>
+            <input type="number" name="year" class="form-control" value="{{ $year }}" min="2020" max="2099">
+          </div>
+
+          <div class="form-group">
+            <label>ملف Excel <span class="text-danger">*</span></label>
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" name="kpi_file" id="kpiFileInput"
+                     accept=".xlsx,.xls" required>
+              <label class="custom-file-label" for="kpiFileInput">اختر الملف...</label>
+            </div>
+            <small class="text-muted">الصيغة المقبولة: xlsx أو xls</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-warning">
+            <i class="fas fa-upload ml-1"></i>استيراد
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+@push('scripts')
+<script>
+document.getElementById('kpiFileInput')?.addEventListener('change', function(){
+  var label = this.nextElementSibling;
+  label.textContent = this.files[0]?.name || 'اختر الملف...';
+});
+</script>
+@endpush
+
 @endsection
 
 @section('script')

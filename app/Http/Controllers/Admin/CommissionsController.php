@@ -98,4 +98,47 @@ class CommissionsController extends Controller
         Commission::where('com_code', $this->comCode())->findOrFail($id)->delete();
         return redirect()->route('commissions.index')->with('success', 'تم حذف العمولة بنجاح');
     }
+
+    public function report(Request $request)
+    {
+        $employees = $this->employees();
+
+        $commissionTypes = Commission::where('com_code', $this->comCode())
+            ->whereNotNull('commission_type')->where('commission_type', '!=', '')
+            ->distinct()->orderBy('commission_type')->pluck('commission_type');
+
+        $sort = in_array($request->sort, ['amount', 'date', 'month']) ? $request->sort : 'date';
+        $dir  = $request->dir === 'asc' ? 'asc' : 'desc';
+
+        $query = Commission::with('employee')
+            ->where('com_code', $this->comCode());
+
+        if ($request->filled('employee_id'))     $query->where('employee_id', $request->employee_id);
+        if ($request->filled('month'))           $query->where('month', $request->month);
+        if ($request->filled('year'))            $query->where('year', $request->year);
+        if ($request->filled('status'))          $query->where('status', $request->status);
+        if ($request->filled('commission_type')) $query->where('commission_type', $request->commission_type);
+
+        match ($sort) {
+            'amount' => $query->orderBy('amount', $dir),
+            'month'  => $query->orderBy('year', $dir)->orderBy('month', $dir),
+            default  => $query->orderBy('commission_date', $dir),
+        };
+
+        // إجماليات بدون فلتر الحالة لعرض كل الأعمدة
+        $summaryQuery = Commission::where('com_code', $this->comCode());
+        if ($request->filled('employee_id'))     $summaryQuery->where('employee_id', $request->employee_id);
+        if ($request->filled('month'))           $summaryQuery->where('month', $request->month);
+        if ($request->filled('year'))            $summaryQuery->where('year', $request->year);
+        if ($request->filled('commission_type')) $summaryQuery->where('commission_type', $request->commission_type);
+
+        $summary = $summaryQuery->selectRaw('status, SUM(amount) as total, COUNT(*) as cnt')
+            ->groupBy('status')->get()->keyBy('status');
+
+        $data = $query->paginate(25)->withQueryString();
+
+        return view('admin.commissions.report', compact(
+            'data', 'employees', 'commissionTypes', 'summary', 'sort', 'dir'
+        ));
+    }
 }

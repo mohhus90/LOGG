@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\KpiDefinition;
 use App\Models\KpiEmployeeScore;
 use App\Models\Employee;
+use App\Exports\KpiTemplateExport;
+use App\Imports\KpiScoresImport;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KpiController extends Controller
 {
@@ -189,32 +192,121 @@ class KpiController extends Controller
     }
 
     // ─────────────────────────────────────────────
+    // دليل KPI (طباعة / PDF)
+    // ─────────────────────────────────────────────
+    public function guide()
+    {
+        return view('admin.kpi.guide');
+    }
+
+    // ─────────────────────────────────────────────
+    // تصدير نموذج Excel للمديرين
+    // ─────────────────────────────────────────────
+    public function exportTemplate(Request $request)
+    {
+        $month   = (int) ($request->month ?? now()->month);
+        $year    = (int) ($request->year  ?? now()->year);
+        $admin   = Auth::guard('admin')->user();
+
+        $monthName = \Carbon\Carbon::create($year, $month, 1)->locale('ar')->monthName;
+        $filename  = "kpi_template_{$year}_{$month}.xlsx";
+
+        return Excel::download(
+            new KpiTemplateExport($month, $year, (int)$admin->com_code, $admin->id),
+            $filename
+        );
+    }
+
+    // ─────────────────────────────────────────────
+    // استيراد ملف Excel المملوء من المديرين
+    // ─────────────────────────────────────────────
+    public function importScores(Request $request)
+    {
+        $request->validate([
+            'kpi_file' => 'required|file|mimes:xlsx,xls',
+            'month'    => 'required|integer|between:1,12',
+            'year'     => 'required|integer|min:2020',
+        ], [
+            'kpi_file.required' => 'يرجى اختيار ملف Excel',
+            'kpi_file.mimes'    => 'الملف يجب أن يكون بصيغة xlsx أو xls',
+        ]);
+
+        $admin  = Auth::guard('admin')->user();
+        $month  = (int) $request->month;
+        $year   = (int) $request->year;
+
+        $import = new KpiScoresImport($month, $year, (int)$admin->com_code, $admin->id);
+        Excel::import($import, $request->file('kpi_file'));
+
+        if (!empty($import->errors)) {
+            return back()->with('warning',
+                "تم الاستيراد جزئياً — تم: {$import->imported} | تجاهل: {$import->skipped}<br>" .
+                implode('<br>', $import->errors)
+            );
+        }
+
+        return redirect()->route('kpi.scores', ['month' => $month, 'year' => $year])
+            ->with('success', "✅ تم استيراد {$import->imported} قراءة من ملف Excel بنجاح.");
+    }
+
+    // ─────────────────────────────────────────────
     // تقرير KPI الشهري
     // ─────────────────────────────────────────────
     public function report(Request $request)
     {
-        $month  = $request->month ?? now()->month;
-        $year   = $request->year  ?? now()->year;
+        $month      = $request->month      ?? now()->month;
+        $year       = $request->year       ?? now()->year;
+        $employeeId = $request->employee_id ?? null;
+        $kpiId      = $request->kpi_id      ?? null;
+        $category   = $request->category    ?? null;
+        $sort       = in_array($request->sort, ['score','achievement','bonus','name']) ? $request->sort : 'score';
+        $dir        = $request->dir === 'asc' ? 'asc' : 'desc';
 
-        $scores = KpiEmployeeScore::with(['employee', 'kpi'])
+        $orderColumn = Schema::hasColumn('kpi_definitions', 'sort_order') ? 'sort_order' : 'id';
+        $employees = Employee::where('com_code', $this->comCode())->orderBy('employee_name_A')->get();
+        $kpiDefs   = KpiDefinition::where('com_code', $this->comCode())->where('is_active', 1)->orderBy($orderColumn)->get();
+
+        $query = KpiEmployeeScore::with(['employee', 'kpi'])
             ->where('com_code', $this->comCode())
-            ->where('month', $month)->where('year', $year)
-            ->get();
+            ->where('month', $month)->where('year', $year);
+
+        if ($employeeId) $query->where('employee_id', $employeeId);
+        if ($kpiId)      $query->where('kpi_id', $kpiId);
+        if ($category) {
+            $catKpiIds = KpiDefinition::where('com_code', $this->comCode())
+                ->where('category', $category)->pluck('id');
+            $query->whereIn('kpi_id', $catKpiIds);
+        }
+
+        $scores = $query->get();
 
         $byEmployee = $scores->groupBy('employee_id')->map(function ($empScores) {
             $emp = $empScores->first()->employee;
             return [
                 'employee'        => $emp,
-                'total_score'     => $empScores->sum('score'),
-                'avg_achievement' => $empScores->avg('achievement_pct'),
+                'total_score'     => round($empScores->sum('score'), 2),
+                'avg_achievement' => round($empScores->avg('achievement_pct'), 1),
                 'total_bonus'     => $empScores->where('effect_direction', 1)->sum('salary_effect_amount'),
                 'total_deduction' => $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
                 'net_effect'      => $empScores->where('effect_direction', 1)->sum('salary_effect_amount')
                                    - $empScores->where('effect_direction', 2)->sum('salary_effect_amount'),
                 'scores'          => $empScores,
             ];
-        })->sortByDesc('total_score');
+        });
 
-        return view('admin.kpi.report', compact('byEmployee', 'month', 'year'));
+        $byEmployee = match ($sort) {
+            'achievement' => $dir === 'desc' ? $byEmployee->sortByDesc('avg_achievement') : $byEmployee->sortBy('avg_achievement'),
+            'bonus'       => $dir === 'desc' ? $byEmployee->sortByDesc('net_effect')      : $byEmployee->sortBy('net_effect'),
+            'name'        => $dir === 'desc'
+                ? $byEmployee->sortByDesc(fn($d) => $d['employee']->employee_name_A ?? '')
+                : $byEmployee->sortBy(fn($d) => $d['employee']->employee_name_A ?? ''),
+            default       => $dir === 'desc' ? $byEmployee->sortByDesc('total_score')     : $byEmployee->sortBy('total_score'),
+        };
+
+        return view('admin.kpi.report', compact(
+            'byEmployee', 'month', 'year',
+            'employees', 'kpiDefs',
+            'sort', 'dir', 'employeeId', 'kpiId', 'category'
+        ));
     }
 }

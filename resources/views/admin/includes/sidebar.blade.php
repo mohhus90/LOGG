@@ -1,13 +1,25 @@
 {{-- FILE: resources/views/admin/includes/sidebar.blade.php --}}
 
 <div class="sidebar">
-  <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
-    <div class="info">
-      <a href="#" class="d-block">{{ Auth::guard('admin')->user()->name }}</a>
-      @if(Auth::guard('admin')->user()->is_super_admin)
-        <span class="badge badge-warning badge-sm">{{ __('admin.super_admin') }}</span>
-      @endif
-      <small class="text-muted d-block">{{ Auth::guard('admin')->user()->company?->name }}</small>
+  <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center"
+       style="border-bottom:1px solid rgba(255,255,255,.1)">
+    <div class="info w-100">
+      <div class="d-flex align-items-center justify-content-between">
+        <span class="text-white font-weight-bold" style="font-size:.9rem">
+          <i class="fas fa-users ml-1" style="color:#818cf8"></i>
+          موديول HR
+        </span>
+        <a href="{{ route('admin.dashboard.home.page') }}"
+           class="btn btn-xs" title="تبديل الموديول"
+           style="background:rgba(255,255,255,.1);color:#aaa;font-size:.75rem;padding:3px 8px;border-radius:4px">
+          <i class="fas fa-th-large"></i>
+        </a>
+      </div>
+      <small class="text-muted d-block mt-1">{{ Auth::guard('admin')->user()->name }}
+        @if(Auth::guard('admin')->user()->is_super_admin)
+          <span class="badge badge-warning badge-sm" style="font-size:.65em">{{ __('admin.super_admin') }}</span>
+        @endif
+      </small>
     </div>
   </div>
 
@@ -154,6 +166,11 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="{{ route('attendance.range_batch_create') }}" class="nav-link {{ request()->routeIs('attendance.range_batch_create') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-calendar-alt"></i><p>{{ __('admin.att_range_batch_entry') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="{{ route('attendance.excel_import_form') }}" class="nav-link {{ request()->routeIs('attendance.excel_import_form') ? 'active' : '' }}">
               <i class="nav-icon fas fa-file-excel"></i>
               <p>{{ __('admin.excel_import') }} <small class="badge badge-warning mr-1">Finger ID</small></p>
@@ -218,7 +235,7 @@
 
       {{-- Payroll --}}
       @php
-        $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/deductions*','admin/dashboard/payroll*');
+        $payrollOpen = request()->is('admin/dashboard/advances*','admin/dashboard/commissions*','admin/dashboard/branch_commissions*','admin/dashboard/deductions*','admin/dashboard/bonuses*','admin/dashboard/payroll*');
       @endphp
       <li class="nav-item has-treeview {{ $payrollOpen ? 'menu-open' : '' }}">
         <a href="#" class="nav-link {{ $payrollOpen ? 'active' : '' }}">
@@ -232,7 +249,7 @@
             </a>
           </li>
 
-          @php $commOpen = request()->is('admin/dashboard/commissions*'); @endphp
+          @php $commOpen = request()->is('admin/dashboard/commissions*','admin/dashboard/branch_commissions*'); @endphp
           <li class="nav-item has-treeview {{ $commOpen ? 'menu-open' : '' }}">
             <a href="#" class="nav-link {{ $commOpen ? 'active' : '' }}">
               <i class="nav-icon fas fa-percentage"></i>
@@ -259,12 +276,51 @@
                   <i class="nav-icon fas fa-calculator"></i><p>{{ __('admin.calculate_commissions') }}</p>
                 </a>
               </li>
+              @php $bcOpen = request()->is('admin/dashboard/branch_commissions*'); @endphp
+              <li class="nav-item has-treeview {{ $bcOpen ? 'menu-open' : '' }}">
+                <a href="#" class="nav-link {{ $bcOpen ? 'active' : '' }}">
+                  <i class="nav-icon fas fa-store"></i>
+                  <p>عمولات الفروع (التارجت) <i class="right fas fa-angle-left"></i></p>
+                </a>
+                <ul class="nav nav-treeview">
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.index') }}" class="nav-link {{ request()->routeIs('branch_commissions.index') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-list"></i><p>الخطط</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.targets') }}" class="nav-link {{ request()->routeIs('branch_commissions.targets') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-bullseye"></i><p>تارجت الفروع</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.employee_targets') }}" class="nav-link {{ request()->routeIs('branch_commissions.employee_targets') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-user-tag"></i><p>تارجت الموظفين</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.events') }}" class="nav-link {{ request()->routeIs('branch_commissions.events') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-exchange-alt"></i><p>أحداث منتصف الشهر</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ route('branch_commissions.calculate') }}" class="nav-link {{ request()->routeIs('branch_commissions.calculate') ? 'active' : '' }}">
+                      <i class="nav-icon fas fa-calculator"></i><p>احتساب العمولات</p>
+                    </a>
+                  </li>
+                </ul>
+              </li>
             </ul>
           </li>
 
           <li class="nav-item">
             <a href="{{ route('deductions.index') }}" class="nav-link {{ request()->is('admin/dashboard/deductions*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-minus-circle"></i><p>{{ __('admin.deductions') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('bonuses.index') }}" class="nav-link {{ request()->is('admin/dashboard/bonuses*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-gift"></i><p>المكافآت</p>
             </a>
           </li>
           <li class="nav-item">

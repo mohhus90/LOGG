@@ -14,13 +14,13 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # localhost: Alias /NEXA → public, so index.php lives at /NEXA/index.php
+    # XAMPP (localhost or IP): Alias /NEXA → public, so route through /NEXA/index.php
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{HTTP_HOST} ^localhost$ [NC]
+    RewriteCond %{REQUEST_URI} ^/NEXA/
     RewriteRule ^ /NEXA/index.php [L]
 
-    # production (nexaerp.duckdns.org): DocumentRoot = public, index.php is at /
+    # Production (DocumentRoot = public): route through /index.php
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ /index.php [L]

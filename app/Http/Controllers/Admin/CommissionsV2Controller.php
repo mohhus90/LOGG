@@ -82,23 +82,93 @@ class CommissionsV2Controller extends Controller
             ->with('success', 'تم إضافة قاعدة العمولة بنجاح');
     }
 
-    // ── إدخال المبيعات ──
+    // ── إدخال المبيعات (عرض الجدول الكامل) ──
     public function sales(Request $request)
     {
-        $month     = $request->month ?? now()->month;
-        $year      = $request->year  ?? now()->year;
-        $employees = Employee::where('com_code', $this->comCode())
-            ->orderBy('employee_name_A')->get();
-        $branches  = Branche::where('com_code', $this->comCode())->get();
+        $month    = $request->month ?? now()->month;
+        $year     = $request->year  ?? now()->year;
 
-        $existing = SalesRecord::where('com_code', $this->comCode())
+        $records  = SalesRecord::where('com_code', $this->comCode())
             ->where('month', $month)->where('year', $year)
-            ->get()->groupBy('employee_id');
+            ->with(['employee', 'branch'])
+            ->orderBy('branch_id')->orderBy('employee_id')
+            ->get();
+
+        $employees   = Employee::where('com_code', $this->comCode())->orderBy('employee_name_A')->get();
+        $branches    = Branche::where('com_code', $this->comCode())->get();
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
         return view('admin.commissions_v2.sales',
-            compact('employees', 'branches', 'month', 'year', 'existing'));
+            compact('records', 'employees', 'branches', 'month', 'year', 'daysInMonth'));
     }
 
+    // ── إضافة سجل مبيعات واحد ──
+    public function storeSaleRecord(Request $request)
+    {
+        $request->validate([
+            'employee_id'  => 'required|integer',
+            'branch_id'    => 'required|integer',
+            'sales_amount' => 'required|numeric|min:0',
+            'month'        => 'required|integer',
+            'year'         => 'required|integer',
+        ]);
+
+        $admin = Auth::guard('admin')->user();
+
+        SalesRecord::create([
+            'employee_id'  => $request->employee_id,
+            'branch_id'    => $request->branch_id,
+            'month'        => $request->month,
+            'year'         => $request->year,
+            'sales_amount' => $request->sales_amount,
+            'from_day'     => $request->from_day ?: null,
+            'to_day'       => $request->to_day   ?: null,
+            'notes'        => $request->notes,
+            'sales_type'   => 'manual',
+            'com_code'     => $admin->com_code,
+            'added_by'     => $admin->id,
+        ]);
+
+        return redirect()->route('commissions_v2.sales', ['month' => $request->month, 'year' => $request->year])
+            ->with('success', 'تم إضافة سجل المبيعات');
+    }
+
+    // ── تعديل سجل مبيعات ──
+    public function updateSaleRecord(Request $request, int $id)
+    {
+        $request->validate([
+            'employee_id'  => 'required|integer',
+            'branch_id'    => 'required|integer',
+            'sales_amount' => 'required|numeric|min:0',
+        ]);
+
+        $record = SalesRecord::where('com_code', $this->comCode())->findOrFail($id);
+        $record->update([
+            'employee_id'  => $request->employee_id,
+            'branch_id'    => $request->branch_id,
+            'sales_amount' => $request->sales_amount,
+            'from_day'     => $request->from_day ?: null,
+            'to_day'       => $request->to_day   ?: null,
+            'notes'        => $request->notes,
+        ]);
+
+        return redirect()->route('commissions_v2.sales', ['month' => $record->month, 'year' => $record->year])
+            ->with('success', 'تم تحديث السجل');
+    }
+
+    // ── حذف سجل مبيعات ──
+    public function deleteSaleRecord(int $id)
+    {
+        $record = SalesRecord::where('com_code', $this->comCode())->findOrFail($id);
+        $month  = $record->month;
+        $year   = $record->year;
+        $record->delete();
+
+        return redirect()->route('commissions_v2.sales', ['month' => $month, 'year' => $year])
+            ->with('success', 'تم الحذف');
+    }
+
+    // saveSales: يُبقى للتوافق مع الكود القديم
     public function saveSales(Request $request)
     {
         $month = $request->month;
@@ -121,7 +191,7 @@ class CommissionsV2Controller extends Controller
         }
 
         return redirect()->route('commissions_v2.calculate', ['month' => $month, 'year' => $year])
-            ->with('success', 'تم حفظ المبيعات. يمكنك الآن احتساب العمولات.');
+            ->with('success', 'تم حفظ المبيعات.');
     }
 
     // ── احتساب العمولات تلقائياً من قواعد المبيعات ──
@@ -193,18 +263,24 @@ class CommissionsV2Controller extends Controller
             foreach ($request->approve ?? [] as $empId => $commissions) {
                 foreach ($commissions as $commissionData) {
                     if (!($commissionData['approved'] ?? false)) continue;
-                    Commission::create([
-                        'employee_id'      => $empId,
-                        'commission_date'  => now()->format('Y-m-d'),
-                        'commission_type'  => $commissionData['rule'],
-                        'amount'           => $commissionData['amount'],
-                        'month'            => $month,
-                        'year'             => $year,
-                        'status'           => 1,
-                        'notes'            => 'محتسبة تلقائياً من قاعدة: ' . $commissionData['rule'],
-                        'com_code'         => $admin->com_code,
-                        'added_by'         => $admin->id,
-                    ]);
+                    // updateOrCreate بدل create: لو العمولة دي (نفس الموظف/الشهر/القاعدة)
+                    // معتمدة بالفعل من قبل، تُحدَّث قيمتها فقط بدل تكرارها كسجل جديد
+                    Commission::updateOrCreate(
+                        [
+                            'employee_id'     => $empId,
+                            'month'           => $month,
+                            'year'            => $year,
+                            'commission_type' => $commissionData['rule'],
+                            'com_code'        => $admin->com_code,
+                        ],
+                        [
+                            'commission_date' => now()->format('Y-m-d'),
+                            'amount'          => $commissionData['amount'],
+                            'status'          => 1,
+                            'notes'           => 'محتسبة تلقائياً من قاعدة: ' . $commissionData['rule'],
+                            'added_by'        => $admin->id,
+                        ]
+                    );
                 }
             }
             DB::commit();
@@ -214,7 +290,7 @@ class CommissionsV2Controller extends Controller
         }
 
         return redirect()->route('commissions.index', ['month' => $month, 'year' => $year])
-            ->with('success', 'تم اعتماد العمولات وإضافتها لمسير الرواتب');
+            ->with('success', 'تم اعتماد العمولات وإضافتها لكشف الرواتب');
     }
 
     private function getSalesForRule(CommissionRule $rule, Employee $emp, $salesData): float

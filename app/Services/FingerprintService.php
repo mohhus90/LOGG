@@ -246,6 +246,22 @@ class FingerprintService
 
         $date        = $attendance->attendance_date->format('Y-m-d');
         $nextDateStr = Carbon::parse($date)->addDay()->format('Y-m-d');
+
+        // موظف غير نشط: إذا كان التاريخ بعد تاريخ الاستقالة → تحويل السجل لغياب إجباري بيوم ثابت
+        if ($employee->functional_status == 2 && $employee->resignation_date && $date > $employee->resignation_date) {
+            $attendance->check_in_time          = null;
+            $attendance->check_out_time         = null;
+            $attendance->missing_punch          = null;
+            $attendance->status                 = 2;
+            $attendance->late_minutes           = 0;
+            $attendance->overtime_hours         = 0;
+            $attendance->overtime_amount        = 0;
+            $attendance->late_deduction         = 0;
+            $attendance->absence_deduction_days = 1.0;
+            $attendance->notes                  = 'غياب بعد ترك العمل';
+            $attendance->save();
+            return ['success' => false, 'resigned' => true, 'error' => 'تاريخ بعد ترك الموظف للعمل'];
+        }
         $isNight     = $shift->to_time < $shift->from_time;
 
         // نافذة البحث حسب نوع الشيفت:
@@ -356,18 +372,32 @@ class FingerprintService
         $from = Carbon::parse($dateFrom)->startOfDay();
         $to   = Carbon::parse($dateTo)->startOfDay();
 
-        // تحميل الموظفين مع تطبيق فلتر الموظف المحدد إن وُجد
+        // تحميل الموظفين: النشطون + المستقيلون الذين تاريخ تركهم ضمن نطاق الشهر المعالَج
+        $fromMonthStart = $from->copy()->startOfMonth()->toDateString();
+        $toMonthEnd     = $to->copy()->endOfMonth()->toDateString();
+
         $empQuery = Employee::with('shifts_type')
             ->where('com_code', $comCode)
-            ->where('functional_status', 1);
+            ->where(function ($q) use ($fromMonthStart, $toMonthEnd) {
+                $q->where('functional_status', 1)
+                  ->orWhere(function ($q2) use ($fromMonthStart, $toMonthEnd) {
+                      $q2->where('functional_status', 2)
+                         ->whereNotNull('resignation_date')
+                         ->whereBetween('resignation_date', [$fromMonthStart, $toMonthEnd]);
+                  });
+            });
         if ($employeeId) {
             $empQuery->where('id', $employeeId);
         }
         $allEmployees = $empQuery->get();
 
-        // finger_ids المطلوبة للفلتر (null = جميع الموظفين)
+        // الموظفون النشطون فقط → يُستخدمون في خرائط البصمة والفلتر
+        // (الموظفون غير النشطين يدخلون حلقة الغياب فقط، ولا يُضافون للخرائط)
+        $activeEmployees = $allEmployees->where('functional_status', 1)->values();
+
+        // finger_ids المطلوبة للفلتر (null = جميع الموظفين) — مبنية على النشطين فقط
         $filteredFingerIds = $employeeId
-            ? $allEmployees->pluck('finger_id')->filter()->values()->toArray()
+            ? $activeEmployees->pluck('finger_id')->filter()->values()->toArray()
             : null;
 
         // إذا forceReprocess: إعادة ضبط is_processed للسجلات في النطاق (+ يوم احتياطي للشيفت الليلي)
@@ -424,9 +454,10 @@ class FingerprintService
             ];
         };
 
+        // خرائط البصمة → فقط النشطون (لمنع التعارض مع رقم بصمة مشترك بين فرعين)
         $branchFingerMap = [];
-        $fallbackMap     = $allEmployees->keyBy(fn($e) => (int)$e->finger_id);
-        foreach ($allEmployees as $emp) {
+        $fallbackMap     = $activeEmployees->keyBy(fn($e) => (int)$e->finger_id);
+        foreach ($activeEmployees as $emp) {
             if ($emp->branches_id) {
                 $branchFingerMap[$emp->branches_id . '_' . (int)$emp->finger_id] = $emp;
             }
@@ -522,6 +553,31 @@ class FingerprintService
                     if (!$employee) {
                         // لا نُعلّم البصمات كـ processed — ربما يُضاف الموظف/الجهاز لاحقاً
                         $notFound[] = $fingerId . ($branchId ? " (فرع {$branchId})" : '');
+                        continue;
+                    }
+
+                    // موظف غير نشط: تجاهل بصماته بعد تاريخ الاستقالة وتحويل أي سجل موجود لغياب
+                    if ($employee->functional_status == 2 && $employee->resignation_date && $dateStr > $employee->resignation_date) {
+                        // تعليم البصمات كـ processed لمنع إعادة معالجتها مستقبلاً
+                        $logIds = collect($group['punches'])->pluck('id')->toArray();
+                        if ($logIds) {
+                            FingerprintLog::whereIn('id', $logIds)->update(['is_processed' => 1]);
+                        }
+                        // تحديث السجل الموجود (حضر من معالجة سابقة) إلى غياب إن وُجد
+                        Attendance::where('employee_id', $employee->id)
+                            ->where('attendance_date', $dateStr)
+                            ->where('is_manual_lock', 0)
+                            ->update([
+                                'status'          => 2,
+                                'check_in_time'   => null,
+                                'check_out_time'  => null,
+                                'missing_punch'   => null,
+                                'late_minutes'    => 0,
+                                'overtime_hours'  => 0,
+                                'overtime_amount' => 0,
+                                'late_deduction'  => 0,
+                                'notes'           => 'غياب بعد ترك العمل',
+                            ]);
                         continue;
                     }
 
@@ -638,6 +694,19 @@ class FingerprintService
                         continue;
                     }
 
+                    // إذا وصلت بصمة واحدة جديدة لموظف عنده حضور مُسجل مع انصراف مفقود
+                    // → البصمة الجديدة هي الانصراف وليست حضوراً جديداً، ويجب الحفاظ على وقت الحضور المُخزن
+                    // ملاحظة: يشترط فارق لا يقل عن 5 دقائق لتمييز الانصراف الفعلي عن إعادة معالجة نفس بصمة الحضور
+                    if ($isSinglePunch && $att->exists && $att->check_in_time && $att->missing_punch === 'out') {
+                        $newPunchTime  = $firstPunch->punch_time;
+                        $storedCheckIn = Carbon::parse($dateStr . ' ' . $att->check_in_time);
+                        if ($newPunchTime->diffInMinutes($storedCheckIn, true) >= 5 && $newPunchTime->gt($storedCheckIn)) {
+                            $checkIn      = $att->check_in_time;
+                            $checkOut     = $newPunchTime->format('H:i');
+                            $isSinglePunch = false;
+                        }
+                    }
+
                     $att->shift_id       = $employee->shifts_types_id;
                     $att->check_in_time  = $checkIn;
                     $att->check_out_time = $checkOut;
@@ -672,27 +741,73 @@ class FingerprintService
                 // الغائبون في هذا اليوم
                 $dayOfWeek = $currentDate->dayOfWeek; // Carbon: 0=الأحد...6=السبت
                 foreach ($allEmployees as $emp) {
-                    if (in_array($emp->id, $presentEmployeeIds)) continue;
-                    if (Attendance::where('employee_id', $emp->id)->where('attendance_date', $dateStr)->exists()) continue;
+                    // موظف غير نشط: تجاهله كلياً بعد شهر استقالته
+                    if ($emp->functional_status == 2 && $emp->resignation_date) {
+                        $resignYM  = substr($emp->resignation_date, 0, 7);
+                        $currentYM = substr($dateStr, 0, 7);
+                        if ($currentYM > $resignYM) continue;
+                    }
 
-                    $isWeeklyOff  = $emp->weekly_off_day !== null
+                    if (in_array($emp->id, $presentEmployeeIds)) continue;
+
+                    // هل التاريخ بعد تاريخ ترك العمل (في نفس الشهر)؟ → غياب إجباري حتى نهاية الشهر
+                    $isAfterResignation = $emp->functional_status == 2
+                        && $emp->resignation_date
+                        && $dateStr > $emp->resignation_date;
+
+                    $existingAtt = Attendance::where('employee_id', $emp->id)
+                        ->where('attendance_date', $dateStr)
+                        ->first();
+
+                    if ($existingAtt) {
+                        // بعد الاستقالة → تحديث السجل دائماً (حتى لو كان غياباً عادياً) لضبط الملاحظة و absence_deduction_days
+                        if ($isAfterResignation && !$existingAtt->is_manual_lock) {
+                            $needsUpdate = $existingAtt->status != 2
+                                || $existingAtt->notes != 'غياب بعد ترك العمل'
+                                || (float)$existingAtt->absence_deduction_days !== 1.0;
+                            if ($needsUpdate) {
+                                $existingAtt->update([
+                                    'status'                 => 2,
+                                    'check_in_time'          => null,
+                                    'check_out_time'         => null,
+                                    'missing_punch'          => null,
+                                    'late_minutes'           => 0,
+                                    'overtime_hours'         => 0,
+                                    'overtime_amount'        => 0,
+                                    'late_deduction'         => 0,
+                                    'absence_deduction_days' => 1.0,
+                                    'notes'                  => 'غياب بعد ترك العمل',
+                                ]);
+                                $absent++;
+                            }
+                        }
+                        continue;
+                    }
+
+                    $isWeeklyOff  = !$isAfterResignation
+                                    && $emp->weekly_off_day !== null
                                     && (int)$emp->weekly_off_day === $dayOfWeek;
-                    $isBeforeHire = $emp->emp_start_date && $dateStr < $emp->emp_start_date;
+                    $isBeforeHire = !$isAfterResignation && $emp->emp_start_date && $dateStr < $emp->emp_start_date;
+
+                    $notes = $isBeforeHire       ? 'قبل التعيين'
+                           : ($isWeeklyOff       ? 'إجازة أسبوعية - بصمة'
+                           : ($isAfterResignation ? 'غياب بعد ترك العمل'
+                           : 'غياب - بصمة'));
 
                     Attendance::create([
-                        'employee_id'          => $emp->id,
-                        'shift_id'             => $emp->shifts_types_id,
-                        'attendance_date'      => $dateStr,
-                        'status'               => $isWeeklyOff ? 6 : 2,
-                        'is_before_hire'       => $isBeforeHire ? 1 : 0,
-                        'absence_deduction_days' => $isBeforeHire ? 0 : null,
-                        'late_minutes'         => 0,
-                        'overtime_hours'       => 0,
-                        'overtime_amount'      => 0,
-                        'late_deduction'       => 0,
-                        'notes'                => $isBeforeHire ? 'قبل التعيين' : ($isWeeklyOff ? 'إجازة أسبوعية - بصمة' : 'غياب - بصمة'),
-                        'com_code'             => $comCode,
-                        'added_by'             => 1,
+                        'employee_id'            => $emp->id,
+                        'shift_id'               => $emp->shifts_types_id,
+                        'attendance_date'        => $dateStr,
+                        'status'                 => $isWeeklyOff ? 6 : 2,
+                        'is_before_hire'         => $isBeforeHire ? 1 : 0,
+                        'absence_deduction_days' => $isAfterResignation ? 1.0 : ($isBeforeHire ? 0 : null),
+                        'late_minutes'           => 0,
+                        'overtime_hours'         => 0,
+                        'overtime_amount'        => 0,
+                        'late_deduction'         => 0,
+                        'notes'                  => $notes,
+                        'com_code'               => $comCode,
+                        'added_by'               => 1,
                     ]);
                     $absent++;
                 }

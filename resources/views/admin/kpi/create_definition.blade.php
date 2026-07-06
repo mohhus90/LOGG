@@ -112,7 +112,7 @@
                   يؤثر على الراتب
                 </label>
               </div>
-              <small class="text-muted">عند التفعيل تُحتسب مكافأة أو خصم تلقائياً في مسير الراتب</small>
+              <small class="text-muted">عند التفعيل تُحتسب مكافأة أو خصم تلقائياً في كشف الراتب</small>
             </div>
             <div class="col-md-3 form-group">
               <label>نوع التأثير</label>

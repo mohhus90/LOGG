@@ -84,6 +84,14 @@
                             <small>أيام الإجازة</small>
                         </div>
                     </div>
+                    @if(($payroll->weekly_off_days ?? 0) > 0)
+                    <div class="col-3 mt-2">
+                        <div class="p-2 bg-light rounded">
+                            <div class="h4 mb-0" style="color:#6f42c1">{{ $payroll->weekly_off_days }}</div>
+                            <small>إجازة أسبوعية (مدفوعة)</small>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 
@@ -97,7 +105,7 @@
                 <div class="payslip-row">
                     <span class="label">
                         الراتب المستحق
-                        <small class="text-muted">({{ number_format($payroll->daily_rate, 2) }} × {{ $payroll->work_days + $payroll->leave_days }} يوم)</small>
+                        <small class="text-muted">({{ number_format($payroll->daily_rate, 2) }} × {{ $payroll->work_days + $payroll->leave_days + ($payroll->weekly_off_days ?? 0) + $payroll->absence_days }} يوم)</small>
                     </span>
                     <span class="value plus">{{ number_format($payroll->earned_salary, 2) }}</span>
                 </div>
@@ -117,6 +125,24 @@
                 <div class="payslip-row">
                     <span class="label">العمولات</span>
                     <span class="value plus">{{ number_format($payroll->commissions_amount, 2) }}</span>
+                </div>
+                @endif
+                @if(($payroll->bonuses_amount ?? 0) > 0)
+                <div class="payslip-row">
+                    <span class="label">المكافآت</span>
+                    <span class="value plus">{{ number_format($payroll->bonuses_amount, 2) }}</span>
+                </div>
+                @endif
+                @if(($payroll->leave_compensation_amount ?? 0) > 0)
+                <div class="payslip-row">
+                    <span class="label">بدل العمل في الإجازة الأسبوعية</span>
+                    <span class="value plus">{{ number_format($payroll->leave_compensation_amount, 2) }}</span>
+                </div>
+                @endif
+                @if(($payroll->kpi_bonus_amount ?? 0) > 0)
+                <div class="payslip-row">
+                    <span class="label">مكافأة مؤشرات الأداء (KPI)</span>
+                    <span class="value plus">{{ number_format($payroll->kpi_bonus_amount, 2) }}</span>
                 </div>
                 @endif
                 <div class="payslip-row border-top pt-2 mt-1">
@@ -158,9 +184,22 @@
                     <span class="value minus">− {{ number_format($payroll->insurance_deduction, 2) }}</span>
                 </div>
                 @endif
+                @if(($payroll->kpi_deduction_amount ?? 0) > 0)
+                <div class="payslip-row">
+                    <span class="label">خصم مؤشرات الأداء (KPI)</span>
+                    <span class="value minus">− {{ number_format($payroll->kpi_deduction_amount, 2) }}</span>
+                </div>
+                @endif
+                @if(($payroll->sanctions_deduction ?? 0) > 0)
+                <div class="payslip-row">
+                    <span class="label">خصم الجزاءات</span>
+                    <span class="value minus">− {{ number_format($payroll->sanctions_deduction, 2) }}</span>
+                </div>
+                @endif
                 @php
                     $totalDeductions = $payroll->late_deductions + $payroll->absence_deductions
-                        + $payroll->deductions_amount + $payroll->advance_installment + $payroll->insurance_deduction;
+                        + $payroll->deductions_amount + $payroll->advance_installment + $payroll->insurance_deduction
+                        + ($payroll->kpi_deduction_amount ?? 0) + ($payroll->sanctions_deduction ?? 0);
                 @endphp
                 <div class="payslip-row border-top pt-2 mt-1">
                     <span class="label"><strong>إجمالي الخصومات</strong></span>
@@ -182,6 +221,12 @@
                    class="btn btn-success"
                    onclick="return confirm('اعتماد هذا الكشف؟')">
                     <i class="fas fa-check ml-1"></i> اعتماد الكشف
+                </a>
+                @elseif($payroll->status == 2)
+                <a href="{{ route('payroll.unapprove', $payroll->id) }}"
+                   class="btn btn-warning"
+                   onclick="return confirm('سيتم إلغاء اعتماد الكشف وإرجاع أرصدة السلف المخصومة — متابعة؟')">
+                    <i class="fas fa-undo ml-1"></i> إلغاء الاعتماد
                 </a>
                 @endif
                 <button class="btn btn-secondary mr-2" onclick="window.print()">

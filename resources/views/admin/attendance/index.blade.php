@@ -357,14 +357,35 @@
                             <td class="{{ $isBeforeHire ? 'text-muted' : 'text-success' }}">
                                 {{ $isBeforeHire ? '—' : number_format($rec->overtime_amount, 2) }}
                             </td>
-                            <td>
-                                @if(!$isBeforeHire && $rec->is_weekly_off_worked && ($rec->leave_compensation_amount ?? 0) > 0)
-                                    <span class="text-success font-weight-bold">
+                            <td class="text-center" style="padding:3px">
+                                @if(!$isBeforeHire && $rec->status == 1)
+                                    <form method="POST"
+                                          action="{{ route('attendance.toggle_weekly_off', $rec->id) }}"
+                                          style="display:inline">
+                                        @csrf
+                                        <input type="hidden" name="_back_url" value="{{ request()->fullUrl() }}">
+                                        @if($rec->is_weekly_off_worked)
+                                            <button type="submit"
+                                                    class="btn btn-xs btn-success"
+                                                    title="بدل إجازة مفعّل: {{ number_format($rec->leave_compensation_amount ?? 0, 2) }} ج.م — اضغط للإلغاء"
+                                                    onclick="return confirm('إلغاء بدل الإجازة الأسبوعية؟')">
+                                                <i class="fas fa-umbrella-beach"></i>
+                                                <span style="font-size:.65rem">{{ number_format($rec->leave_compensation_amount ?? 0, 2) }}</span>
+                                            </button>
+                                        @else
+                                            <button type="submit"
+                                                    class="btn btn-xs btn-outline-secondary"
+                                                    title="تفعيل بدل الإجازة الأسبوعية لهذا اليوم"
+                                                    onclick="return confirm('تفعيل بدل الإجازة الأسبوعية؟')">
+                                                <i class="fas fa-umbrella-beach"></i>
+                                            </button>
+                                        @endif
+                                    </form>
+                                @elseif(!$isBeforeHire && $rec->is_weekly_off_worked && ($rec->leave_compensation_amount ?? 0) > 0)
+                                    <span class="text-success font-weight-bold" style="font-size:.8rem">
                                         {{ number_format($rec->leave_compensation_amount, 2) }}
                                     </span>
-                                    <br><small class="badge badge-success" style="font-size:.75em">يوم راحة</small>
-                                @elseif($isBeforeHire)
-                                    <span class="text-muted">—</span>
+                                    <br><small class="badge badge-success" style="font-size:.65rem">يوم راحة</small>
                                 @else
                                     <span class="text-muted">—</span>
                                 @endif
@@ -382,7 +403,7 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('attendance.edit', $rec->id) }}"
+                                <a href="{{ route('attendance.edit', $rec->id) . '?back=' . urlencode(request()->fullUrl()) }}"
                                    class="btn btn-xs btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>

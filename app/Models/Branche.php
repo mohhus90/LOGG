@@ -18,4 +18,9 @@ class Branche extends Model
     public function updatedby(){
         return $this->belongsTo('App\Models\Admin','updated_by');
     }
+
+    public function getNameAttribute(): string
+    {
+        return $this->branch_name;
+    }
 }

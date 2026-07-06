@@ -33,6 +33,7 @@
         </div>
         <form action="{{ route('attendance.update', $attendance->id) }}" method="POST">
             @csrf
+            <input type="hidden" name="_back_url" value="{{ $backUrl }}">
             <div class="card-body">
                 @if($errors->any())
                     <div class="alert alert-danger">
@@ -353,6 +354,7 @@
         </div>
         <form id="shiftForm" action="{{ route('attendance.update_shift', $attendance->id) }}" method="POST">
             @csrf
+            <input type="hidden" name="_back_url" value="{{ $backUrl }}">
             <div class="card-body">
                 @if(session('error'))
                     <div class="alert alert-danger">{{ session('error') }}</div>
@@ -496,6 +498,7 @@
 
             <form action="{{ route('attendance.resolve_missing', $attendance->id) }}" method="POST">
                 @csrf
+                <input type="hidden" name="_back_url" value="{{ $backUrl }}">
                 <div class="row">
                     <div class="col-md-5 form-group">
                         <label>طريقة المعالجة <span class="text-danger">*</span></label>

@@ -8,11 +8,16 @@ use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Admin_panel_setting;
 use App\Models\Shifts_type;
+use App\Models\Department;
+use App\Models\Branche;
+use App\Models\Client;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Controllers\Admin\LeaveCompensationController;
+use App\Models\FingerprintLog;
+use App\Services\FingerprintService;
 
 class AttendanceController extends Controller
 {
@@ -126,9 +131,11 @@ class AttendanceController extends Controller
         }
 
         $perPage = in_array((int)$request->get('per_page', 20), [10, 20, 50, 100]) ? (int)$request->get('per_page', 20) : 20;
-        $data = $query->orderByDesc('attendance_date')->paginate($perPage);
+        $data     = $query->orderByDesc('attendance_date')->paginate($perPage);
+        $comCode  = Auth::guard('admin')->user()->com_code;
+        $settings = Admin_panel_setting::where('com_code', $comCode)->first();
 
-        return view('admin.attendance.index', compact('data', 'employees'));
+        return view('admin.attendance.index', compact('data', 'employees', 'settings'));
     }
 
     // ─────────────────────────────────────────────
@@ -235,17 +242,185 @@ class AttendanceController extends Controller
     }
 
     // ─────────────────────────────────────────────
+    //  RANGE BATCH CREATE / STORE
+    //  (تسجيل نفس الحالة/الأوقات لعدة موظفين عبر نطاق تاريخ)
+    // ─────────────────────────────────────────────
+    public function rangeBatchCreate()
+    {
+        $comCode = Auth::guard('admin')->user()->com_code;
+
+        $employees   = Employee::where('com_code', $comCode)->orderBy('employee_name_A')->get();
+        $departments = Department::where('com_code', $comCode)->orderBy('dep_name')->get(['id', 'dep_name']);
+        $branches    = Branche::where('com_code', $comCode)->orderBy('branch_name')->get(['id', 'branch_name']);
+        $clients     = Client::where('com_code', $comCode)->where('active', 1)->orderBy('client_name')->get(['id', 'client_name']);
+
+        return view('admin.attendance.range_batch', compact('employees', 'departments', 'branches', 'clients'));
+    }
+
+    public function rangeBatchStore(Request $request)
+    {
+        $request->validate([
+            'from_date'    => 'required|date',
+            'to_date'      => 'required|date|after_or_equal:from_date',
+            'employee_ids' => 'required|array|min:1',
+            'employee_ids.*' => 'exists:employees,id',
+            'status'          => 'required|integer|between:1,6',
+            'check_in_time'   => 'nullable|date_format:H:i,H:i:s',
+            'check_out_time'  => 'nullable|date_format:H:i,H:i:s',
+            'notes'           => 'nullable|string|max:500',
+        ], [
+            'from_date.required'    => 'حدد تاريخ البداية',
+            'to_date.required'      => 'حدد تاريخ النهاية',
+            'to_date.after_or_equal'=> 'تاريخ النهاية يجب أن يكون بعد البداية',
+            'employee_ids.required' => 'اختر موظف واحد على الأقل',
+            'check_in_time.date_format'  => 'وقت الحضور يجب أن يكون بتنسيق HH:MM',
+            'check_out_time.date_format' => 'وقت الانصراف يجب أن يكون بتنسيق HH:MM',
+        ]);
+
+        $admin           = Auth::guard('admin')->user();
+        $comCode         = $admin->com_code;
+        $skipWeeklyOff   = $request->boolean('skip_weekly_off');
+        $overwrite       = $request->boolean('overwrite_existing');
+        $checkIn         = $request->check_in_time  ? substr($request->check_in_time,  0, 5) : null;
+        $checkOut        = $request->check_out_time ? substr($request->check_out_time, 0, 5) : null;
+        $status          = (int)$request->status;
+
+        $employees = Employee::whereIn('id', $request->employee_ids)->get()->keyBy('id');
+        $settings  = Admin_panel_setting::where('com_code', $comCode)->first();
+
+        $fromDate = Carbon::parse($request->from_date);
+        $toDate   = Carbon::parse($request->to_date);
+
+        $saved           = 0;
+        $skippedWeekly   = 0;
+        $skippedExisting = 0;
+
+        $current = $fromDate->copy();
+        while ($current->lte($toDate)) {
+            $dateStr   = $current->format('Y-m-d');
+            $dayOfWeek = $current->dayOfWeek;
+
+            foreach ($employees as $employee) {
+                if ($skipWeeklyOff && $employee->weekly_off_day !== null && (int)$employee->weekly_off_day === $dayOfWeek) {
+                    $skippedWeekly++;
+                    continue;
+                }
+
+                $attendance = Attendance::where('employee_id', $employee->id)
+                    ->where('attendance_date', $dateStr)
+                    ->first();
+
+                if ($attendance && !$overwrite) {
+                    $skippedExisting++;
+                    continue;
+                }
+
+                $attendance = $attendance ?? new Attendance();
+                $attendance->employee_id     = $employee->id;
+                $attendance->shift_id        = $employee->shifts_types_id;
+                $attendance->attendance_date = $dateStr;
+                $attendance->check_in_time   = $status == 1 ? $checkIn  : null;
+                $attendance->check_out_time  = $status == 1 ? $checkOut : null;
+                $attendance->status          = $status;
+                $attendance->notes           = $request->notes;
+                $attendance->com_code        = $comCode;
+                $attendance->added_by        = $attendance->added_by ?? $admin->id;
+                $attendance->updated_by      = $admin->id;
+
+                $this->applyStatusCalculations($attendance, $employee, $settings, $dateStr);
+
+                $attendance->save();
+                $saved++;
+            }
+
+            $current->addDay();
+        }
+
+        $msg = "تم تسجيل <strong>{$saved}</strong> سجل حضور بنجاح.";
+        if ($skippedExisting) {
+            $msg .= " تم تجاهل <strong>{$skippedExisting}</strong> حالة لوجود سجل حضور محفوظ مسبقاً لنفس الموظف/اليوم"
+                  . ($overwrite ? '' : ' — فعّل خيار "استبدال السجلات الموجودة مسبقاً" إذا أردت الكتابة فوقها.');
+        }
+        if ($skippedWeekly) {
+            $msg .= " وتم تجاهل <strong>{$skippedWeekly}</strong> حالة لكونها يوم الراحة الأسبوعي للموظف.";
+        }
+
+        return redirect()->route('attendance.index')->with('success', $msg);
+    }
+
+    /**
+     * يحسب/يصفّر حقول الحضور حسب الحالة (يُستخدم في التسجيل الدفعي عبر نطاق تاريخ)
+     */
+    private function applyStatusCalculations(Attendance $attendance, Employee $employee, ?Admin_panel_setting $settings, string $date): void
+    {
+        if ($attendance->status == 6) {
+            $attendance->is_weekly_off_worked      = 0;
+            $attendance->leave_compensation_amount = 0;
+            $attendance->weekly_off_overtime       = null;
+            $attendance->late_minutes              = 0;
+            $attendance->early_departure_minutes   = 0;
+            $attendance->overtime_hours            = 0;
+            $attendance->overtime_amount           = 0;
+            $attendance->late_deduction            = 0;
+            $attendance->early_departure_deduction = 0;
+        } elseif ($attendance->status == 1 && $attendance->check_in_time && $attendance->check_out_time) {
+            $this->applyCalculations($attendance, $employee, $settings, $date);
+        } else {
+            $attendance->late_minutes              = 0;
+            $attendance->early_departure_minutes   = 0;
+            $attendance->overtime_hours            = 0;
+            $attendance->overtime_amount           = 0;
+            $attendance->late_deduction            = 0;
+            $attendance->early_departure_deduction = 0;
+            $attendance->late_fraction             = null;
+            $attendance->early_departure_fraction  = null;
+            $attendance->is_weekly_off_worked      = 0;
+            $attendance->leave_compensation_amount = 0;
+            $attendance->weekly_off_overtime       = null;
+        }
+    }
+
+    // ─────────────────────────────────────────────
     //  EDIT / UPDATE
     // ─────────────────────────────────────────────
-    public function edit(int $id)
+    public function edit(Request $request, int $id)
     {
         $attendance   = Attendance::with(['employee', 'shift', 'shiftOverride'])->findOrFail($id);
         $employees    = Employee::orderBy('employee_name_A')->get();
         $comCode      = Auth::guard('admin')->user()->com_code;
         $shifts_types = Shifts_type::where('com_code', $comCode)->orderBy('type')->get();
         $settings     = Admin_panel_setting::getByComCode($comCode);
+        $backUrl      = $request->query('back', route('attendance.index'));
 
-        return view('admin.attendance.edit', compact('attendance', 'employees', 'shifts_types', 'settings'));
+        $date     = $attendance->attendance_date->format('Y-m-d');
+        $nextDate = Carbon::parse($date)->addDay()->format('Y-m-d');
+
+        $fingerId   = $attendance->employee->finger_id ?? null;
+        $fingerLogs = collect();
+
+        if ($fingerId) {
+            $shift       = $attendance->shiftOverride ?? $attendance->shift ?? $attendance->employee->shifts_type;
+            $isNight     = $shift && ($shift->to_time < $shift->from_time);
+            $windowStart = Carbon::parse($date . ' ' . ($shift->from_time ?? '00:00:00'))->subHours(3);
+            $windowEnd   = $isNight
+                ? Carbon::parse($nextDate . ' ' . $shift->to_time)->addHours(3)
+                : Carbon::parse($nextDate . ' 06:00:00');
+
+            $fingerLogs = FingerprintLog::with('device')
+                ->where('com_code', $comCode)
+                ->where('finger_id', $fingerId)
+                ->whereBetween('punch_time', [
+                    $windowStart->format('Y-m-d H:i:s'),
+                    $windowEnd->format('Y-m-d H:i:s'),
+                ])
+                ->orderBy('punch_time')
+                ->get();
+        }
+
+        return view('admin.attendance.edit', compact(
+            'attendance', 'employees', 'shifts_types', 'settings',
+            'backUrl', 'date', 'nextDate', 'fingerLogs'
+        ));
     }
 
     public function update(Request $request, int $id)
@@ -270,7 +445,16 @@ class AttendanceController extends Controller
         $attendance->check_out_time = $request->check_out_time ? substr($request->check_out_time, 0, 5) : null;
         $attendance->status         = $request->status;
         $attendance->notes          = $request->notes;
+        $attendance->is_manual_lock = $request->boolean('is_manual_lock');
         $attendance->updated_by     = Auth::guard('admin')->id();
+
+        // إذا تم إدخال كلا الوقتين يدوياً → مسح حالة البصمة الناقصة
+        if ($attendance->check_in_time && $attendance->check_out_time) {
+            $attendance->missing_punch            = null;
+            $attendance->missing_punch_resolution = null;
+            $attendance->missing_punch_hours      = null;
+            $attendance->missing_punch_deduction  = 0;
+        }
 
         $attendance->permission_minutes       = max(0, (int)($request->permission_minutes       ?? 0));
         $attendance->permission_early_minutes = max(0, (int)($request->permission_early_minutes ?? 0));
@@ -309,8 +493,8 @@ class AttendanceController extends Controller
 
         $attendance->save();
 
-        return redirect()->route('attendance.index')
-            ->with('success', 'تم تحديث سجل الحضور بنجاح');
+        $backUrl = $request->input('_back_url', route('attendance.index'));
+        return redirect()->to($backUrl)->with('success', 'تم تحديث سجل الحضور بنجاح');
     }
 
     /**
@@ -712,7 +896,7 @@ class AttendanceController extends Controller
 
         $attendance->missing_punch_resolution = $resolution;
         $attendance->missing_punch_hours      = $hours;
-        $attendance->late_deduction           = $attendance->late_deduction + $deduction;
+        $attendance->missing_punch_deduction  = $deduction;
         $attendance->updated_by               = Auth::guard('admin')->id();
         $attendance->save();
 
@@ -743,6 +927,171 @@ class AttendanceController extends Controller
         $attendance->save();
 
         return redirect()->back()->with('success', 'تم تحديث الشيفت وإعادة الاحتساب');
+    }
+
+    // ─────────────────────────────────────────────
+    //  تبديل بدل الإجازة الأسبوعية (toggle)
+    // ─────────────────────────────────────────────
+    public function toggleWeeklyOff(Request $request, int $id)
+    {
+        $attendance = Attendance::findOrFail($id);
+        $employee   = $attendance->employee;
+        $comCode    = Auth::guard('admin')->user()->com_code;
+        $settings   = Admin_panel_setting::where('com_code', $comCode)->first();
+
+        $attendance->is_weekly_off_worked = $attendance->is_weekly_off_worked ? 0 : 1;
+        $attendance->updated_by           = Auth::guard('admin')->id();
+
+        $this->handleWeeklyOffWorked($attendance, $employee, $settings);
+        $attendance->save();
+
+        $msg = $attendance->is_weekly_off_worked
+            ? 'تم تفعيل بدل الإجازة: ' . number_format($attendance->leave_compensation_amount, 2) . ' ج.م'
+            : 'تم إلغاء بدل الإجازة الأسبوعية';
+
+        $backUrl = $request->input('_back_url', route('attendance.index'));
+        return redirect()->to($backUrl)->with('success', $msg);
+    }
+
+    // ─────────────────────────────────────────────
+    //  تفريغ البصمة وتحويل السجلات إلى غياب
+    // ─────────────────────────────────────────────
+    public function voidFingerprint(Request $request)
+    {
+        $comCode = Auth::guard('admin')->user()->com_code;
+
+        $query = Attendance::where('com_code', $comCode)
+            ->where('is_manual_lock', 0);
+
+        if ($request->filled('employee_id')) $query->where('employee_id', $request->employee_id);
+        if ($request->filled('from_date'))   $query->where('attendance_date', '>=', $request->from_date);
+        if ($request->filled('to_date'))     $query->where('attendance_date', '<=', $request->to_date);
+        if ($request->filled('status'))      $query->where('status', $request->status);
+
+        $records = $query->get();
+
+        if ($records->isEmpty()) {
+            return redirect()->back()->with('error', 'لا توجد سجلات مطابقة للفلتر المحدد');
+        }
+
+        $employeeIds = $records->pluck('employee_id')->unique()->values();
+        $minDate     = $records->min('attendance_date');
+        $maxDate     = $records->max('attendance_date');
+
+        // تحويل السجلات إلى غياب وتصفير البيانات
+        $query->update([
+            'status'                    => 2,
+            'check_in_time'             => null,
+            'check_out_time'            => null,
+            'missing_punch'             => null,
+            'missing_punch_resolution'  => null,
+            'missing_punch_hours'       => null,
+            'missing_punch_deduction'   => 0,
+            'late_minutes'              => 0,
+            'early_departure_minutes'   => 0,
+            'overtime_hours'            => 0,
+            'overtime_amount'           => 0,
+            'late_deduction'            => 0,
+            'early_departure_deduction' => 0,
+            'late_fraction'             => null,
+            'early_departure_fraction'  => null,
+            'is_weekly_off_worked'      => 0,
+            'leave_compensation_amount' => 0,
+            'weekly_off_overtime'       => null,
+        ]);
+
+        // إعادة بصمات الموظفين المتأثرين في النطاق لغير معالَجة
+        $fingerIds = \App\Models\Employee::where('com_code', $comCode)
+            ->whereIn('id', $employeeIds)
+            ->whereNotNull('finger_id')
+            ->pluck('finger_id');
+
+        if ($fingerIds->isNotEmpty()) {
+            FingerprintLog::where('com_code', $comCode)
+                ->whereIn('finger_id', $fingerIds)
+                ->where('is_processed', 1)
+                ->whereBetween('punch_time', [
+                    Carbon::parse($minDate)->startOfDay()->format('Y-m-d H:i:s'),
+                    Carbon::parse($maxDate)->addDay()->endOfDay()->format('Y-m-d H:i:s'),
+                ])
+                ->update(['is_processed' => 0]);
+        }
+
+        return redirect()->route('attendance.index', $request->only(['employee_id', 'from_date', 'to_date', 'status']))
+            ->with('success', "تم تفريغ {$records->count()} سجل وتحويلها إلى غياب وإعادة البصمات لغير معالَجة");
+    }
+
+    // ─────────────────────────────────────────────
+    //  إعادة معالجة البصمة للسجلات المفلترة
+    // ─────────────────────────────────────────────
+    public function bulkReprocessFingerprint(Request $request)
+    {
+        $comCode = Auth::guard('admin')->user()->com_code;
+
+        // تحديد نطاق التاريخ
+        $fromDate = $request->filled('from_date')
+            ? $request->from_date
+            : Carbon::today()->subMonth()->format('Y-m-d');
+
+        $toDate = $request->filled('to_date')
+            ? $request->to_date
+            : Carbon::today()->format('Y-m-d');
+
+        $employeeId = $request->filled('employee_id') ? (int)$request->employee_id : null;
+
+        $service = new FingerprintService();
+        $result  = $service->processLogs($comCode, $fromDate, $toDate, true, $employeeId);
+
+        if (!$result['success']) {
+            return redirect()->back()->with('error', 'حدث خطأ أثناء إعادة المعالجة: ' . ($result['error'] ?? ''));
+        }
+
+        $msg = "تمت إعادة المعالجة: حضور {$result['imported']}، بصمة ناقصة {$result['missing']}، غياب {$result['absent']}.";
+        if (!empty($result['notFound'])) {
+            $msg .= ' ⚠️ IDs غير معروفة: ' . implode('، ', array_unique($result['notFound']));
+        }
+
+        return redirect()->route('attendance.index', $request->only(['employee_id', 'from_date', 'to_date', 'status']))
+            ->with('success', $msg);
+    }
+
+    // ─────────────────────────────────────────────
+    //  إعادة معالجة البصمة لسجل واحد (مع شيفت جديد)
+    // ─────────────────────────────────────────────
+    public function reprocessFingerprint(Request $request, int $id)
+    {
+        $attendance = Attendance::with(['employee', 'shift', 'shiftOverride'])->findOrFail($id);
+        $employee   = $attendance->employee;
+        $comCode    = Auth::guard('admin')->user()->com_code;
+
+        // استخدام الشيفت المخصص إن وُجد، وإلا شيفت الموظف
+        $shift = $attendance->shiftOverride ?? $attendance->shift ?? $employee->shifts_type;
+
+        if (!$shift) {
+            return redirect()->back()->with('error', 'لم يُحدد شيفت للموظف أو للسجل');
+        }
+
+        $service = new FingerprintService();
+        $result  = $service->reprocessAttendanceFromLogs($attendance, $employee, $shift);
+
+        if (!$result['success'] && empty($result['resigned']) && empty($result['cleared'])) {
+            return redirect()->back()->with('error', $result['error'] ?? 'لم يُعثر على بصمات في النافذة الزمنية');
+        }
+
+        // إعادة احتساب التأخير والأوفرتايم إذا يوجد حضور وانصراف
+        if ($attendance->check_in_time && $attendance->check_out_time && $attendance->status == 1) {
+            $settings = Admin_panel_setting::where('com_code', $comCode)->first();
+            $this->applyCalculations($attendance, $employee, $settings, $attendance->attendance_date->format('Y-m-d'));
+        }
+
+        $attendance->updated_by = Auth::guard('admin')->id();
+        $attendance->save();
+
+        $msg = $result['success']
+            ? "تمت إعادة معالجة البصمة: حضور {$result['checkIn']} — انصراف " . ($result['checkOut'] ?? 'ناقص')
+            : ($result['error'] ?? 'تم تحديث السجل');
+
+        return redirect()->back()->with('success', $msg);
     }
 
     // ─── مساعدات تحويل Excel ───

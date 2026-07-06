@@ -48,7 +48,7 @@ class AdminPermissionsController extends Controller
             ['module_key' => 'advances',           'module_name' => 'السلف',                     'module_icon' => 'fas fa-hand-holding-usd', 'sort_order' => 8],
             ['module_key' => 'commissions',        'module_name' => 'العمولات',                  'module_icon' => 'fas fa-percentage',       'sort_order' => 9],
             ['module_key' => 'deductions',         'module_name' => 'الخصومات',                  'module_icon' => 'fas fa-minus-circle',     'sort_order' => 10],
-            ['module_key' => 'payroll',            'module_name' => 'مسير الرواتب',              'module_icon' => 'fas fa-money-check-alt',  'sort_order' => 11],
+            ['module_key' => 'payroll',            'module_name' => 'كشف الرواتب',               'module_icon' => 'fas fa-money-check-alt',  'sort_order' => 11],
             ['module_key' => 'finance_calender',   'module_name' => 'السنوات المالية',           'module_icon' => 'fas fa-calendar-alt',     'sort_order' => 12],
             ['module_key' => 'vacations_balance',  'module_name' => 'الرصيد السنوي للإجازات',   'module_icon' => 'fas fa-umbrella-beach',   'sort_order' => 13],
             ['module_key' => 'admin_permissions',  'module_name' => 'صلاحيات المستخدمين',       'module_icon' => 'fas fa-user-shield',      'sort_order' => 14],

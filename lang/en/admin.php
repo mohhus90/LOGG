@@ -544,6 +544,24 @@ return [
     'att_late_min'              => 'Tardiness (min)',
     'att_ot_hrs'                => 'Overtime (hrs)',
 
+    // ── Range batch entry ──
+    'att_range_batch_entry'      => 'Batch Entry (Date Range)',
+    'att_range_batch_title'      => 'Batch Attendance Entry From/To Date',
+    'att_range_batch_info'       => 'The same status (and times, if provided) will be recorded for every selected employee on each day within the chosen range.',
+    'att_select_employees'       => 'Select Employees',
+    'att_select_all'             => 'Select All',
+    'att_deselect_all'           => 'Deselect All',
+    'att_search_employee'        => 'Search employee...',
+    'att_selected_count'         => 'employee(s) selected',
+    'att_skip_weekly_off'        => "Skip each employee's weekly off day",
+    'att_overwrite_existing'     => 'Overwrite existing records',
+    'att_overwrite_hint'         => 'If disabled, days that already have a saved attendance record will not be changed',
+    'att_range_submit'           => 'Submit Batch Attendance',
+    'att_days_count'             => 'Days Count',
+    'att_filter_dept'            => 'Department',
+    'att_filter_branch'          => 'Branch',
+    'att_filter_client'          => 'Client',
+
     // ═══════════════════════════════════════════════
     //  VACATIONS / LEAVE BALANCES
     // ═══════════════════════════════════════════════
