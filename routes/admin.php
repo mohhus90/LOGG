@@ -1128,6 +1128,48 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('assets/reports/{id}/schedule',          [\App\Http\Controllers\Admin\Assets\AssetReportsController::class, 'depreciationSchedule'])->where('id', '[0-9]+')->name('asset_reports.schedule');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول التصنيع/الإنتاج — Manufacturing Module
+    // ═════════════════════════════════════════════
+
+    // ── قوائم المواد (BOM) ──
+    Route::middleware(['auth:admin', 'admin.permission:bill_of_materials,can_read'])->group(function () {
+        Route::get('manufacturing/boms',            [\App\Http\Controllers\Admin\Manufacturing\BillOfMaterialsController::class, 'index'])->name('bill_of_materials.index');
+        Route::get('manufacturing/boms/{id}',       [\App\Http\Controllers\Admin\Manufacturing\BillOfMaterialsController::class, 'show'])->where('id', '[0-9]+')->name('bill_of_materials.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bill_of_materials,can_create'])->group(function () {
+        Route::get('manufacturing/boms/create',     [\App\Http\Controllers\Admin\Manufacturing\BillOfMaterialsController::class, 'create'])->name('bill_of_materials.create');
+        Route::post('manufacturing/boms/store',     [\App\Http\Controllers\Admin\Manufacturing\BillOfMaterialsController::class, 'store'])->name('bill_of_materials.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bill_of_materials,can_update'])->group(function () {
+        Route::post('manufacturing/boms/{id}/toggle', [\App\Http\Controllers\Admin\Manufacturing\BillOfMaterialsController::class, 'toggle'])->where('id', '[0-9]+')->name('bill_of_materials.toggle');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bill_of_materials,can_delete'])->group(function () {
+        Route::get('manufacturing/boms/{id}/delete',[\App\Http\Controllers\Admin\Manufacturing\BillOfMaterialsController::class, 'delete'])->where('id', '[0-9]+')->name('bill_of_materials.delete');
+    });
+
+    // ── أوامر الإنتاج ──
+    Route::middleware(['auth:admin', 'admin.permission:production_orders,can_read'])->group(function () {
+        Route::get('manufacturing/orders',            [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'index'])->name('production_orders.index');
+        Route::get('manufacturing/orders/{id}',       [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'show'])->where('id', '[0-9]+')->name('production_orders.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:production_orders,can_create'])->group(function () {
+        Route::get('manufacturing/orders/create',     [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'create'])->name('production_orders.create');
+        Route::post('manufacturing/orders/store',     [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'store'])->name('production_orders.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:production_orders,can_update'])->group(function () {
+        Route::post('manufacturing/orders/{id}/issue-materials',   [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'issueMaterials'])->where('id', '[0-9]+')->name('production_orders.issue_materials');
+        Route::post('manufacturing/orders/{id}/receive',           [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'receiveFinishedGoods'])->where('id', '[0-9]+')->name('production_orders.receive');
+        Route::post('manufacturing/orders/{id}/complete',          [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'complete'])->where('id', '[0-9]+')->name('production_orders.complete');
+        Route::post('manufacturing/orders/{id}/cancel',            [\App\Http\Controllers\Admin\Manufacturing\ProductionOrdersController::class, 'cancel'])->where('id', '[0-9]+')->name('production_orders.cancel');
+    });
+
+    // ── تقارير الإنتاج ──
+    Route::middleware(['auth:admin', 'admin.permission:manufacturing_reports,can_read'])->group(function () {
+        Route::get('manufacturing/reports',              [\App\Http\Controllers\Admin\Manufacturing\ManufacturingReportsController::class, 'index'])->name('manufacturing_reports.index');
+        Route::get('manufacturing/reports/cost-summary',  [\App\Http\Controllers\Admin\Manufacturing\ManufacturingReportsController::class, 'costSummary'])->name('manufacturing_reports.cost_summary');
+    });
+
 });
 
 // ─────────────────────────────────────────────
