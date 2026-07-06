@@ -5,7 +5,7 @@
 
 > **✅ حالة الخطة (2026-07-06): Phases 0-7 مكتملة بالكامل ومُختبرة end-to-end.**
 > النظام الآن ERP متكامل فعليًا: محاسبة عامة + ترحيل تلقائي من كل الموديولات + خزينة وشيكات + أصول ثابتة وإهلاك + تصنيع بتكلفة فعلية + مطابقة ETA محاسبية.
-> المتبقي هو **Phase 8 فقط** (اختياري/مؤجل عمدًا): عملات متعددة، إيصال إلكتروني B2C، مطابقة بنكية تلقائية، موازنات، FIFO. لا شيء من هذا ضروري لاعتبار النظام مكتملًا لشركة/مصنع مصري نموذجي.
+> **Phase 9 (جديدة 2026-07-06)**: 5 موديولات كانت لسه "قريبًا" في شاشة اختيار الموديولات (`admin/hub.blade.php`) ولم تكن جزءًا من الخطة الأصلية: ضبط الجودة، BI/التقارير، CRM، إدارة المشاريع، إدارة الوثائق. تفاصيلها بالأسفل.
 
 ## الوضع الحالي (قبل بدء هذه الخطة)
 
@@ -48,15 +48,16 @@ Phase 2: ترقية تكلفة المخزون (avg_cost/total_value على Stock
          تعديل StockService::adjustStock لإرجاع تكلفة COGS)                 [x] 2026-07-06
 Phase 3: ربط الترحيل التلقائي بالموديولات القائمة
          (فواتير بيع/شراء، رواتب، مرتجعات)                                  [x] 2026-07-06
-Phase 4: الخزينة والبنوك (خزائن، حسابات بنكية، سندات قبض/صرف، شيكات)         [x] 2026-07-06
+Phase 4: الخزينة والبنوك (خزائن، حسابات بنكية، سندات، شيكات)                 [x] 2026-07-06
 Phase 5: الأصول الثابتة (سجل أصول، إهلاك)                                    [x] 2026-07-06
 Phase 6: التصنيع/الإنتاج (BOM، أوامر إنتاج)                                  [x] 2026-07-06
 Phase 7: استكمال ربط الفاتورة الإلكترونية بالمحاسبة                          [x] 2026-07-06
 Phase 8: اختياري/مؤجل (عملات متعددة، إيصال إلكتروني B2C، مطابقة بنكية
          تلقائية، موازنات مراكز التكلفة، FIFO)                               [ ]
+Phase 9: موديولات "قريبًا" غير محاسبية (ضبط جودة، BI، CRM، مشاريع، وثائق)     [ ] 2026-07-06 بدأ
 ```
 
-Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Phase 3 حتى يكون قيد COGS صحيحًا. المراحل 4/5/6 مستقلة عن بعضها ويمكن إعادة ترتيب أولويتها حسب احتياج العمل الفعلي (مثال: شركة خدمية قد لا تحتاج Phase 6 إطلاقًا).
+Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Phase 3 حتى يكون قيد COGS صحيحًا. المراحل 4/5/6 مستقلة عن بعضها ويمكن إعادة ترتيب أولويتها حسب احتياج العمل الفعلي (مثال: شركة خدمية قد لا تحتاج Phase 6 إطلاقًا). Phase 9 مستقلة تمامًا عن كل ما قبلها (لا ترحيل محاسبي فيها إلا استثناءً بسيطًا في CRM).
 
 ---
 
@@ -82,7 +83,7 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 **Controllers:** `app/Http/Controllers/Admin/Accounting/`
 `ChartOfAccountsController`, `CostCentersController`, `JournalEntriesController`, `AccountingPeriodsController`, `GlPostingRulesController`, `AccountingReportsController` (ميزان مراجعة، قائمة دخل، ميزانية عمومية، كشف حساب/عميل/مورد، إقفال سنة مالية).
 
-**module_keys (sort_order 50-55):** `chart_of_accounts`, `cost_centers`, `journal_entries`, `accounting_periods`, `gl_posting_rules`, `accounting_reports` — سيدر migration على نمط `2026_07_05_000013_seed_sales_admin_modules.php`.
+**module_keys (sort_order 50-55):** `chart_of_accounts`, `cost_centers`, `journal_entries`, `accounting_periods`, `gl_posting_rules`, `accounting_reports`. سيدر migration على نمط `2026_07_05_000013_seed_sales_admin_modules.php`.
 
 **Sidebar:** `resources/views/admin/includes/sidebar_accounting.blade.php`
 
@@ -105,7 +106,7 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 
 **✅ تم التنفيذ فعليًا (2026-07-06):** لم يتطلب الأمر أي تغيير كاسر في توقيع الدالة —
 `adjustStock()` لسه بترجع نفس `StockMovement` بالضبط، لكن دلوقتي `unit_cost`/`total_cost` عليه
-بيعكسوا تكلفة COGS الحقيقية (المتوسط المرجح) مش السعر المُمرَّر من المستدعي. يعني كل الأماكن
+بيعكسوا تكلفة COGS حقيقية (المتوسط المرجح) مش السعر المُمرَّر من المستدعي. يعني كل الأماكن
 الحالية اللي بتنادي الدالة (`SalesInvoicesController`, `PurchaseInvoicesController`,
 `SalesReturnsController`, `PurchaseReturnsController`, `StockTransfersController`,
 `StockAdjustmentsController`) اشتغلت من غير أي تعديل، ومين يحتاج تكلفة COGS لاحقًا (Phase 3)
@@ -217,6 +218,58 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 
 ---
 
+### Phase 9 — الموديولات غير المحاسبية المتبقية في شاشة اختيار الموديولات
+
+خمس بطاقات في `resources/views/admin/hub.blade.php` كانت لسه `coming-soon` من الجلسة الأصلية، ولم تكن جزءًا من التحليل الذي بُنيت عليه Phases 1-7 (تلك ركّزت حصرًا على الفجوة المحاسبية). طلب المستخدم (2026-07-06) إضافتها كمرحلة جديدة، بترتيب أولوية: **ضبط الجودة → BI/التقارير → CRM → إدارة المشاريع → إدارة الوثائق**. لا علاقة محاسبية مباشرة لمعظمها (باستثناء ربط بسيط اختياري لاحقًا)، فلا تتطلب `JournalPostingService`.
+
+#### Phase 9.1 — ضبط الجودة (Quality Control)
+
+مرتبطة مباشرة بالتصنيع (Phase 6): فحوصات جودة على أوامر الإنتاج و/أو فواتير الشراء (فحص استلام).
+
+**جداول:** `quality_checklists` (قوالب فحص: name, applies_to[production|purchase|both], is_active) + `quality_checklist_items` (criterion نصي لكل بند)، `quality_inspections` (inspection_number QC-YYYY-XXXX, checklist_id, source_type[production_order|purchase_invoice], source_id, inspector_id, date, overall_result[pass|fail|conditional], notes) + `quality_inspection_items` (نتيجة كل بند: pass|fail|na).
+
+**Controllers:** `app/Http/Controllers/Admin/Quality/` — `QualityChecklistsController`, `QualityInspectionsController`, `QualityReportsController` (نسبة النجاح/الرفض).
+
+**module_keys (sort_order 83-85)** — ضمن الفجوة المحجوزة أصلًا خلف التصنيع (83-89). **Sidebar:** `sidebar_quality.blade.php`.
+
+نطاق مقصود الاستبعاد منه (لتبسيط الإصدار الأول): لا يوجد ربط تلقائي بحجز/رفض كمية في المخزون عند فشل الفحص (يُسجَّل النتيجة فقط، والإجراء التصحيحي يدوي عبر تسوية مخزون موجودة بالفعل).
+
+#### Phase 9.2 — التقارير والتحليلات (BI & Analytics)
+
+طبقة تجميع فوق كل الموديولات الموجودة بالفعل - لا جداول جديدة تقريبًا.
+
+**Controller:** `app/Http/Controllers/Admin/BI/BiDashboardController.php` — لوحة تنفيذية واحدة تجمع مؤشرات من: المبيعات، المشتريات، المخزون، المحاسبة (أرباح/خسائر مختصرة)، الخزينة، الرواتب. **module_key:** `bi_dashboard` (sort_order 91، بعد نطاق الأصول والتصنيع مباشرة).
+
+#### Phase 9.3 — إدارة علاقات العملاء (CRM)
+
+يُبنى فوق `Customer` الموجود بالفعل (Sales)، بدون تعديله.
+
+**جداول:** `crm_leads` (عميل محتمل قبل التحويل: name, phone, source, status[new|contacted|qualified|converted|lost])، `crm_opportunities` (lead_id أو customer_id، stage[prospecting|proposal|negotiation|won|lost], value, expected_close_date)، `crm_activities` (نشاط/متابعة: linked_type[lead|customer|opportunity], linked_id, type[call|meeting|note], notes, activity_date, created_by).
+
+**Controllers:** `app/Http/Controllers/Admin/Crm/` — `LeadsController` (+ `convertToCustomer()` تنشئ `Customer` فعليًا)، `OpportunitiesController`، `ActivitiesController` (تُدرج ضمن صفحة العرض لكل Lead/Opportunity).
+
+**module_keys (sort_order 100-102)**, **Sidebar:** `sidebar_crm.blade.php`. الحملات التسويقية (Campaigns) مؤجَّلة — خارج نطاق الإصدار الأول.
+
+#### Phase 9.4 — إدارة المشاريع (Project Management)
+
+**جداول:** `projects` (name, customer_id nullable, start_date, end_date, budget, status[planning|active|on_hold|completed|cancelled])، `project_tasks` (project_id, title, assigned_to [employee_id], due_date, status[todo|in_progress|done], priority[low|medium|high]).
+
+**Controllers:** `app/Http/Controllers/Admin/Projects/` — `ProjectsController`, `ProjectTasksController` (عرض لوحة Kanban بسيطة حسب الحالة).
+
+**module_keys (sort_order 110-111)**, **Sidebar:** `sidebar_projects.blade.php`. مخطط جانت والتكاليف الفعلية المرتبطة بمصروفات الخزينة مؤجَّلة لإصدار لاحق.
+
+#### Phase 9.5 — إدارة الوثائق (Document Management)
+
+أرشفة عامة على مستوى الشركة (مختلفة عن `employee_documents` الموجود بالفعل والخاص بمستندات الموظفين فقط - لا تُمس).
+
+**جداول:** `document_categories` (name)، `documents` (category_id, title, file_path, file_original_name, linked_type nullable [عام أو مرتبط بأي كيان]، linked_id nullable, version, status[draft|pending|approved|rejected], uploaded_by).
+
+**Controller:** `app/Http/Controllers/Admin/Documents/DocumentsController.php` — رفع/عرض/تحميل، بنفس اصطلاح التخزين المستخدم في `EmployeesConroller` (`public_path('assets/admin/documents/...')`).
+
+**module_keys (sort_order 120-121)**, **Sidebar:** `sidebar_documents.blade.php`.
+
+---
+
 ## جدول تخصيص module_key / sort_order
 
 | النطاق | sort_order | الموديولات |
@@ -225,9 +278,14 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 | الخزينة | 60-66 | cash_boxes, bank_accounts, treasury_receipts, treasury_payments, cheques, bank_reconciliation, treasury_reports |
 | الأصول الثابتة | 70-73 | asset_categories, fixed_assets, asset_depreciation, asset_reports |
 | التصنيع | 80-82 | bill_of_materials, production_orders, manufacturing_reports |
-| إيصال إلكتروني (اختياري) | 91+ | eta_receipts |
+| ضبط الجودة (Phase 9.1) | 83-85 | quality_checklists, quality_inspections, quality_reports |
+| BI (Phase 9.2) | 91 | bi_dashboard |
+| CRM (Phase 9.3) | 100-102 | crm_leads, crm_opportunities, crm_activities |
+| المشاريع (Phase 9.4) | 110-111 | projects, project_tasks |
+| الوثائق (Phase 9.5) | 120-121 | document_categories, documents |
+| إيصال إلكتروني (اختياري) | 92+ | eta_receipts |
 
-(الفجوات 56-59, 67-69, 74-79, 83-89 محجوزة عمدًا لموديولات فرعية مستقبلية، بنفس نمط التباعد المستخدم في Sales/Purchasing/Inventory الحاليين.)
+(الفجوات 56-59, 67-69, 86-89 محجوزة عمدًا لموديولات فرعية مستقبلية، بنفس نمط التباعد المستخدم في Sales/Purchasing/Inventory الحاليين.)
 
 ## الاصطلاحات الواجب اتباعها بدقة عند إضافة أي كود جديد
 
@@ -237,6 +295,7 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 4. **ترقيم المستندات**: `PREFIX-YYYY-XXXX` بإعادة تصفير سنوي، محسوبة في `store()` — انظر `SalesInvoicesController::nextInvoiceNumber()`.
 5. **Sidebar**: partial جديد لكل Area تحت `resources/views/admin/includes/sidebar_<area>.blade.php`، بدون منطق صلاحيات في الـ blade (الفحص عند الـ route فقط).
 6. **الترحيل المحاسبي**: أي حدث تجاري جديد يمر حصريًا عبر `JournalPostingService::post()` — ممنوع إنشاء `JournalEntry` مباشرة من أي Controller.
+7. **Routes مع {id} bare**: أي route بصيغة `resource/{id}` (بدون لاحقة) **يجب** أن يحمل `->where('id', '[0-9]+')` لو فيه route تاني بصيغة `resource/create` في نفس المجموعة، وإلا هيبتلع الكلمة "create" كـ id (باگ حصل فعليًا في 10 شاشات قبل الإصلاح في هذه الخطة).
 
 ## التحقق بعد كل مرحلة
 
