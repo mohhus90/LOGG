@@ -37,6 +37,56 @@ class SmsService
 
         if (empty($normalized)) return false;
 
+        $session = $this->authenticate();
+        if (!$session) return false;
+
+        return $this->postToVlserv($session, $normalized, $message)['sent'];
+    }
+
+    /**
+     * إرسال نفس الرسالة لمجموعة موظفين فى استدعاء API واحد فقط للدفعة كلها.
+     * VLServ يفرض فترة تهدئة بين عمليات إرسال الدفعات على نفس الحساب — استدعاء
+     * Create عدة مرات متتالية (مرة لكل رقم) كان يفشل فيما عدا الاستدعاء الأول
+     * حتى مع تسجيل دخول وجلسة واحدة (راجع memory project-vlserv-sso). الحل
+     * الصحيح هو إرسال كل الأرقام دفعة واحدة كما هو مصمم فى BulkSMS API نفسه.
+     *
+     * $phones: مصفوفة associative [مفتاح => رقم هاتف] (المفتاح مثلاً id الموظف).
+     * يعيد نفس المفاتيح مع ['sent' => bool, 'reason' => string|null].
+     */
+    public function sendBatch(array $phones, string $message): array
+    {
+        $results = [];
+        foreach ($phones as $key => $phone) {
+            $results[$key] = ['sent' => false, 'reason' => null];
+        }
+        if (!$this->isEnabled() || empty($phones)) return $results;
+
+        $normalizedByKey = [];
+        foreach ($phones as $key => $phone) {
+            $n = $this->normalizePhone((string) $phone);
+            if ($n !== '') $normalizedByKey[$key] = $n;
+        }
+        if (empty($normalizedByKey)) return $results;
+
+        $session = $this->authenticate();
+        if (!$session) return $results;
+
+        $api = $this->postToVlserv($session, array_values($normalizedByKey), $message);
+        $invalidSet = array_flip($api['invalidNumbers']);
+
+        foreach ($normalizedByKey as $key => $n) {
+            if (isset($invalidSet[$n])) {
+                $results[$key] = ['sent' => false, 'reason' => 'invalid_number'];
+            } else {
+                $results[$key] = ['sent' => $api['sent'], 'reason' => $api['sent'] ? null : $api['message']];
+            }
+        }
+
+        return $results;
+    }
+
+    private function authenticate(): ?array
+    {
         try {
             $baseUrl = $this->getBaseUrl();
             $jar     = new CookieJar();
@@ -51,7 +101,7 @@ class SmsService
             $loginOk = $this->doLogin($client, $baseUrl);
             if (!$loginOk) {
                 Log::error("SmsService: VLServ login failed for '{$this->setting->sms_username}'");
-                return false;
+                return null;
             }
 
             // الخطوة 2: جلب صفحة الإرسال لاستخراج CSRF token + sender ID
@@ -61,7 +111,7 @@ class SmsService
             // إذا أعادنا إلى صفحة تسجيل الدخول → فشل التوثيق
             if (str_contains($smsHtml, 'name="Password"') || !str_contains($smsHtml, 'SendSMS')) {
                 Log::error("SmsService: session not authenticated after login (redirected back to login page)");
-                return false;
+                return null;
             }
 
             $csrfToken = $this->extractToken($smsHtml);
@@ -75,10 +125,28 @@ class SmsService
 
             if (!$senderId) {
                 Log::error("SmsService: sender '{$this->setting->sms_sender}' not found in VLServ approved senders list");
-                return false;
+                return null;
             }
-            Log::info("SmsService: using sender ID={$senderId}, phones=" . implode(',', $normalized));
+            Log::info("SmsService: authenticated, using sender ID={$senderId}");
 
+            return [
+                'client'    => $client,
+                'baseUrl'   => $baseUrl,
+                'csrfToken' => $csrfToken,
+                'senderId'  => $senderId,
+            ];
+        } catch (\Exception $e) {
+            Log::error("SmsService: authenticate exception — " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * @return array{sent: bool, invalidNumbers: string[], message: string}
+     */
+    private function postToVlserv(array $session, array $normalizedPhones, string $message): array
+    {
+        try {
             // بناء multipart form — CSRF token اختياري (صفحة Create لا تطلبه دائماً)
             $multipart = [
                 ['name' => 'SelectedTemplateID',   'contents' => ''],
@@ -86,25 +154,25 @@ class SmsService
                 ['name' => 'IsCustom',             'contents' => 'false'],
                 ['name' => 'IsTemplate',           'contents' => 'false'],
                 ['name' => 'TemplateName',         'contents' => ''],
-                ['name' => 'SelectedFakeSenderID', 'contents' => (string) $senderId],
+                ['name' => 'SelectedFakeSenderID', 'contents' => (string) $session['senderId']],
                 ['name' => 'NewFakeSender',        'contents' => ''],
                 ['name' => 'CampaignCategoryId',   'contents' => ''],
                 ['name' => 'CampaignCategoryName', 'contents' => ''],
-                ['name' => 'PhoneNumbers',         'contents' => implode(',', $normalized)],
+                ['name' => 'PhoneNumbers',         'contents' => implode(',', $normalizedPhones)],
                 ['name' => 'SMSText',              'contents' => $message],
                 ['name' => 'IsSMSTemplate',        'contents' => 'True'],
-                ['name' => 'AllowDuplication',     'contents' => 'false'],
+                ['name' => 'AllowDuplication',     'contents' => 'true'],
                 ['name' => 'SendingType',          'contents' => '2'],
                 ['name' => 'SendDate',             'contents' => ''],
             ];
-            if ($csrfToken) {
-                array_unshift($multipart, ['name' => '__RequestVerificationToken', 'contents' => $csrfToken]);
+            if ($session['csrfToken']) {
+                array_unshift($multipart, ['name' => '__RequestVerificationToken', 'contents' => $session['csrfToken']]);
             }
 
-            // الخطوة 3: POST إلى Create
-            $response = $client->post($baseUrl . '/BulkSMS/SMS/SendSMS/Create', [
+            // POST إلى Create — استدعاء واحد لكل الأرقام دفعة واحدة
+            $response = $session['client']->post($session['baseUrl'] . '/BulkSMS/SMS/SendSMS/Create', [
                 'headers' => [
-                    'Referer'          => $baseUrl . '/BulkSMS/SMS/SendSMS/Index',
+                    'Referer'          => $session['baseUrl'] . '/BulkSMS/SMS/SendSMS/Index',
                     'X-Requested-With' => 'XMLHttpRequest',
                 ],
                 'multipart' => $multipart,
@@ -114,17 +182,22 @@ class SmsService
             Log::info("SmsService: Create response status={$response->getStatusCode()} body=" . substr($body, 0, 500));
             $data = json_decode($body, true);
 
+            $invalidNumbers = [];
+            if (!empty($data['InvalidNumbers'])) {
+                $invalidNumbers = array_values(array_filter(array_map('trim', explode(',', $data['InvalidNumbers']))));
+            }
+
             if ($data && ($data['MessageTypeId'] ?? 0) === 1) {
-                Log::info("SmsService: sent to " . count($normalized) . " number(s) — " . ($data['Message'] ?? 'OK'));
-                return true;
+                Log::info("SmsService: sent to " . count($normalizedPhones) . " number(s) — " . ($data['Message'] ?? 'OK'));
+                return ['sent' => true, 'invalidNumbers' => $invalidNumbers, 'message' => $data['Message'] ?? 'OK'];
             }
 
             Log::warning("SmsService: send failed — " . ($data['Message'] ?? substr($body, 0, 500)));
-            return false;
+            return ['sent' => false, 'invalidNumbers' => $invalidNumbers, 'message' => $data['Message'] ?? 'فشل الإرسال'];
 
         } catch (\Exception $e) {
-            Log::error("SmsService: exception — " . $e->getMessage());
-            return false;
+            Log::error("SmsService: postToVlserv exception — " . $e->getMessage());
+            return ['sent' => false, 'invalidNumbers' => [], 'message' => $e->getMessage()];
         }
     }
 

@@ -113,6 +113,18 @@ class SmsController extends Controller
             ->whereIn('id', $request->employee_ids)
             ->get(['id','employee_name_A','employee_id','emp_mobile']);
 
+        // نجمع أرقام الموظفين اللى عندهم رقم هاتف ونرسلها كلها فى استدعاء API واحد
+        // فقط. VLServ يفرض فترة تهدئة بين عمليات إرسال الدفعات على نفس الحساب،
+        // فاستدعاء Create مرة لكل موظف كان بيفشل فى كل المحاولات ما عدا الأولى.
+        $phonesToSend = [];
+        foreach ($employees as $emp) {
+            if (!empty($emp->emp_mobile)) {
+                $phonesToSend[$emp->id] = $emp->emp_mobile;
+            }
+        }
+
+        $sendResults = $sms->sendBatch($phonesToSend, $request->message);
+
         $results = [];
 
         foreach ($employees as $emp) {
@@ -128,7 +140,7 @@ class SmsController extends Controller
                 continue;
             }
 
-            $sent = $sms->send($emp->emp_mobile, $request->message);
+            $sent = $sendResults[$emp->id]['sent'] ?? false;
 
             $results[] = [
                 'id'     => $emp->id,
