@@ -1004,6 +1004,78 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('accounting/reports/ledger',            [\App\Http\Controllers\Admin\Accounting\AccountingReportsController::class, 'ledgerDetail'])->name('accounting_reports.ledger');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول الخزينة — Treasury Module
+    // ═════════════════════════════════════════════
+
+    // ── الخزائن النقدية ──
+    Route::middleware(['auth:admin', 'admin.permission:cash_boxes,can_read'])->group(function () {
+        Route::get('treasury/cash-boxes',            [\App\Http\Controllers\Admin\Treasury\CashBoxesController::class, 'index'])->name('cash_boxes.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:cash_boxes,can_create'])->group(function () {
+        Route::get('treasury/cash-boxes/create',     [\App\Http\Controllers\Admin\Treasury\CashBoxesController::class, 'create'])->name('cash_boxes.create');
+        Route::post('treasury/cash-boxes/store',     [\App\Http\Controllers\Admin\Treasury\CashBoxesController::class, 'store'])->name('cash_boxes.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:cash_boxes,can_update'])->group(function () {
+        Route::get('treasury/cash-boxes/{id}/edit',  [\App\Http\Controllers\Admin\Treasury\CashBoxesController::class, 'edit'])->where('id', '[0-9]+')->name('cash_boxes.edit');
+        Route::post('treasury/cash-boxes/{id}',      [\App\Http\Controllers\Admin\Treasury\CashBoxesController::class, 'update'])->where('id', '[0-9]+')->name('cash_boxes.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:cash_boxes,can_delete'])->group(function () {
+        Route::get('treasury/cash-boxes/{id}/delete',[\App\Http\Controllers\Admin\Treasury\CashBoxesController::class, 'delete'])->where('id', '[0-9]+')->name('cash_boxes.delete');
+    });
+
+    // ── الحسابات البنكية ──
+    Route::middleware(['auth:admin', 'admin.permission:bank_accounts,can_read'])->group(function () {
+        Route::get('treasury/bank-accounts',            [\App\Http\Controllers\Admin\Treasury\BankAccountsController::class, 'index'])->name('bank_accounts.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bank_accounts,can_create'])->group(function () {
+        Route::get('treasury/bank-accounts/create',     [\App\Http\Controllers\Admin\Treasury\BankAccountsController::class, 'create'])->name('bank_accounts.create');
+        Route::post('treasury/bank-accounts/store',     [\App\Http\Controllers\Admin\Treasury\BankAccountsController::class, 'store'])->name('bank_accounts.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bank_accounts,can_update'])->group(function () {
+        Route::get('treasury/bank-accounts/{id}/edit',  [\App\Http\Controllers\Admin\Treasury\BankAccountsController::class, 'edit'])->where('id', '[0-9]+')->name('bank_accounts.edit');
+        Route::post('treasury/bank-accounts/{id}',      [\App\Http\Controllers\Admin\Treasury\BankAccountsController::class, 'update'])->where('id', '[0-9]+')->name('bank_accounts.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:bank_accounts,can_delete'])->group(function () {
+        Route::get('treasury/bank-accounts/{id}/delete',[\App\Http\Controllers\Admin\Treasury\BankAccountsController::class, 'delete'])->where('id', '[0-9]+')->name('bank_accounts.delete');
+    });
+
+    // ── سندات القبض ──
+    Route::middleware(['auth:admin', 'admin.permission:treasury_receipts,can_read'])->group(function () {
+        Route::get('treasury/receipts',            [\App\Http\Controllers\Admin\Treasury\ReceiptVouchersController::class, 'index'])->name('treasury_receipts.index');
+        Route::get('treasury/receipts/{id}',       [\App\Http\Controllers\Admin\Treasury\ReceiptVouchersController::class, 'show'])->where('id', '[0-9]+')->name('treasury_receipts.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:treasury_receipts,can_create'])->group(function () {
+        Route::get('treasury/receipts/create',     [\App\Http\Controllers\Admin\Treasury\ReceiptVouchersController::class, 'create'])->name('treasury_receipts.create');
+        Route::post('treasury/receipts/store',     [\App\Http\Controllers\Admin\Treasury\ReceiptVouchersController::class, 'store'])->name('treasury_receipts.store');
+    });
+
+    // ── سندات الصرف ──
+    Route::middleware(['auth:admin', 'admin.permission:treasury_payments,can_read'])->group(function () {
+        Route::get('treasury/payments',            [\App\Http\Controllers\Admin\Treasury\PaymentVouchersController::class, 'index'])->name('treasury_payments.index');
+        Route::get('treasury/payments/{id}',       [\App\Http\Controllers\Admin\Treasury\PaymentVouchersController::class, 'show'])->where('id', '[0-9]+')->name('treasury_payments.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:treasury_payments,can_create'])->group(function () {
+        Route::get('treasury/payments/create',     [\App\Http\Controllers\Admin\Treasury\PaymentVouchersController::class, 'create'])->name('treasury_payments.create');
+        Route::post('treasury/payments/store',     [\App\Http\Controllers\Admin\Treasury\PaymentVouchersController::class, 'store'])->name('treasury_payments.store');
+    });
+
+    // ── الشيكات ──
+    Route::middleware(['auth:admin', 'admin.permission:cheques,can_read'])->group(function () {
+        Route::get('treasury/cheques',             [\App\Http\Controllers\Admin\Treasury\ChequesController::class, 'index'])->name('cheques.index');
+        Route::get('treasury/cheques/{id}',        [\App\Http\Controllers\Admin\Treasury\ChequesController::class, 'show'])->where('id', '[0-9]+')->name('cheques.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:cheques,can_update'])->group(function () {
+        Route::post('treasury/cheques/{id}/collect', [\App\Http\Controllers\Admin\Treasury\ChequesController::class, 'collect'])->where('id', '[0-9]+')->name('cheques.collect');
+        Route::post('treasury/cheques/{id}/bounce',  [\App\Http\Controllers\Admin\Treasury\ChequesController::class, 'bounce'])->where('id', '[0-9]+')->name('cheques.bounce');
+    });
+
+    // ── تقارير الخزينة ──
+    Route::middleware(['auth:admin', 'admin.permission:treasury_reports,can_read'])->group(function () {
+        Route::get('treasury/reports',             [\App\Http\Controllers\Admin\Treasury\TreasuryReportsController::class, 'index'])->name('treasury_reports.index');
+        Route::get('treasury/reports/cheques-due', [\App\Http\Controllers\Admin\Treasury\TreasuryReportsController::class, 'chequesDue'])->name('treasury_reports.cheques_due');
+    });
+
 });
 
 // ─────────────────────────────────────────────

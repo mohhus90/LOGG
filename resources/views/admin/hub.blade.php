@@ -368,6 +368,7 @@
         .mod-qual   { --module-color: rgba(6,182,212,.5);   }
         .mod-bi     { --module-color: rgba(236,72,153,.5);  }
         .mod-doc    { --module-color: rgba(234,179,8,.5);   }
+        .mod-treasury { --module-color: rgba(202,138,4,.5); }
 
         .icon-hr     { background: rgba(99,102,241,.15);   color: #818cf8; }
         .icon-sales  { background: rgba(16,185,129,.15);  color: #34d399; }
@@ -381,6 +382,7 @@
         .icon-qual   { background: rgba(6,182,212,.15);    color: #22d3ee; }
         .icon-bi     { background: rgba(236,72,153,.15);   color: #f472b6; }
         .icon-doc    { background: rgba(234,179,8,.15);    color: #facc15; }
+        .icon-treasury { background: rgba(202,138,4,.15);  color: #eab308; }
 
         /* Active module glow on hover */
         .active-module.mod-hr:hover     { box-shadow: 0 20px 50px -10px rgba(99,102,241,.4),  0 0 0 1px rgba(99,102,241,.3); }
@@ -667,6 +669,27 @@
                         <span class="feature-tag">القيود</span>
                         <span class="feature-tag">الميزانية</span>
                         <span class="feature-tag">ETA</span>
+                    </div>
+                </a>
+            </div>
+
+            {{-- 4b. Treasury --}}
+            <div class="col-xl-3 col-lg-4 col-md-6 reveal">
+                <a href="{{ route('treasury_reports.index') }}" class="module-card active-module mod-treasury">
+                    <div class="module-icon-wrap icon-treasury">
+                        <i class="fas fa-cash-register"></i>
+                    </div>
+                    <div class="module-title">الخزينة</div>
+                    <div class="module-subtitle">Treasury</div>
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
+                    </span>
+                    <div class="module-features">
+                        <span class="feature-tag">سندات القبض</span>
+                        <span class="feature-tag">سندات الصرف</span>
+                        <span class="feature-tag">الشيكات</span>
+                        <span class="feature-tag">البنوك</span>
                     </div>
                 </a>
             </div>
