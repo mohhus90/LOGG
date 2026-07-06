@@ -605,7 +605,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── الأصناف ──
     Route::middleware(['auth:admin', 'admin.permission:items,can_read'])->group(function () {
         Route::get('sales/items',                [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'index'])->name('items.index');
-        Route::get('sales/items/{id}',           [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'show'])->name('items.show');
+        Route::get('sales/items/{id}',           [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'show'])->where('id', '[0-9]+')->name('items.show');
         Route::get('sales/items/ajax/search',    [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'ajaxSearch'])->name('items.ajax.search');
     });
     Route::middleware(['auth:admin', 'admin.permission:items,can_create'])->group(function () {
@@ -623,7 +623,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── العملاء ──
     Route::middleware(['auth:admin', 'admin.permission:sales_customers,can_read'])->group(function () {
         Route::get('sales/customers',            [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'index'])->name('sales_customers.index');
-        Route::get('sales/customers/{id}',       [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'show'])->name('sales_customers.show');
+        Route::get('sales/customers/{id}',       [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'show'])->where('id', '[0-9]+')->name('sales_customers.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_customers,can_create'])->group(function () {
         Route::get('sales/customers/create',     [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'create'])->name('sales_customers.create');
@@ -640,7 +640,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── عروض الأسعار ──
     Route::middleware(['auth:admin', 'admin.permission:sales_quotations,can_read'])->group(function () {
         Route::get('sales/quotations',               [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'index'])->name('sales_quotations.index');
-        Route::get('sales/quotations/{id}',          [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'show'])->name('sales_quotations.show');
+        Route::get('sales/quotations/{id}',          [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'show'])->where('id', '[0-9]+')->name('sales_quotations.show');
         Route::get('sales/quotations/{id}/print',    [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'print'])->name('sales_quotations.print');
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_quotations,can_create'])->group(function () {
@@ -660,7 +660,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── أوامر البيع ──
     Route::middleware(['auth:admin', 'admin.permission:sales_orders,can_read'])->group(function () {
         Route::get('sales/orders',               [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'index'])->name('sales_orders.index');
-        Route::get('sales/orders/{id}',          [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'show'])->name('sales_orders.show');
+        Route::get('sales/orders/{id}',          [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'show'])->where('id', '[0-9]+')->name('sales_orders.show');
         Route::get('sales/orders/{id}/print',    [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'print'])->name('sales_orders.print');
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_orders,can_create'])->group(function () {
@@ -680,7 +680,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── فواتير البيع ──
     Route::middleware(['auth:admin', 'admin.permission:sales_invoices,can_read'])->group(function () {
         Route::get('sales/invoices',             [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'index'])->name('sales_invoices.index');
-        Route::get('sales/invoices/{id}',        [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'show'])->name('sales_invoices.show');
+        Route::get('sales/invoices/{id}',        [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'show'])->where('id', '[0-9]+')->name('sales_invoices.show');
         Route::get('sales/invoices/{id}/print',  [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'print'])->name('sales_invoices.print');
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_invoices,can_create'])->group(function () {
@@ -699,7 +699,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── مدفوعات العملاء ──
     Route::middleware(['auth:admin', 'admin.permission:sales_payments,can_read'])->group(function () {
         Route::get('sales/payments',             [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'index'])->name('sales_payments.index');
-        Route::get('sales/payments/{id}',        [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'show'])->name('sales_payments.show');
+        Route::get('sales/payments/{id}',        [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'show'])->where('id', '[0-9]+')->name('sales_payments.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_payments,can_create'])->group(function () {
         Route::get('sales/payments/create',      [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'create'])->name('sales_payments.create');
@@ -712,7 +712,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── مرتجعات البيع ──
     Route::middleware(['auth:admin', 'admin.permission:sales_returns,can_read'])->group(function () {
         Route::get('sales/returns',              [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'index'])->name('sales_returns.index');
-        Route::get('sales/returns/{id}',         [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'show'])->name('sales_returns.show');
+        Route::get('sales/returns/{id}',         [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'show'])->where('id', '[0-9]+')->name('sales_returns.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_returns,can_create'])->group(function () {
         Route::get('sales/returns/create',       [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'create'])->name('sales_returns.create');
@@ -742,7 +742,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── الموردون ──
     Route::middleware(['auth:admin', 'admin.permission:suppliers,can_read'])->group(function () {
         Route::get('purchasing/suppliers',            [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'index'])->name('suppliers.index');
-        Route::get('purchasing/suppliers/{id}',        [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'show'])->name('suppliers.show');
+        Route::get('purchasing/suppliers/{id}',        [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'show'])->where('id', '[0-9]+')->name('suppliers.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:suppliers,can_create'])->group(function () {
         Route::get('purchasing/suppliers/create',      [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'create'])->name('suppliers.create');
@@ -759,7 +759,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── طلبات الشراء ──
     Route::middleware(['auth:admin', 'admin.permission:purchase_requests,can_read'])->group(function () {
         Route::get('purchasing/requests',               [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'index'])->name('purchase_requests.index');
-        Route::get('purchasing/requests/{id}',          [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'show'])->name('purchase_requests.show');
+        Route::get('purchasing/requests/{id}',          [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'show'])->where('id', '[0-9]+')->name('purchase_requests.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:purchase_requests,can_create'])->group(function () {
         Route::get('purchasing/requests/create',        [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'create'])->name('purchase_requests.create');
@@ -778,7 +778,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── أوامر الشراء ──
     Route::middleware(['auth:admin', 'admin.permission:purchase_orders,can_read'])->group(function () {
         Route::get('purchasing/orders',               [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'index'])->name('purchase_orders.index');
-        Route::get('purchasing/orders/{id}',          [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'show'])->name('purchase_orders.show');
+        Route::get('purchasing/orders/{id}',          [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'show'])->where('id', '[0-9]+')->name('purchase_orders.show');
         Route::get('purchasing/orders/{id}/print',    [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'print'])->name('purchase_orders.print');
     });
     Route::middleware(['auth:admin', 'admin.permission:purchase_orders,can_create'])->group(function () {
@@ -798,7 +798,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── فواتير الشراء ──
     Route::middleware(['auth:admin', 'admin.permission:purchase_invoices,can_read'])->group(function () {
         Route::get('purchasing/invoices',             [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'index'])->name('purchase_invoices.index');
-        Route::get('purchasing/invoices/{id}',        [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'show'])->name('purchase_invoices.show');
+        Route::get('purchasing/invoices/{id}',        [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'show'])->where('id', '[0-9]+')->name('purchase_invoices.show');
         Route::get('purchasing/invoices/{id}/print',  [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'print'])->name('purchase_invoices.print');
     });
     Route::middleware(['auth:admin', 'admin.permission:purchase_invoices,can_create'])->group(function () {
@@ -817,7 +817,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── مدفوعات الموردين ──
     Route::middleware(['auth:admin', 'admin.permission:purchase_payments,can_read'])->group(function () {
         Route::get('purchasing/payments',             [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'index'])->name('purchase_payments.index');
-        Route::get('purchasing/payments/{id}',        [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'show'])->name('purchase_payments.show');
+        Route::get('purchasing/payments/{id}',        [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'show'])->where('id', '[0-9]+')->name('purchase_payments.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:purchase_payments,can_create'])->group(function () {
         Route::get('purchasing/payments/create',      [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'create'])->name('purchase_payments.create');
@@ -830,7 +830,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── مرتجعات الشراء ──
     Route::middleware(['auth:admin', 'admin.permission:purchase_returns,can_read'])->group(function () {
         Route::get('purchasing/returns',              [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'index'])->name('purchase_returns.index');
-        Route::get('purchasing/returns/{id}',         [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'show'])->name('purchase_returns.show');
+        Route::get('purchasing/returns/{id}',         [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'show'])->where('id', '[0-9]+')->name('purchase_returns.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:purchase_returns,can_create'])->group(function () {
         Route::get('purchasing/returns/create',       [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'create'])->name('purchase_returns.create');
@@ -887,7 +887,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── تسويات المخزون ──
     Route::middleware(['auth:admin', 'admin.permission:stock_adjustments,can_read'])->group(function () {
         Route::get('inventory/adjustments',           [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'index'])->name('stock_adjustments.index');
-        Route::get('inventory/adjustments/{id}',       [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'show'])->name('stock_adjustments.show');
+        Route::get('inventory/adjustments/{id}',       [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'show'])->where('id', '[0-9]+')->name('stock_adjustments.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:stock_adjustments,can_create'])->group(function () {
         Route::get('inventory/adjustments/create',     [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'create'])->name('stock_adjustments.create');
@@ -904,7 +904,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── تحويلات المخازن ──
     Route::middleware(['auth:admin', 'admin.permission:stock_transfers,can_read'])->group(function () {
         Route::get('inventory/transfers',              [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'index'])->name('stock_transfers.index');
-        Route::get('inventory/transfers/{id}',         [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'show'])->name('stock_transfers.show');
+        Route::get('inventory/transfers/{id}',         [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'show'])->where('id', '[0-9]+')->name('stock_transfers.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:stock_transfers,can_create'])->group(function () {
         Route::get('inventory/transfers/create',       [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'create'])->name('stock_transfers.create');
