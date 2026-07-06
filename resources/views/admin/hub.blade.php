@@ -843,23 +843,23 @@
 
             {{-- 12. Document Management --}}
             <div class="col-xl-3 col-lg-4 col-md-6 reveal">
-                <div class="module-card coming-soon mod-doc">
+                <a href="{{ route('documents.index') }}" class="module-card active-module mod-doc">
                     <div class="module-icon-wrap icon-doc">
                         <i class="fas fa-file-alt"></i>
                     </div>
                     <div class="module-title">إدارة الوثائق</div>
                     <div class="module-subtitle">Document Management</div>
-                    <span class="module-badge badge-soon">
-                        <i class="fas fa-clock" style="font-size:9px; margin-left:5px;"></i>
-                        قريباً
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
                     </span>
                     <div class="module-features">
                         <span class="feature-tag">الأرشفة</span>
                         <span class="feature-tag">الموافقات</span>
-                        <span class="feature-tag">الإصدارات</span>
-                        <span class="feature-tag">البحث</span>
+                        <span class="feature-tag">الفئات</span>
+                        <span class="feature-tag">التحميل</span>
                     </div>
-                </div>
+                </a>
             </div>
 
         </div>{{-- /row --}}

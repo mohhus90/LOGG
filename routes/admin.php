@@ -1296,6 +1296,42 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('project-tasks/{id}/delete', [\App\Http\Controllers\Admin\Projects\ProjectTasksController::class, 'delete'])->where('id', '[0-9]+')->name('project_tasks.delete');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول إدارة الوثائق — Document Management Module
+    // ═════════════════════════════════════════════
+
+    // ── فئات الوثائق ──
+    Route::middleware(['auth:admin', 'admin.permission:document_categories,can_read'])->group(function () {
+        Route::get('documents/categories', [\App\Http\Controllers\Admin\Documents\DocumentCategoriesController::class, 'index'])->name('document_categories.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:document_categories,can_create'])->group(function () {
+        Route::post('documents/categories/store', [\App\Http\Controllers\Admin\Documents\DocumentCategoriesController::class, 'store'])->name('document_categories.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:document_categories,can_update'])->group(function () {
+        Route::post('documents/categories/{id}', [\App\Http\Controllers\Admin\Documents\DocumentCategoriesController::class, 'update'])->where('id', '[0-9]+')->name('document_categories.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:document_categories,can_delete'])->group(function () {
+        Route::get('documents/categories/{id}/delete', [\App\Http\Controllers\Admin\Documents\DocumentCategoriesController::class, 'delete'])->where('id', '[0-9]+')->name('document_categories.delete');
+    });
+
+    // ── الوثائق ──
+    Route::middleware(['auth:admin', 'admin.permission:documents,can_read'])->group(function () {
+        Route::get('documents',                [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'index'])->name('documents.index');
+        Route::get('documents/{id}',           [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'show'])->where('id', '[0-9]+')->name('documents.show');
+        Route::get('documents/{id}/download',  [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'download'])->where('id', '[0-9]+')->name('documents.download');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:documents,can_create'])->group(function () {
+        Route::get('documents/create',         [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'create'])->name('documents.create');
+        Route::post('documents/store',         [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'store'])->name('documents.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:documents,can_update'])->group(function () {
+        Route::post('documents/{id}/approve',  [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'approve'])->where('id', '[0-9]+')->name('documents.approve');
+        Route::post('documents/{id}/reject',   [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'reject'])->where('id', '[0-9]+')->name('documents.reject');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:documents,can_delete'])->group(function () {
+        Route::get('documents/{id}/delete',    [\App\Http\Controllers\Admin\Documents\DocumentsController::class, 'delete'])->where('id', '[0-9]+')->name('documents.delete');
+    });
+
 });
 
 // ─────────────────────────────────────────────
