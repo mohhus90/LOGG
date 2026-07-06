@@ -1076,6 +1076,58 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('treasury/reports/cheques-due', [\App\Http\Controllers\Admin\Treasury\TreasuryReportsController::class, 'chequesDue'])->name('treasury_reports.cheques_due');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول الأصول الثابتة — Fixed Assets Module
+    // ═════════════════════════════════════════════
+
+    // ── فئات الأصول ──
+    Route::middleware(['auth:admin', 'admin.permission:asset_categories,can_read'])->group(function () {
+        Route::get('assets/categories',            [\App\Http\Controllers\Admin\Assets\AssetCategoriesController::class, 'index'])->name('asset_categories.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:asset_categories,can_create'])->group(function () {
+        Route::get('assets/categories/create',     [\App\Http\Controllers\Admin\Assets\AssetCategoriesController::class, 'create'])->name('asset_categories.create');
+        Route::post('assets/categories/store',     [\App\Http\Controllers\Admin\Assets\AssetCategoriesController::class, 'store'])->name('asset_categories.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:asset_categories,can_update'])->group(function () {
+        Route::get('assets/categories/{id}/edit',  [\App\Http\Controllers\Admin\Assets\AssetCategoriesController::class, 'edit'])->where('id', '[0-9]+')->name('asset_categories.edit');
+        Route::post('assets/categories/{id}',      [\App\Http\Controllers\Admin\Assets\AssetCategoriesController::class, 'update'])->where('id', '[0-9]+')->name('asset_categories.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:asset_categories,can_delete'])->group(function () {
+        Route::get('assets/categories/{id}/delete',[\App\Http\Controllers\Admin\Assets\AssetCategoriesController::class, 'delete'])->where('id', '[0-9]+')->name('asset_categories.delete');
+    });
+
+    // ── الأصول الثابتة ──
+    Route::middleware(['auth:admin', 'admin.permission:fixed_assets,can_read'])->group(function () {
+        Route::get('assets/fixed-assets',            [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'index'])->name('fixed_assets.index');
+        Route::get('assets/fixed-assets/{id}',       [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'show'])->where('id', '[0-9]+')->name('fixed_assets.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:fixed_assets,can_create'])->group(function () {
+        Route::get('assets/fixed-assets/create',     [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'create'])->name('fixed_assets.create');
+        Route::post('assets/fixed-assets/store',     [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'store'])->name('fixed_assets.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:fixed_assets,can_update'])->group(function () {
+        Route::get('assets/fixed-assets/{id}/edit',      [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'edit'])->where('id', '[0-9]+')->name('fixed_assets.edit');
+        Route::post('assets/fixed-assets/{id}',          [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'update'])->where('id', '[0-9]+')->name('fixed_assets.update');
+        Route::post('assets/fixed-assets/{id}/dispose',  [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'dispose'])->where('id', '[0-9]+')->name('fixed_assets.dispose');
+        Route::post('assets/fixed-assets/{id}/transfer', [\App\Http\Controllers\Admin\Assets\FixedAssetsController::class, 'transfer'])->where('id', '[0-9]+')->name('fixed_assets.transfer');
+    });
+
+    // ── إهلاك الأصول ──
+    Route::middleware(['auth:admin', 'admin.permission:asset_depreciation,can_read'])->group(function () {
+        Route::get('assets/depreciation',         [\App\Http\Controllers\Admin\Assets\DepreciationRunController::class, 'form'])->name('asset_depreciation.form');
+        Route::get('assets/depreciation/history', [\App\Http\Controllers\Admin\Assets\DepreciationRunController::class, 'history'])->name('asset_depreciation.history');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:asset_depreciation,can_create'])->group(function () {
+        Route::post('assets/depreciation/run',    [\App\Http\Controllers\Admin\Assets\DepreciationRunController::class, 'run'])->name('asset_depreciation.run');
+    });
+
+    // ── تقارير الأصول ──
+    Route::middleware(['auth:admin', 'admin.permission:asset_reports,can_read'])->group(function () {
+        Route::get('assets/reports',                       [\App\Http\Controllers\Admin\Assets\AssetReportsController::class, 'index'])->name('asset_reports.index');
+        Route::get('assets/reports/register',              [\App\Http\Controllers\Admin\Assets\AssetReportsController::class, 'register'])->name('asset_reports.register');
+        Route::get('assets/reports/{id}/schedule',          [\App\Http\Controllers\Admin\Assets\AssetReportsController::class, 'depreciationSchedule'])->where('id', '[0-9]+')->name('asset_reports.schedule');
+    });
+
 });
 
 // ─────────────────────────────────────────────

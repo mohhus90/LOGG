@@ -759,23 +759,23 @@
 
             {{-- 8. Fixed Assets --}}
             <div class="col-xl-3 col-lg-4 col-md-6 reveal">
-                <div class="module-card coming-soon mod-asset">
+                <a href="{{ route('asset_reports.index') }}" class="module-card active-module mod-asset">
                     <div class="module-icon-wrap icon-asset">
                         <i class="fas fa-building"></i>
                     </div>
                     <div class="module-title">الأصول الثابتة</div>
                     <div class="module-subtitle">Fixed Assets</div>
-                    <span class="module-badge badge-soon">
-                        <i class="fas fa-clock" style="font-size:9px; margin-left:5px;"></i>
-                        قريباً
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
                     </span>
                     <div class="module-features">
                         <span class="feature-tag">سجل الأصول</span>
                         <span class="feature-tag">الاستهلاك</span>
-                        <span class="feature-tag">الصيانة</span>
+                        <span class="feature-tag">النقل</span>
                         <span class="feature-tag">التخلص</span>
                     </div>
-                </div>
+                </a>
             </div>
 
             {{-- 9. Projects --}}
