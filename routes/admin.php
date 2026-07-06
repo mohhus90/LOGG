@@ -965,7 +965,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // ── القيود اليومية ──
     Route::middleware(['auth:admin', 'admin.permission:journal_entries,can_read'])->group(function () {
         Route::get('accounting/journal-entries',        [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'index'])->name('journal_entries.index');
-        Route::get('accounting/journal-entries/{id}',   [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'show'])->name('journal_entries.show');
+        Route::get('accounting/journal-entries/{id}',   [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'show'])->where('id', '[0-9]+')->name('journal_entries.show');
     });
     Route::middleware(['auth:admin', 'admin.permission:journal_entries,can_create'])->group(function () {
         Route::get('accounting/journal-entries/create', [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'create'])->name('journal_entries.create');
