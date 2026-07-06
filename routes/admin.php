@@ -74,15 +74,17 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     Route::middleware(['auth:admin', 'admin.permission:general_settings,can_update'])->group(function () {
         Route::post('generalsetting/update', [AdminPanelSettingController::class, 'update'])->name('generalsetting.update');
     });
-    Route::middleware(['auth:admin'])->group(function () {
+    Route::middleware(['auth:admin', 'admin.permission:general_settings,can_update'])->group(function () {
         Route::post('sms/test',    [AdminPanelSettingController::class, 'testSms'])->name('sms.test');
     });
     // ─────────────────────────────────────────────
     //  SMS — إرسال رسائل جماعية
     // ─────────────────────────────────────────────
-    Route::middleware(['auth:admin'])->group(function () {
+    Route::middleware(['auth:admin', 'admin.permission:sms,can_read'])->group(function () {
         Route::get('sms/compose',  [SmsController::class, 'compose'])->name('sms.compose');
         Route::get('sms/filter',   [SmsController::class, 'filterEmployees'])->name('sms.filter');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sms,can_create'])->group(function () {
         Route::post('sms/send',    [SmsController::class, 'send'])->name('sms.send');
     });
     // ─────────────────────────────────────────────
