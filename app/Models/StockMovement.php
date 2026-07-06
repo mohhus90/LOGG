@@ -22,6 +22,8 @@ class StockMovement extends Model
         'adjustment_out'      => ['label' => 'تسوية نقص',        'class' => 'danger',  'sign' => -1],
         'transfer_in'         => ['label' => 'تحويل وارد',       'class' => 'secondary','sign' => 1],
         'transfer_out'        => ['label' => 'تحويل صادر',       'class' => 'secondary','sign' => -1],
+        'sales_out_reversal'    => ['label' => 'عكس عند تعديل فاتورة بيع',   'class' => 'warning', 'sign' => 1],
+        'purchase_in_reversal'  => ['label' => 'عكس عند تعديل فاتورة شراء', 'class' => 'warning', 'sign' => -1],
     ];
 
     public function getTypeLabelAttribute(): string

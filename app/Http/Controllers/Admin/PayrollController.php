@@ -16,6 +16,7 @@ use App\Models\Bonus;
 use App\Models\EmployeeSanction;
 use App\Models\Admin_panel_setting;
 use App\Services\SmsService;
+use App\Services\Accounting\JournalPostingService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -449,6 +450,7 @@ class PayrollController extends Controller
 
         DB::transaction(function () use ($payroll) {
             $payroll->update(['status' => 2, 'updated_by' => Auth::guard('admin')->id()]);
+            $this->postPayrollJournal($payroll);
 
             if ($payroll->advance_installment > 0) {
                 $activeAdvances = Advance::where('employee_id', $payroll->employee_id)
@@ -492,6 +494,31 @@ class PayrollController extends Controller
         return back()->with('success', 'تم اعتماد كشف الراتب بنجاح');
     }
 
+    /** ترحيل قيد استحقاق الراتب عند الاعتماد (Phase 3): مصروف رواتب مقابل رواتب مستحقة */
+    private function postPayrollJournal(MonthlyPayroll $payroll): void
+    {
+        $employee = $payroll->employee;
+        $comCode  = (int) ($employee->com_code ?? $this->comCode());
+        if (JournalPostingService::alreadyPosted($comCode, 'payroll', $payroll->id)) {
+            return;
+        }
+        if ((float) $payroll->net_salary <= 0) {
+            return;
+        }
+
+        JournalPostingService::post('payroll_approved', $comCode, [
+            ['role' => 'SALARY_EXPENSE', 'debit' => $payroll->net_salary, 'credit' => 0],
+            ['role' => 'SALARY_PAYABLE', 'debit' => 0, 'credit' => $payroll->net_salary, 'party_type' => 'employee', 'party_id' => $payroll->employee_id],
+        ], [
+            'source_module' => 'payroll',
+            'source_id'     => $payroll->id,
+            'entry_date'    => $payroll->period_to ?? now(),
+            'reference'     => sprintf('%02d-%04d', $payroll->month, $payroll->year),
+            'description'   => 'مسير رواتب '.($employee->employee_name_A ?? '').' - '.$payroll->month.'/'.$payroll->year,
+            'created_by'    => Auth::guard('admin')->id(),
+        ]);
+    }
+
     // ─────────────────────────────────────────────
     //  إلغاء اعتماد كشف الراتب — يعيد أرصدة السلف التي خُصمت عند الاعتماد
     // ─────────────────────────────────────────────
@@ -519,6 +546,9 @@ class PayrollController extends Controller
                 }
                 $log->delete();
             }
+
+            $comCode = (int) ($payroll->employee->com_code ?? $this->comCode());
+            JournalPostingService::reverseBySource($comCode, 'payroll', $payroll->id, Auth::guard('admin')->id(), 'إلغاء اعتماد كشف الراتب');
 
             $payroll->update(['status' => 1, 'updated_by' => Auth::guard('admin')->id()]);
         });

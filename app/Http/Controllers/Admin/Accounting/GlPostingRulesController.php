@@ -19,6 +19,9 @@ class GlPostingRulesController extends Controller
             'sales_invoice_cogs'        => ['COGS' => 'تكلفة البضاعة المباعة', 'INVENTORY' => 'المخزون'],
             'purchase_invoice_received' => ['INVENTORY' => 'المخزون', 'EXPENSE' => 'مصروف عام', 'VAT_INPUT' => 'ضريبة مشتريات', 'AP_CONTROL' => 'دائن المورد'],
             'payroll_approved'          => ['SALARY_EXPENSE' => 'مصروف الرواتب', 'SALARY_PAYABLE' => 'رواتب مستحقة'],
+            'sales_return_posted'       => ['SALES_REVENUE' => 'عكس إيراد المبيعات', 'VAT_OUTPUT' => 'عكس ضريبة مبيعات', 'AR_CONTROL' => 'دائن العميل'],
+            'sales_return_cogs'         => ['INVENTORY' => 'المخزون (إرجاع)', 'COGS' => 'عكس تكلفة البضاعة المباعة'],
+            'purchase_return_posted'    => ['AP_CONTROL' => 'مدين المورد', 'INVENTORY' => 'المخزون (إخراج)', 'VAT_INPUT' => 'عكس ضريبة مشتريات'],
         ];
     }
 

@@ -2,8 +2,9 @@
 namespace App\Http\Controllers\Admin\Sales;
 
 use App\Http\Controllers\Controller;
-use App\Models\{SalesInvoice, SalesInvoiceItem, SalesPayment, Customer, Item, ItemUnit, Branche, Warehouse};
+use App\Models\{SalesInvoice, SalesInvoiceItem, SalesPayment, Customer, Item, ItemUnit, Branche, Warehouse, StockMovement};
 use App\Services\StockService;
+use App\Services\Accounting\JournalPostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB};
 
@@ -97,6 +98,7 @@ class SalesInvoicesController extends Controller
                 'created_by'      => Auth::guard('admin')->id(),
             ]);
 
+            $totalCogs = 0.0;
             foreach ($request->items as $row) {
                 $qty      = (float)($row['qty'] ?? 0);
                 $price    = (float)($row['price'] ?? 0);
@@ -120,16 +122,55 @@ class SalesInvoicesController extends Controller
                 ]);
 
                 if (!empty($row['item_id']) && $warehouseId) {
-                    StockService::adjustStock(
+                    $movement = StockService::adjustStock(
                         $this->comCode(), (int) $row['item_id'], $warehouseId, -$qty,
                         'sales_out', 'sales_invoice', $invoice->id, $price, $request->date,
                         null, Auth::guard('admin')->id()
                     );
+                    $totalCogs += (float) $movement->total_cost;
                 }
             }
+
+            $this->postInvoiceJournal($invoice, $taxableAmount, $taxAmount, $totalCogs);
         });
 
         return redirect()->route('sales_invoices.index')->with('success', 'تم إنشاء الفاتورة بنجاح');
+    }
+
+    /** ترحيل قيد الإيراد/الضريبة + قيد تكلفة البضاعة المباعة لفاتورة بيع (Phase 3) */
+    private function postInvoiceJournal(SalesInvoice $invoice, float $taxableAmount, float $taxAmount, float $totalCogs): void
+    {
+        $comCode = $invoice->com_code;
+        if (JournalPostingService::alreadyPosted($comCode, 'sales_invoice', $invoice->id)) {
+            return;
+        }
+
+        JournalPostingService::post('sales_invoice_issued', $comCode, [
+            ['role' => 'AR_CONTROL',    'debit' => $invoice->total, 'credit' => 0, 'party_type' => 'customer', 'party_id' => $invoice->customer_id],
+            ['role' => 'SALES_REVENUE', 'debit' => 0, 'credit' => $taxableAmount],
+            ['role' => 'VAT_OUTPUT',    'debit' => 0, 'credit' => $taxAmount],
+        ], [
+            'source_module' => 'sales_invoice',
+            'source_id'     => $invoice->id,
+            'entry_date'    => $invoice->date,
+            'reference'     => $invoice->invoice_number,
+            'description'   => 'فاتورة بيع '.$invoice->invoice_number,
+            'created_by'    => Auth::guard('admin')->id(),
+        ]);
+
+        if ($totalCogs > 0) {
+            JournalPostingService::post('sales_invoice_cogs', $comCode, [
+                ['role' => 'COGS',      'debit' => $totalCogs, 'credit' => 0],
+                ['role' => 'INVENTORY', 'debit' => 0, 'credit' => $totalCogs],
+            ], [
+                'source_module' => 'sales_invoice',
+                'source_id'     => $invoice->id,
+                'entry_date'    => $invoice->date,
+                'reference'     => $invoice->invoice_number,
+                'description'   => 'تكلفة البضاعة المباعة - فاتورة '.$invoice->invoice_number,
+                'created_by'    => Auth::guard('admin')->id(),
+            ]);
+        }
     }
 
     public function show($id)
@@ -184,7 +225,20 @@ class SalesInvoicesController extends Controller
                 'notes'           => $request->notes,
             ]);
 
+            // عكس حركات المخزون القديمة المرتبطة بهذه الفاتورة قبل إعادة بناء البنود
+            if ($invoice->warehouse_id) {
+                $oldMovements = StockMovement::where('reference_type', 'sales_invoice')->where('reference_id', $invoice->id)->get();
+                foreach ($oldMovements as $mv) {
+                    StockService::adjustStock(
+                        $invoice->com_code, $mv->item_id, $mv->warehouse_id, $mv->quantity,
+                        'sales_out_reversal', 'sales_invoice', $invoice->id, null, $request->date,
+                        'عكس عند تعديل الفاتورة', Auth::guard('admin')->id()
+                    );
+                }
+            }
+
             $invoice->items()->delete();
+            $totalCogs = 0.0;
             foreach ($request->items ?? [] as $row) {
                 $qty     = (float)($row['qty'] ?? 0);
                 $price   = (float)($row['price'] ?? 0);
@@ -206,7 +260,20 @@ class SalesInvoicesController extends Controller
                     'tax_amount'       => $taxAmt,
                     'total'            => $lineNet + $taxAmt,
                 ]);
+
+                if (!empty($row['item_id']) && $invoice->warehouse_id) {
+                    $movement = StockService::adjustStock(
+                        $invoice->com_code, (int) $row['item_id'], $invoice->warehouse_id, -$qty,
+                        'sales_out', 'sales_invoice', $invoice->id, $price, $request->date,
+                        null, Auth::guard('admin')->id()
+                    );
+                    $totalCogs += (float) $movement->total_cost;
+                }
             }
+
+            // عكس القيد المحاسبي القديم وترحيل قيد جديد بالأرقام المحدّثة
+            JournalPostingService::reverseBySource($invoice->com_code, 'sales_invoice', $invoice->id, Auth::guard('admin')->id(), 'تعديل الفاتورة');
+            $this->postInvoiceJournal($invoice, $taxableAmount, $taxAmount, $totalCogs);
         });
         return redirect()->route('sales_invoices.show', $id)->with('success', 'تم تعديل الفاتورة');
     }
@@ -214,7 +281,10 @@ class SalesInvoicesController extends Controller
     public function cancel($id)
     {
         $invoice = SalesInvoice::where('com_code', $this->comCode())->findOrFail($id);
-        $invoice->update(['status' => 'cancelled']);
+        DB::transaction(function () use ($invoice) {
+            $invoice->update(['status' => 'cancelled']);
+            JournalPostingService::reverseBySource($invoice->com_code, 'sales_invoice', $invoice->id, Auth::guard('admin')->id(), 'إلغاء الفاتورة');
+        });
         return back()->with('success', 'تم إلغاء الفاتورة');
     }
 

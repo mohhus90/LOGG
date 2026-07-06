@@ -158,6 +158,20 @@ class JournalPostingService
             ->exists();
     }
 
+    /** يعكس كل القيود المرحّلة المرتبطة بمصدر معيّن (فاتورة/كشف راتب/مرتجع...) دفعة واحدة */
+    public static function reverseBySource(int $comCode, string $sourceModule, int $sourceId, ?int $byAdminId = null, ?string $reason = null): void
+    {
+        $entries = JournalEntry::where('com_code', $comCode)
+            ->where('source_module', $sourceModule)
+            ->where('source_id', $sourceId)
+            ->where('status', 'posted')
+            ->get();
+
+        foreach ($entries as $entry) {
+            self::reverse($entry, $byAdminId, $reason);
+        }
+    }
+
     private static function applyBalance(int $accountId, float $debit, float $credit): void
     {
         $account = ChartOfAccount::lockForUpdate()->find($accountId);

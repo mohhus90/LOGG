@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Sales;
 use App\Http\Controllers\Controller;
 use App\Models\{SalesReturn, SalesReturnItem, SalesInvoice, Customer, ItemUnit, Branche, Warehouse};
 use App\Services\StockService;
+use App\Services\Accounting\JournalPostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB};
 
@@ -108,20 +109,59 @@ class SalesReturnsController extends Controller
         }
 
         DB::transaction(function () use ($ret) {
+            $totalCogs = 0.0;
             if ($ret->warehouse_id) {
                 foreach ($ret->items as $row) {
                     if (!$row->item_id) continue;
-                    StockService::adjustStock(
+                    $movement = StockService::adjustStock(
                         $ret->com_code, $row->item_id, $ret->warehouse_id, $row->quantity,
                         'sales_return_in', 'sales_return', $ret->id, $row->unit_price, $ret->date,
                         null, Auth::guard('admin')->id()
                     );
+                    $totalCogs += (float) $movement->total_cost;
                 }
             }
             $ret->update(['status' => 'approved']);
+            $this->postReturnJournal($ret, $totalCogs);
         });
 
         return back()->with('success', 'تم اعتماد المرتجع وتحديث أرصدة المخزون');
+    }
+
+    /** ترحيل قيد مرتجع البيع (Phase 3): عكس الإيراد/الضريبة + عكس تكلفة البضاعة المباعة */
+    private function postReturnJournal(SalesReturn $ret, float $totalCogs): void
+    {
+        $comCode = $ret->com_code;
+        if (JournalPostingService::alreadyPosted($comCode, 'sales_return', $ret->id)) {
+            return;
+        }
+
+        JournalPostingService::post('sales_return_posted', $comCode, [
+            ['role' => 'SALES_REVENUE', 'debit' => $ret->subtotal, 'credit' => 0],
+            ['role' => 'VAT_OUTPUT',    'debit' => $ret->tax_amount, 'credit' => 0],
+            ['role' => 'AR_CONTROL',    'debit' => 0, 'credit' => $ret->total, 'party_type' => 'customer', 'party_id' => $ret->customer_id],
+        ], [
+            'source_module' => 'sales_return',
+            'source_id'     => $ret->id,
+            'entry_date'    => $ret->date,
+            'reference'     => $ret->return_number,
+            'description'   => 'مرتجع بيع '.$ret->return_number,
+            'created_by'    => Auth::guard('admin')->id(),
+        ]);
+
+        if ($totalCogs > 0) {
+            JournalPostingService::post('sales_return_cogs', $comCode, [
+                ['role' => 'INVENTORY', 'debit' => $totalCogs, 'credit' => 0],
+                ['role' => 'COGS',      'debit' => 0, 'credit' => $totalCogs],
+            ], [
+                'source_module' => 'sales_return',
+                'source_id'     => $ret->id,
+                'entry_date'    => $ret->date,
+                'reference'     => $ret->return_number,
+                'description'   => 'عكس تكلفة البضاعة المباعة - مرتجع '.$ret->return_number,
+                'created_by'    => Auth::guard('admin')->id(),
+            ]);
+        }
     }
 
     public function reject($id)

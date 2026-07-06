@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Purchasing;
 use App\Http\Controllers\Controller;
 use App\Models\{PurchaseReturn, PurchaseReturnItem, PurchaseInvoice, Supplier, ItemUnit, Branche, Warehouse};
 use App\Services\StockService;
+use App\Services\Accounting\JournalPostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB};
 
@@ -119,9 +120,32 @@ class PurchaseReturnsController extends Controller
                 }
             }
             $ret->update(['status' => 'approved']);
+            $this->postReturnJournal($ret);
         });
 
         return back()->with('success', 'تم اعتماد المرتجع وتحديث أرصدة المخزون');
+    }
+
+    /** ترحيل قيد مرتجع الشراء (Phase 3): مدين المورد مقابل تخفيض المخزون وضريبة المشتريات */
+    private function postReturnJournal(PurchaseReturn $ret): void
+    {
+        $comCode = $ret->com_code;
+        if (JournalPostingService::alreadyPosted($comCode, 'purchase_return', $ret->id)) {
+            return;
+        }
+
+        JournalPostingService::post('purchase_return_posted', $comCode, [
+            ['role' => 'AP_CONTROL', 'debit' => $ret->total, 'credit' => 0, 'party_type' => 'supplier', 'party_id' => $ret->supplier_id],
+            ['role' => 'INVENTORY',  'debit' => 0, 'credit' => $ret->subtotal],
+            ['role' => 'VAT_INPUT',  'debit' => 0, 'credit' => $ret->tax_amount],
+        ], [
+            'source_module' => 'purchase_return',
+            'source_id'     => $ret->id,
+            'entry_date'    => $ret->date,
+            'reference'     => $ret->return_number,
+            'description'   => 'مرتجع شراء '.$ret->return_number,
+            'created_by'    => Auth::guard('admin')->id(),
+        ]);
     }
 
     public function reject($id)

@@ -2,8 +2,9 @@
 namespace App\Http\Controllers\Admin\Purchasing;
 
 use App\Http\Controllers\Controller;
-use App\Models\{PurchaseInvoice, PurchaseInvoiceItem, PurchasePayment, Supplier, Item, ItemUnit, Branche, Warehouse};
+use App\Models\{PurchaseInvoice, PurchaseInvoiceItem, PurchasePayment, Supplier, Item, ItemUnit, Branche, Warehouse, StockMovement};
 use App\Services\StockService;
+use App\Services\Accounting\JournalPostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB};
 
@@ -95,6 +96,8 @@ class PurchaseInvoicesController extends Controller
                 'created_by'          => Auth::guard('admin')->id(),
             ]);
 
+            $inventoryAmount = 0.0;
+            $expenseAmount   = 0.0;
             foreach ($request->items as $row) {
                 $qty     = (float)($row['qty'] ?? 0);
                 $price   = (float)($row['price'] ?? 0);
@@ -117,6 +120,15 @@ class PurchaseInvoicesController extends Controller
                     'total'            => $lineNet + $taxAmt,
                 ]);
 
+                if (!empty($row['item_id'])) {
+                    $itemType = Item::where('id', $row['item_id'])->value('type');
+                    if ($itemType === 'service') {
+                        $expenseAmount += $lineNet;
+                    } else {
+                        $inventoryAmount += $lineNet;
+                    }
+                }
+
                 if (!empty($row['item_id']) && $warehouseId) {
                     StockService::adjustStock(
                         $this->comCode(), (int) $row['item_id'], $warehouseId, $qty,
@@ -125,9 +137,46 @@ class PurchaseInvoicesController extends Controller
                     );
                 }
             }
+
+            $this->postInvoiceJournal($invoice, $inventoryAmount, $expenseAmount, $taxAmount);
         });
 
         return redirect()->route('purchase_invoices.index')->with('success', 'تم إنشاء فاتورة الشراء بنجاح');
+    }
+
+    /** ترحيل قيد استلام فاتورة الشراء (Phase 3): مخزون/مصروف + ضريبة مشتريات مقابل دائن المورد */
+    private function postInvoiceJournal(PurchaseInvoice $invoice, float $inventoryAmount, float $expenseAmount, float $taxAmount): void
+    {
+        $comCode = $invoice->com_code;
+        if (JournalPostingService::alreadyPosted($comCode, 'purchase_invoice', $invoice->id)) {
+            return;
+        }
+        if ($inventoryAmount <= 0 && $expenseAmount <= 0 && $taxAmount <= 0) {
+            return;
+        }
+
+        // خصم إجمالي على مستوى رأس الفاتورة (إن وُجد) يُخصم من المخزون أولاً ثم من المصروف
+        $headerDiscount = (float) $invoice->discount_amount;
+        if ($headerDiscount > 0) {
+            $fromInventory   = min($inventoryAmount, $headerDiscount);
+            $inventoryAmount -= $fromInventory;
+            $expenseAmount    = max(0, $expenseAmount - ($headerDiscount - $fromInventory));
+        }
+
+        $lines = [];
+        if ($inventoryAmount > 0) $lines[] = ['role' => 'INVENTORY', 'debit' => $inventoryAmount, 'credit' => 0];
+        if ($expenseAmount > 0)   $lines[] = ['role' => 'EXPENSE',   'debit' => $expenseAmount, 'credit' => 0];
+        if ($taxAmount > 0)       $lines[] = ['role' => 'VAT_INPUT', 'debit' => $taxAmount, 'credit' => 0];
+        $lines[] = ['role' => 'AP_CONTROL', 'debit' => 0, 'credit' => $inventoryAmount + $expenseAmount + $taxAmount, 'party_type' => 'supplier', 'party_id' => $invoice->supplier_id];
+
+        JournalPostingService::post('purchase_invoice_received', $comCode, $lines, [
+            'source_module' => 'purchase_invoice',
+            'source_id'     => $invoice->id,
+            'entry_date'    => $invoice->date,
+            'reference'     => $invoice->invoice_number,
+            'description'   => 'فاتورة شراء '.$invoice->invoice_number,
+            'created_by'    => Auth::guard('admin')->id(),
+        ]);
     }
 
     public function show($id)
@@ -183,7 +232,21 @@ class PurchaseInvoicesController extends Controller
                 'notes'               => $request->notes,
             ]);
 
+            // عكس حركات المخزون القديمة المرتبطة بهذه الفاتورة قبل إعادة بناء البنود
+            if ($invoice->warehouse_id) {
+                $oldMovements = StockMovement::where('reference_type', 'purchase_invoice')->where('reference_id', $invoice->id)->get();
+                foreach ($oldMovements as $mv) {
+                    StockService::adjustStock(
+                        $invoice->com_code, $mv->item_id, $mv->warehouse_id, -$mv->quantity,
+                        'purchase_in_reversal', 'purchase_invoice', $invoice->id, null, $request->date,
+                        'عكس عند تعديل فاتورة الشراء', Auth::guard('admin')->id()
+                    );
+                }
+            }
+
             $invoice->items()->delete();
+            $inventoryAmount = 0.0;
+            $expenseAmount   = 0.0;
             foreach ($request->items ?? [] as $row) {
                 $qty     = (float)($row['qty'] ?? 0);
                 $price   = (float)($row['price'] ?? 0);
@@ -205,7 +268,27 @@ class PurchaseInvoicesController extends Controller
                     'tax_amount'       => $taxAmt,
                     'total'            => $lineNet + $taxAmt,
                 ]);
+
+                if (!empty($row['item_id'])) {
+                    $itemType = Item::where('id', $row['item_id'])->value('type');
+                    if ($itemType === 'service') {
+                        $expenseAmount += $lineNet;
+                    } else {
+                        $inventoryAmount += $lineNet;
+                    }
+                }
+
+                if (!empty($row['item_id']) && $invoice->warehouse_id) {
+                    StockService::adjustStock(
+                        $invoice->com_code, (int) $row['item_id'], $invoice->warehouse_id, $qty,
+                        'purchase_in', 'purchase_invoice', $invoice->id, $price, $request->date,
+                        null, Auth::guard('admin')->id()
+                    );
+                }
             }
+
+            JournalPostingService::reverseBySource($invoice->com_code, 'purchase_invoice', $invoice->id, Auth::guard('admin')->id(), 'تعديل الفاتورة');
+            $this->postInvoiceJournal($invoice, $inventoryAmount, $expenseAmount, $invoice->tax_amount);
         });
         return redirect()->route('purchase_invoices.show', $id)->with('success', 'تم تعديل فاتورة الشراء');
     }
@@ -213,7 +296,10 @@ class PurchaseInvoicesController extends Controller
     public function cancel($id)
     {
         $invoice = PurchaseInvoice::where('com_code', $this->comCode())->findOrFail($id);
-        $invoice->update(['status' => 'cancelled']);
+        DB::transaction(function () use ($invoice) {
+            $invoice->update(['status' => 'cancelled']);
+            JournalPostingService::reverseBySource($invoice->com_code, 'purchase_invoice', $invoice->id, Auth::guard('admin')->id(), 'إلغاء الفاتورة');
+        });
         return back()->with('success', 'تم إلغاء الفاتورة');
     }
 
