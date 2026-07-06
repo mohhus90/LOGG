@@ -1,0 +1,52 @@
+@extends('admin.layouts.crm')
+@section('title') تعديل عميل محتمل @endsection
+@section('start') إدارة علاقات العملاء @endsection
+@section('home') <a href="{{ route('crm_leads.index') }}">العملاء المحتملون</a> @endsection
+@section('startpage') تعديل @endsection
+
+@section('content')
+<div class="col-lg-6 col-md-8">
+    <div class="card card-primary card-outline">
+        <div class="card-header"><h3 class="card-title"><i class="fas fa-edit ml-2"></i> تعديل: {{ $lead->name }}</h3></div>
+        <form action="{{ route('crm_leads.update', $lead->id) }}" method="POST">
+            @csrf
+            <div class="card-body">
+                @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+                <div class="form-group">
+                    <label>الاسم <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="{{ old('name', $lead->name) }}" required>
+                </div>
+                <div class="form-group">
+                    <label>الهاتف</label>
+                    <input type="text" name="phone" class="form-control" value="{{ old('phone', $lead->phone) }}">
+                </div>
+                <div class="form-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" name="email" class="form-control" value="{{ old('email', $lead->email) }}">
+                </div>
+                <div class="form-group">
+                    <label>المصدر</label>
+                    <input type="text" name="source" class="form-control" value="{{ old('source', $lead->source) }}">
+                </div>
+                <div class="form-group">
+                    <label>الحالة <span class="text-danger">*</span></label>
+                    <select name="status" class="form-control" required>
+                        <option value="new" {{ $lead->status=='new'?'selected':'' }}>جديد</option>
+                        <option value="contacted" {{ $lead->status=='contacted'?'selected':'' }}>تم التواصل</option>
+                        <option value="qualified" {{ $lead->status=='qualified'?'selected':'' }}>مؤهّل</option>
+                        <option value="lost" {{ $lead->status=='lost'?'selected':'' }}>خسارة</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظات</label>
+                    <textarea name="notes" class="form-control" rows="3">{{ old('notes', $lead->notes) }}</textarea>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save ml-1"></i> حفظ</button>
+                <a href="{{ route('crm_leads.show', $lead->id) }}" class="btn btn-secondary">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection

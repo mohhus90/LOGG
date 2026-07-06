@@ -738,23 +738,23 @@
 
             {{-- 6. CRM --}}
             <div class="col-xl-3 col-lg-4 col-md-6 reveal">
-                <div class="module-card coming-soon mod-crm">
+                <a href="{{ route('crm_leads.index') }}" class="module-card active-module mod-crm">
                     <div class="module-icon-wrap icon-crm">
                         <i class="fas fa-handshake"></i>
                     </div>
                     <div class="module-title">إدارة علاقات العملاء</div>
                     <div class="module-subtitle">CRM</div>
-                    <span class="module-badge badge-soon">
-                        <i class="fas fa-clock" style="font-size:9px; margin-left:5px;"></i>
-                        قريباً
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
                     </span>
                     <div class="module-features">
                         <span class="feature-tag">العملاء المحتملون</span>
                         <span class="feature-tag">الفرص</span>
                         <span class="feature-tag">المتابعة</span>
-                        <span class="feature-tag">الحملات</span>
+                        <span class="feature-tag">تحويل لعميل</span>
                     </div>
-                </div>
+                </a>
             </div>
 
             {{-- 8. Fixed Assets --}}

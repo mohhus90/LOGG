@@ -1218,6 +1218,52 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('bi/dashboard', [\App\Http\Controllers\Admin\BI\BiDashboardController::class, 'index'])->name('bi_dashboard.index');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول إدارة علاقات العملاء — CRM Module
+    // ═════════════════════════════════════════════
+
+    // ── العملاء المحتملون ──
+    Route::middleware(['auth:admin', 'admin.permission:crm_leads,can_read'])->group(function () {
+        Route::get('crm/leads',            [\App\Http\Controllers\Admin\Crm\LeadsController::class, 'index'])->name('crm_leads.index');
+        Route::get('crm/leads/{id}',       [\App\Http\Controllers\Admin\Crm\LeadsController::class, 'show'])->where('id', '[0-9]+')->name('crm_leads.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:crm_leads,can_create'])->group(function () {
+        Route::get('crm/leads/create',     [\App\Http\Controllers\Admin\Crm\LeadsController::class, 'create'])->name('crm_leads.create');
+        Route::post('crm/leads/store',     [\App\Http\Controllers\Admin\Crm\LeadsController::class, 'store'])->name('crm_leads.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:crm_leads,can_update'])->group(function () {
+        Route::get('crm/leads/{id}/edit',  [\App\Http\Controllers\Admin\Crm\LeadsController::class, 'edit'])->where('id', '[0-9]+')->name('crm_leads.edit');
+        Route::post('crm/leads/{id}',      [\App\Http\Controllers\Admin\Crm\LeadsController::class, 'update'])->where('id', '[0-9]+')->name('crm_leads.update');
+        Route::post('crm/leads/{id}/convert', [\App\Http\Controllers\Admin\Crm\LeadsController::class, 'convertToCustomer'])->where('id', '[0-9]+')->name('crm_leads.convert');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:crm_leads,can_delete'])->group(function () {
+        Route::get('crm/leads/{id}/delete',[\App\Http\Controllers\Admin\Crm\LeadsController::class, 'delete'])->where('id', '[0-9]+')->name('crm_leads.delete');
+    });
+
+    // ── الفرص البيعية ──
+    Route::middleware(['auth:admin', 'admin.permission:crm_opportunities,can_read'])->group(function () {
+        Route::get('crm/opportunities',            [\App\Http\Controllers\Admin\Crm\OpportunitiesController::class, 'index'])->name('crm_opportunities.index');
+        Route::get('crm/opportunities/{id}',       [\App\Http\Controllers\Admin\Crm\OpportunitiesController::class, 'show'])->where('id', '[0-9]+')->name('crm_opportunities.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:crm_opportunities,can_create'])->group(function () {
+        Route::get('crm/opportunities/create',     [\App\Http\Controllers\Admin\Crm\OpportunitiesController::class, 'create'])->name('crm_opportunities.create');
+        Route::post('crm/opportunities/store',     [\App\Http\Controllers\Admin\Crm\OpportunitiesController::class, 'store'])->name('crm_opportunities.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:crm_opportunities,can_update'])->group(function () {
+        Route::post('crm/opportunities/{id}/stage', [\App\Http\Controllers\Admin\Crm\OpportunitiesController::class, 'updateStage'])->where('id', '[0-9]+')->name('crm_opportunities.stage');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:crm_opportunities,can_delete'])->group(function () {
+        Route::get('crm/opportunities/{id}/delete', [\App\Http\Controllers\Admin\Crm\OpportunitiesController::class, 'delete'])->where('id', '[0-9]+')->name('crm_opportunities.delete');
+    });
+
+    // ── المتابعات ──
+    Route::middleware(['auth:admin', 'admin.permission:crm_activities,can_create'])->group(function () {
+        Route::post('crm/activities/store', [\App\Http\Controllers\Admin\Crm\ActivitiesController::class, 'store'])->name('crm_activities.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:crm_activities,can_delete'])->group(function () {
+        Route::get('crm/activities/{id}/delete', [\App\Http\Controllers\Admin\Crm\ActivitiesController::class, 'delete'])->where('id', '[0-9]+')->name('crm_activities.delete');
+    });
+
 });
 
 // ─────────────────────────────────────────────
