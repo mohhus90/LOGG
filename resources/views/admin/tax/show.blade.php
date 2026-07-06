@@ -68,13 +68,13 @@
         @if($invoice->status === 'Valid' && !$invoice->is_posted)
           <form action="{{ route('tax.post', $invoice->id) }}" method="POST" class="d-inline">
             @csrf
-            <button class="btn btn-warning btn-sm"><i class="fas fa-check ml-1"></i> ترحيل محاسبي</button>
+            <button class="btn btn-warning btn-sm"><i class="fas fa-check ml-1"></i> تأكيد المطابقة المحاسبية</button>
           </form>
         @elseif($invoice->is_posted)
           <form action="{{ route('tax.unpost', $invoice->id) }}" method="POST" class="d-inline">
             @csrf
             <button class="btn btn-secondary btn-sm" onclick="return confirm('إلغاء الترحيل؟')">
-              <i class="fas fa-undo ml-1"></i> إلغاء الترحيل
+              <i class="fas fa-undo ml-1"></i> إلغاء التأكيد
             </button>
           </form>
         @endif
@@ -352,105 +352,60 @@
         </div>
       </div>
 
-      {{-- ─── القيد المحاسبي المقترح ─── --}}
+      {{-- ─── الربط بالسجل الداخلي والمطابقة المحاسبية ─── --}}
       @if($invoice->status === 'Valid')
       <hr>
-      <h6><i class="fas fa-book ml-1"></i>القيد المحاسبي المقترح</h6>
-      @php
-        $isPosted = $invoice->is_posted;
-        $net      = $invoice->net_amount;
-        $vat      = $invoice->total_vat;
-        $total    = $invoice->total_amount;
-        $isSales  = $invoice->direction === 'Sent';
-      @endphp
-      <div class="table-responsive">
-        <table class="table table-sm table-bordered {{ $isPosted ? '' : 'table-warning' }}">
-          <thead class="thead-dark">
-            <tr><th>الحساب</th><th>مدين</th><th>دائن</th></tr>
-          </thead>
-          <tbody>
-            @if($isSales)
-            <tr>
-              <td>العملاء / ذمم مدينة</td>
-              <td class="text-right">{{ number_format($total, 2) }}</td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>المبيعات</td>
-              <td></td>
-              <td class="text-right">{{ number_format($net, 2) }}</td>
-            </tr>
-            @foreach($taxTotals as $tax)
-            @php
-              $taxCode  = $tax['taxType'] ?? '';
-              $taxLabel = $taxTypeLabels[$taxCode] ?? $taxCode;
-              $taxAmt   = (float)($tax['amount'] ?? 0);
-              $isWht    = in_array($taxCode, ['T4','W1','W11']);
-            @endphp
-            <tr>
-              <td>{{ $taxLabel }}</td>
-              @if($isWht)
-              <td class="text-right">{{ number_format(abs($taxAmt), 2) }}</td>
-              <td></td>
-              @else
-              <td></td>
-              <td class="text-right">{{ number_format(abs($taxAmt), 2) }}</td>
-              @endif
-            </tr>
-            @endforeach
-            @if(empty($taxTotals) && $vat != 0)
-            <tr>
-              <td>ضريبة القيمة المضافة (دائن)</td>
-              <td></td>
-              <td class="text-right">{{ number_format($vat, 2) }}</td>
-            </tr>
-            @endif
+      <h6><i class="fas fa-link ml-1"></i>الربط بالفاتورة الداخلية</h6>
+
+      @if($linkedInvoice)
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+          <div>
+            مربوطة بـ
+            @if($invoice->direction === 'Sent')
+              <a href="{{ route('sales_invoices.show', $linkedInvoice->id) }}">{{ $linkedInvoice->invoice_number }}</a>
             @else
-            <tr>
-              <td>المشتريات</td>
-              <td class="text-right">{{ number_format($net, 2) }}</td>
-              <td></td>
-            </tr>
-            @foreach($taxTotals as $tax)
-            @php
-              $taxCode  = $tax['taxType'] ?? '';
-              $taxLabel = $taxTypeLabels[$taxCode] ?? $taxCode;
-              $taxAmt   = (float)($tax['amount'] ?? 0);
-              $isWht    = in_array($taxCode, ['T4','W1','W11']);
-            @endphp
-            <tr>
-              <td>{{ $taxLabel }}</td>
-              @if($isWht)
-              <td></td>
-              <td class="text-right">{{ number_format(abs($taxAmt), 2) }}</td>
-              @else
-              <td class="text-right">{{ number_format(abs($taxAmt), 2) }}</td>
-              <td></td>
-              @endif
-            </tr>
-            @endforeach
-            @if(empty($taxTotals) && $vat != 0)
-            <tr>
-              <td>ضريبة القيمة المضافة (مدين)</td>
-              <td class="text-right">{{ number_format($vat, 2) }}</td>
-              <td></td>
-            </tr>
+              <a href="{{ route('purchase_invoices.show', $linkedInvoice->id) }}">{{ $linkedInvoice->invoice_number }}</a>
             @endif
-            <tr>
-              <td>الموردون / ذمم دائنة</td>
-              <td></td>
-              <td class="text-right">{{ number_format($total, 2) }}</td>
-            </tr>
-            @endif
-          </tbody>
-        </table>
-      </div>
-      @if(!$isPosted)
-        <p class="text-warning"><i class="fas fa-exclamation-triangle ml-1"></i>القيد مقترح ولم يُرحَّل بعد</p>
+            — إجمالي {{ number_format($linkedInvoice->total, 2) }}
+          </div>
+          <form action="{{ route('tax.unlink', $invoice->id) }}" method="POST" class="d-inline">
+            @csrf
+            <button class="btn btn-xs btn-outline-secondary" onclick="return confirm('إلغاء الربط؟')">إلغاء الربط</button>
+          </form>
+        </div>
       @else
+        <p class="text-muted">لم يتم ربط هذه الفاتورة بسجل داخلي بعد. اختر أقرب فاتورة مطابقة من المقترحات التالية (بالمبلغ والتاريخ):</p>
+        @if($suggestedMatches->count())
+        <form action="{{ route('tax.link', $invoice->id) }}" method="POST" class="form-inline">
+          @csrf
+          <select name="linked_invoice_id" class="form-control form-control-sm ml-2" required style="min-width:280px">
+            <option value="">-- اختر الفاتورة --</option>
+            @foreach($suggestedMatches as $match)
+              <option value="{{ $match->id }}">{{ $match->invoice_number }} — {{ number_format($match->total, 2) }} — {{ \Carbon\Carbon::parse($match->date)->format('Y-m-d') }}</option>
+            @endforeach
+          </select>
+          <button class="btn btn-primary btn-sm"><i class="fas fa-link ml-1"></i> ربط</button>
+        </form>
+        @else
+        <p class="text-muted small">لا توجد فواتير داخلية مطابقة بنفس المبلغ تقريبًا خلال ٣ أيام من تاريخ الإصدار.</p>
+        @endif
+      @endif
+
+      <hr>
+      <h6><i class="fas fa-book ml-1"></i>حالة الترحيل المحاسبي</h6>
+      <p class="text-muted small">
+        القيد المحاسبي الفعلي يُرحَّل تلقائيًا وقت حفظ الفاتورة في نظامنا (موديول المحاسبة)، وليس هنا -
+        هذا القسم يتحقق فقط من وجود ذلك القيد قبل اعتماد المطابقة مع ETA.
+      </p>
+      @if($invoice->is_posted)
         <p class="text-success"><i class="fas fa-check-circle ml-1"></i>
-          مرحّل بتاريخ {{ $invoice->posted_at?->format('Y-m-d H:i') }}
+          تم تأكيد المطابقة بتاريخ {{ $invoice->posted_at?->format('Y-m-d H:i') }}
         </p>
+        @if($invoice->posting_notes)
+          <p class="text-warning small"><i class="fas fa-exclamation-triangle ml-1"></i>{{ $invoice->posting_notes }}</p>
+        @endif
+      @else
+        <p class="text-warning"><i class="fas fa-exclamation-triangle ml-1"></i>لم يتم تأكيد المطابقة المحاسبية بعد</p>
       @endif
       @endif
 

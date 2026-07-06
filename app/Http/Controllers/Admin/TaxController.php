@@ -165,7 +165,10 @@ class TaxController extends Controller
             }
         }
 
-        return view('admin.tax.show', compact('invoice'));
+        $linkedInvoice = $invoice->linkedInvoice();
+        $suggestedMatches = $linkedInvoice ? collect() : $invoice->suggestedMatches();
+
+        return view('admin.tax.show', compact('invoice', 'linkedInvoice', 'suggestedMatches'));
     }
 
     // ─────────────────────────────────────────────
@@ -364,8 +367,57 @@ class TaxController extends Controller
     }
 
     // ─────────────────────────────────────────────
-    //  Accounting — ترحيل محاسبي
+    //  ربط الفاتورة الإلكترونية بفاتورة داخلية (Phase 7)
     // ─────────────────────────────────────────────
+
+    /**
+     * لا يوجد مفتاح مطابقة مضمون بين ETA ونظامنا الداخلي (internal_id حر النص)،
+     * فالربط هنا يدوي يختاره المستخدم من مرشحات مقترحة بالمبلغ والتاريخ.
+     */
+    public function linkInvoice(Request $request, int $id)
+    {
+        $invoice = EtaInvoice::where('com_code', $this->comCode())->findOrFail($id);
+        $request->validate(['linked_invoice_id' => 'required|integer']);
+
+        if ($invoice->direction === 'Sent') {
+            $target = \App\Models\SalesInvoice::where('com_code', $this->comCode())->findOrFail($request->linked_invoice_id);
+            $invoice->update(['sales_invoice_id' => $target->id, 'purchase_invoice_id' => null]);
+        } else {
+            $target = \App\Models\PurchaseInvoice::where('com_code', $this->comCode())->findOrFail($request->linked_invoice_id);
+            $invoice->update(['purchase_invoice_id' => $target->id, 'sales_invoice_id' => null]);
+        }
+
+        return back()->with('success', 'تم ربط الفاتورة بالسجل الداخلي');
+    }
+
+    public function unlinkInvoice(int $id)
+    {
+        $invoice = EtaInvoice::where('com_code', $this->comCode())->findOrFail($id);
+        $invoice->update(['sales_invoice_id' => null, 'purchase_invoice_id' => null]);
+        return back()->with('success', 'تم إلغاء ربط الفاتورة');
+    }
+
+    // ─────────────────────────────────────────────
+    //  تأكيد المطابقة المحاسبية — ETA طبقة امتثال فوق القيد الفعلي
+    //  (القيد المحاسبي الحقيقي يحدث وقت حفظ فاتورة البيع/الشراء في نظامنا،
+    //  وليس هنا؛ هذا الإجراء يتحقق فقط أن القيد موجود فعلاً قبل الاعتماد)
+    // ─────────────────────────────────────────────
+
+    /** يتحقق أن للفاتورة المرتبطة (إن وُجدت) قيدًا محاسبيًا فعليًا مرحّلًا */
+    private function verifyGlPosting(EtaInvoice $invoice): ?string
+    {
+        $linked = $invoice->linkedInvoice();
+        if (!$linked) {
+            return 'لم يتم ربط الفاتورة بسجل داخلي - تعذّر التحقق من الترحيل المحاسبي، تُعتمد كامتثال فقط';
+        }
+
+        $sourceModule = $invoice->direction === 'Sent' ? 'sales_invoice' : 'purchase_invoice';
+        if (!\App\Services\Accounting\JournalPostingService::alreadyPosted($invoice->com_code, $sourceModule, $linked->id)) {
+            return 'الفاتورة الداخلية المرتبطة ليس لها قيد محاسبي مرحّل بعد';
+        }
+
+        return null;
+    }
 
     public function postInvoice(int $id)
     {
@@ -375,29 +427,47 @@ class TaxController extends Controller
             return back()->with('error', 'هذه الفاتورة مرحّلة بالفعل');
         }
 
+        $warning = $this->verifyGlPosting($invoice);
+        if ($warning && $invoice->linkedInvoice()) {
+            // مربوطة لكن بدون قيد فعلي - نمنع الاعتماد حتى تتم مطابقتها محاسبيًا
+            return back()->with('error', $warning);
+        }
+
         $invoice->update([
-            'is_posted'  => true,
-            'posted_at'  => now(),
-            'posted_by'  => Auth::guard('admin')->id(),
+            'is_posted'      => true,
+            'posted_at'      => now(),
+            'posted_by'      => Auth::guard('admin')->id(),
+            'posting_notes'  => $warning,
         ]);
 
-        return back()->with('success', 'تم الترحيل المحاسبي للفاتورة بنجاح');
+        return back()->with('success', 'تم تأكيد المطابقة المحاسبية للفاتورة بنجاح');
     }
 
     public function postBulk(Request $request)
     {
         $request->validate(['ids' => 'required|array', 'ids.*' => 'integer']);
 
-        $count = EtaInvoice::where('com_code', $this->comCode())
-            ->whereIn('id', $request->ids)
-            ->where('is_posted', false)
-            ->update([
-                'is_posted' => true,
-                'posted_at' => now(),
-                'posted_by' => Auth::guard('admin')->id(),
-            ]);
+        $invoices = EtaInvoice::where('com_code', $this->comCode())
+            ->whereIn('id', $request->ids)->where('is_posted', false)->get();
 
-        return response()->json(['success' => true, 'count' => $count]);
+        $count = 0;
+        $blocked = 0;
+        foreach ($invoices as $invoice) {
+            $warning = $this->verifyGlPosting($invoice);
+            if ($warning && $invoice->linkedInvoice()) {
+                $blocked++;
+                continue;
+            }
+            $invoice->update([
+                'is_posted'     => true,
+                'posted_at'     => now(),
+                'posted_by'     => Auth::guard('admin')->id(),
+                'posting_notes' => $warning,
+            ]);
+            $count++;
+        }
+
+        return response()->json(['success' => true, 'count' => $count, 'blocked' => $blocked]);
     }
 
     public function unpostInvoice(int $id)

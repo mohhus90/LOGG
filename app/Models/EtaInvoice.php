@@ -8,6 +8,7 @@ class EtaInvoice extends Model
 {
     protected $fillable = [
         'com_code', 'direction', 'uuid', 'long_id', 'internal_id',
+        'sales_invoice_id', 'purchase_invoice_id',
         'document_type', 'document_type_version',
         'issuer_id', 'issuer_name', 'receiver_id', 'receiver_name',
         'date_issued', 'date_received',
@@ -38,6 +39,42 @@ class EtaInvoice extends Model
     public function poster()
     {
         return $this->belongsTo(Admin::class, 'posted_by');
+    }
+
+    public function salesInvoice()
+    {
+        return $this->belongsTo(SalesInvoice::class, 'sales_invoice_id');
+    }
+
+    public function purchaseInvoice()
+    {
+        return $this->belongsTo(PurchaseInvoice::class, 'purchase_invoice_id');
+    }
+
+    /** الفاتورة الداخلية المرتبطة (بيع أو شراء حسب الاتجاه)، أو null لو غير مربوطة بعد */
+    public function linkedInvoice()
+    {
+        return $this->direction === 'Sent' ? $this->salesInvoice : $this->purchaseInvoice;
+    }
+
+    /**
+     * مرشحات محتملة للربط اليدوي: فواتير داخلية بنفس الاتجاه ونفس الإجمالي تقريبًا
+     * خلال ٣ أيام من تاريخ إصدار فاتورة ETA (لا يوجد مفتاح مطابقة مضمون بين
+     * النظامين، فهذا ترشيح تقريبي يراجعه المستخدم قبل الربط الفعلي).
+     */
+    public function suggestedMatches()
+    {
+        $date = $this->date_issued;
+        if ($this->direction === 'Sent') {
+            return SalesInvoice::where('com_code', $this->com_code)
+                ->whereBetween('total', [$this->total_amount - 1, $this->total_amount + 1])
+                ->when($date, fn ($q) => $q->whereBetween('date', [$date->copy()->subDays(3), $date->copy()->addDays(3)]))
+                ->limit(10)->get();
+        }
+        return PurchaseInvoice::where('com_code', $this->com_code)
+            ->whereBetween('total', [$this->total_amount - 1, $this->total_amount + 1])
+            ->when($date, fn ($q) => $q->whereBetween('date', [$date->copy()->subDays(3), $date->copy()->addDays(3)]))
+            ->limit(10)->get();
     }
 
     public function getDirectionLabelAttribute(): string

@@ -564,6 +564,8 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('tax/invoices/{id}/post',    [TaxController::class, 'postInvoice'])->name('tax.post');
         Route::post('tax/invoices/{id}/unpost',  [TaxController::class, 'unpostInvoice'])->name('tax.unpost');
         Route::post('tax/invoices/post-bulk',    [TaxController::class, 'postBulk'])->name('tax.post_bulk');
+        Route::post('tax/invoices/{id}/link',    [TaxController::class, 'linkInvoice'])->name('tax.link');
+        Route::post('tax/invoices/{id}/unlink',  [TaxController::class, 'unlinkInvoice'])->name('tax.unlink');
     });
 
     // ═════════════════════════════════════════════
