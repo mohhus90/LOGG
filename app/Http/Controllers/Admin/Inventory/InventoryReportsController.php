@@ -16,10 +16,8 @@ class InventoryReportsController extends Controller
         $cc = $this->comCode();
 
         $stockValue = DB::table('stock_balances as sb')
-            ->join('items as i', 'sb.item_id', '=', 'i.id')
             ->where('sb.com_code', $cc)
-            ->selectRaw('SUM(sb.quantity * i.cost_price) as total_value')
-            ->value('total_value');
+            ->sum('sb.total_value');
 
         $stats = [
             'total_stock_value' => $stockValue ?? 0,
@@ -53,8 +51,8 @@ class InventoryReportsController extends Controller
             ->join('warehouses as w', 'sb.warehouse_id', '=', 'w.id')
             ->where('sb.com_code', $this->comCode())
             ->where('sb.quantity', '>', 0)
-            ->select('i.id', 'i.name', 'i.code', 'w.name as warehouse_name', 'sb.quantity', 'i.cost_price')
-            ->selectRaw('sb.quantity * i.cost_price as value');
+            ->select('i.id', 'i.name', 'i.code', 'w.name as warehouse_name', 'sb.quantity')
+            ->selectRaw('sb.avg_cost as cost_price, sb.total_value as value');
 
         if ($request->filled('warehouse_id')) $query->where('sb.warehouse_id', $request->warehouse_id);
 

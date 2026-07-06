@@ -20,7 +20,7 @@
 - [ ] **الخزينة والبنوك** — لا يوجد خزائن/حسابات بنكية/سندات قبض وصرف/شيكات (رغم أن SalesPayment/PurchasePayment فيهم حقول شبه-سند بدون ترحيل فعلي).
 - [ ] **الأصول الثابتة** — لا يوجد سجل أصول ولا إهلاك.
 - [ ] **التصنيع/الإنتاج** — لا يوجد BOM ولا أوامر إنتاج (لكن `items` جاهز بأنواع raw_material/semi_finished).
-- [ ] **تكلفة المخزون** — `stock_balances` بدون avg_cost/total_value، فلا يوجد COGS حقيقي.
+- [x] **تكلفة المخزون** — `stock_balances` أصبح فيه `avg_cost`/`total_value` بالمتوسط المرجح، و`StockService::adjustStock()` بيرجع تكلفة COGS حقيقية.
 - [ ] **ربط الفاتورة الإلكترونية بالمحاسبة** — التكامل الحالي يغيّر flags فقط، بدون قيد محاسبي فعلي.
 
 ## القرارات المعمارية الأساسية
@@ -41,7 +41,7 @@ Phase 0: هذا المستند (مرجع دائم)                              
 Phase 1: نواة المحاسبة (دليل حسابات، قيود يومية، مراكز تكلفة، فترات،
          خدمة الترحيل JournalPostingService، تقارير مالية)                  [x] 2026-07-06
 Phase 2: ترقية تكلفة المخزون (avg_cost/total_value على StockBalance،
-         تعديل StockService::adjustStock لإرجاع تكلفة COGS)                 [ ]
+         تعديل StockService::adjustStock لإرجاع تكلفة COGS)                 [x] 2026-07-06
 Phase 3: ربط الترحيل التلقائي بالموديولات القائمة
          (فواتير بيع/شراء، رواتب، مرتجعات)                                  [ ]
 Phase 4: الخزينة والبنوك (خزائن، حسابات بنكية، سندات قبض/صرف، شيكات)         [ ]
@@ -93,12 +93,24 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 
 ### Phase 2 — ترقية تكلفة المخزون
 
-- إضافة أعمدة: `stock_balances.avg_cost`, `stock_balances.total_value`؛ `items.costing_method` (enum `weighted_average`), `items.avg_cost` (نسخة مجمّعة للتقارير).
+- إضافة أعمدة: `stock_balances.avg_cost`, `stock_balances.total_value`؛ `items.costing_method` (افتراضي `weighted_average`).
 - `stock_movements`: إضافة `total_cost` (nullable).
 - تعديل `app/Services/StockService.php::adjustStock()`:
   - عند الإضافة (+): إعادة حساب المتوسط المرجح.
-  - عند الخصم (−): استخدام `avg_cost` الحالي كتكلفة COGS بدل التكلفة المرسلة من المستدعي، وإرجاعها للمستدعي.
-  - **تغيير كاسر لتوقيع الدالة** — كل الأماكن المستخدمة لها (مثل `SalesInvoicesController::store`) تحتاج تعديل سطر واحد لقراءة الشكل الجديد.
+  - عند الخصم (−): استخدام `avg_cost` الحالي كتكلفة COGS بدل التكلفة المرسلة من المستدعي.
+
+**✅ تم التنفيذ فعليًا (2026-07-06):** لم يتطلب الأمر أي تغيير كاسر في توقيع الدالة —
+`adjustStock()` لسه بترجع نفس `StockMovement` بالضبط، لكن دلوقتي `unit_cost`/`total_cost` عليه
+بيعكسوا تكلفة COGS الحقيقية (المتوسط المرجح) مش السعر المُمرَّر من المستدعي. يعني كل الأماكن
+الحالية اللي بتنادي الدالة (`SalesInvoicesController`, `PurchaseInvoicesController`,
+`SalesReturnsController`, `PurchaseReturnsController`, `StockTransfersController`,
+`StockAdjustmentsController`) اشتغلت من غير أي تعديل، ومين يحتاج تكلفة COGS لاحقًا (Phase 3)
+هياخدها من الكائن المُرجع (`$movement->total_cost`) بدل ما يحسبها بنفسه.
+تم أيضًا تحديث `InventoryReportsController::index()/valuation()` ليعتمدوا على
+`stock_balances.avg_cost/total_value` بدل `items.cost_price` الثابت، مع migration تهيئة
+(`2026_07_06_000019_add_costing_fields_to_inventory_tables.php`) تنسخ `cost_price` الحالي
+كمتوسط مبدئي للأرصدة الموجودة. تم التحقق بمحاكاة شراء دفعتين بأسعار مختلفة ثم بيع جزء،
+والتأكد من صحة المتوسط المرجح والـ COGS الناتج.
 
 ---
 
