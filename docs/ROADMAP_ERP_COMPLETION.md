@@ -256,13 +256,15 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 
 **✅ تم التنفيذ فعليًا (2026-07-06):** `LeadsController::convertToCustomer()` تنشئ `Customer` حقيقي في موديول المبيعات وتوجّه المستخدم لصفحته مباشرة (`sales_customers.show`)، بدون تعديل أي كود موجود في موديول المبيعات. الفرص البيعية معروضة كلوحة Kanban بسيطة (أعمدة حسب المرحلة، بدون سحب وإفلات — تحديث المرحلة عبر فورم صغير). المتابعات (`crm_activities`) مُصمَّمة بربط بسيط `linked_type/linked_id` (بدون morphTo حقيقي، بنفس اصطلاح باقي الموديولات في هذا المشروع) وتُدرج مباشرة داخل صفحة عرض أي Lead أو فرصة. تم التحقق end-to-end: إنشاء عميل محتمل + متابعة + فرصة بيعية مرتبطة به، ثم تحويله فعليًا لعميل حقيقي والتأكد من ربط `converted_customer_id` بشكل صحيح.
 
-#### Phase 9.4 — إدارة المشاريع (Project Management)
+#### Phase 9.4 — إدارة المشاريع (Project Management) [x] 2026-07-06
 
 **جداول:** `projects` (name, customer_id nullable, start_date, end_date, budget, status[planning|active|on_hold|completed|cancelled])، `project_tasks` (project_id, title, assigned_to [employee_id], due_date, status[todo|in_progress|done], priority[low|medium|high]).
 
 **Controllers:** `app/Http/Controllers/Admin/Projects/` — `ProjectsController`, `ProjectTasksController` (عرض لوحة Kanban بسيطة حسب الحالة).
 
 **module_keys (sort_order 110-111)**, **Sidebar:** `sidebar_projects.blade.php`. مخطط جانت والتكاليف الفعلية المرتبطة بمصروفات الخزينة مؤجَّلة لإصدار لاحق.
+
+**✅ تم التنفيذ فعليًا (2026-07-06):** `project_tasks` ليس بها عمود `com_code` مباشر (بنفس نمط `monthly_payrolls`) — العزل بالشركة يتم عبر `whereHas('project', fn($q) => $q->where('com_code', ...))`، وتم التحقق أن هذا يمنع فعليًا الوصول لمهام شركة أخرى. لوحة Kanban داخل صفحة عرض المشروع (أعمدة حسب الحالة: قيد الانتظار/قيد التنفيذ/منجزة) مع تحديث الحالة عبر قائمة منسدلة تُرسل تلقائيًا (`onchange="this.form.submit()"`) بدل سحب وإفلات. تم التحقق end-to-end: مشروع + مهمة مُسنَدة لموظف حقيقي، تحديث الحالة، والتأكد من رفض الوصول لها بـ com_code خاطئ.
 
 #### Phase 9.5 — إدارة الوثائق (Document Management)
 

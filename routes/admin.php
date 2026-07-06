@@ -1264,6 +1264,38 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('crm/activities/{id}/delete', [\App\Http\Controllers\Admin\Crm\ActivitiesController::class, 'delete'])->where('id', '[0-9]+')->name('crm_activities.delete');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول إدارة المشاريع — Project Management Module
+    // ═════════════════════════════════════════════
+
+    // ── المشاريع ──
+    Route::middleware(['auth:admin', 'admin.permission:projects,can_read'])->group(function () {
+        Route::get('projects',            [\App\Http\Controllers\Admin\Projects\ProjectsController::class, 'index'])->name('projects.index');
+        Route::get('projects/{id}',       [\App\Http\Controllers\Admin\Projects\ProjectsController::class, 'show'])->where('id', '[0-9]+')->name('projects.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:projects,can_create'])->group(function () {
+        Route::get('projects/create',     [\App\Http\Controllers\Admin\Projects\ProjectsController::class, 'create'])->name('projects.create');
+        Route::post('projects/store',     [\App\Http\Controllers\Admin\Projects\ProjectsController::class, 'store'])->name('projects.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:projects,can_update'])->group(function () {
+        Route::get('projects/{id}/edit',  [\App\Http\Controllers\Admin\Projects\ProjectsController::class, 'edit'])->where('id', '[0-9]+')->name('projects.edit');
+        Route::post('projects/{id}',      [\App\Http\Controllers\Admin\Projects\ProjectsController::class, 'update'])->where('id', '[0-9]+')->name('projects.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:projects,can_delete'])->group(function () {
+        Route::get('projects/{id}/delete',[\App\Http\Controllers\Admin\Projects\ProjectsController::class, 'delete'])->where('id', '[0-9]+')->name('projects.delete');
+    });
+
+    // ── مهام المشاريع ──
+    Route::middleware(['auth:admin', 'admin.permission:project_tasks,can_create'])->group(function () {
+        Route::post('projects/{projectId}/tasks/store', [\App\Http\Controllers\Admin\Projects\ProjectTasksController::class, 'store'])->where('projectId', '[0-9]+')->name('project_tasks.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:project_tasks,can_update'])->group(function () {
+        Route::post('project-tasks/{id}/status', [\App\Http\Controllers\Admin\Projects\ProjectTasksController::class, 'updateStatus'])->where('id', '[0-9]+')->name('project_tasks.status');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:project_tasks,can_delete'])->group(function () {
+        Route::get('project-tasks/{id}/delete', [\App\Http\Controllers\Admin\Projects\ProjectTasksController::class, 'delete'])->where('id', '[0-9]+')->name('project_tasks.delete');
+    });
+
 });
 
 // ─────────────────────────────────────────────

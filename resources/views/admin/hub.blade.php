@@ -780,23 +780,23 @@
 
             {{-- 9. Projects --}}
             <div class="col-xl-3 col-lg-4 col-md-6 reveal">
-                <div class="module-card coming-soon mod-proj">
+                <a href="{{ route('projects.index') }}" class="module-card active-module mod-proj">
                     <div class="module-icon-wrap icon-proj">
                         <i class="fas fa-project-diagram"></i>
                     </div>
                     <div class="module-title">إدارة المشاريع</div>
                     <div class="module-subtitle">Project Management</div>
-                    <span class="module-badge badge-soon">
-                        <i class="fas fa-clock" style="font-size:9px; margin-left:5px;"></i>
-                        قريباً
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
                     </span>
                     <div class="module-features">
                         <span class="feature-tag">المشاريع</span>
                         <span class="feature-tag">المهام</span>
-                        <span class="feature-tag">الجانت</span>
-                        <span class="feature-tag">التكاليف</span>
+                        <span class="feature-tag">لوحة Kanban</span>
+                        <span class="feature-tag">الأولويات</span>
                     </div>
-                </div>
+                </a>
             </div>
 
             {{-- 10. Quality --}}
