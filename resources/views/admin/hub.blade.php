@@ -822,23 +822,23 @@
 
             {{-- 11. BI & Analytics --}}
             <div class="col-xl-3 col-lg-4 col-md-6 reveal">
-                <div class="module-card coming-soon mod-bi">
+                <a href="{{ route('bi_dashboard.index') }}" class="module-card active-module mod-bi">
                     <div class="module-icon-wrap icon-bi">
                         <i class="fas fa-chart-pie"></i>
                     </div>
                     <div class="module-title">التقارير والتحليلات</div>
                     <div class="module-subtitle">BI & Analytics</div>
-                    <span class="module-badge badge-soon">
-                        <i class="fas fa-clock" style="font-size:9px; margin-left:5px;"></i>
-                        قريباً
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
                     </span>
                     <div class="module-features">
-                        <span class="feature-tag">لوحات التحكم</span>
-                        <span class="feature-tag">التقارير</span>
+                        <span class="feature-tag">لوحة تنفيذية</span>
+                        <span class="feature-tag">مؤشرات مالية</span>
                         <span class="feature-tag">الرسوم البيانية</span>
-                        <span class="feature-tag">التصدير</span>
+                        <span class="feature-tag">اتجاه المبيعات</span>
                     </div>
-                </div>
+                </a>
             </div>
 
             {{-- 12. Document Management --}}

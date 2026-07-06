@@ -1211,6 +1211,13 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('quality/reports',                [\App\Http\Controllers\Admin\Quality\QualityReportsController::class, 'index'])->name('quality_reports.index');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول التقارير والتحليلات — BI Module
+    // ═════════════════════════════════════════════
+    Route::middleware(['auth:admin', 'admin.permission:bi_dashboard,can_read'])->group(function () {
+        Route::get('bi/dashboard', [\App\Http\Controllers\Admin\BI\BiDashboardController::class, 'index'])->name('bi_dashboard.index');
+    });
+
 });
 
 // ─────────────────────────────────────────────
