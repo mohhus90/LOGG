@@ -1,13 +1,25 @@
 {{-- FILE: resources/views/admin/includes/sidebar.blade.php --}}
 
 <div class="sidebar">
-  <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
-    <div class="info">
-      <a href="#" class="d-block">{{ Auth::guard('admin')->user()->name }}</a>
-      @if(Auth::guard('admin')->user()->is_super_admin)
-        <span class="badge badge-warning badge-sm">{{ __('admin.super_admin') }}</span>
-      @endif
-      <small class="text-muted d-block">{{ Auth::guard('admin')->user()->company?->name }}</small>
+  <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center"
+       style="border-bottom:1px solid rgba(255,255,255,.1)">
+    <div class="info w-100">
+      <div class="d-flex align-items-center justify-content-between">
+        <span class="text-white font-weight-bold" style="font-size:.9rem">
+          <i class="fas fa-users ml-1" style="color:#818cf8"></i>
+          موديول HR
+        </span>
+        <a href="{{ route('admin.dashboard.home.page') }}"
+           class="btn btn-xs" title="تبديل الموديول"
+           style="background:rgba(255,255,255,.1);color:#aaa;font-size:.75rem;padding:3px 8px;border-radius:4px">
+          <i class="fas fa-th-large"></i>
+        </a>
+      </div>
+      <small class="text-muted d-block mt-1">{{ Auth::guard('admin')->user()->name }}
+        @if(Auth::guard('admin')->user()->is_super_admin)
+          <span class="badge badge-warning badge-sm" style="font-size:.65em">{{ __('admin.super_admin') }}</span>
+        @endif
+      </small>
     </div>
   </div>
 

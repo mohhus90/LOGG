@@ -1,0 +1,122 @@
+﻿@extends('admin.layouts.sales')
+@section('title') تقرير المبيعات بالعميل @endsection
+@section('start') المبيعات @endsection
+@section('home') <a href="{{ route('sales_reports.index') }}">التقارير</a> @endsection
+@section('startpage') بالعميل @endsection
+
+@section('content')
+<div class="col-12">
+
+    {{-- Search Filter --}}
+    <div class="card card-outline card-secondary mb-3">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-search ml-2"></i> بحث عن عميل</h3>
+            <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ route('sales_reports.customer') }}">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <input type="text" name="search" class="form-control"
+                                   value="{{ request('search') }}"
+                                   placeholder="ابحث باسم العميل أو الكود...">
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-start">
+                        <button type="submit" class="btn btn-primary ml-2">
+                            <i class="fas fa-search"></i> بحث
+                        </button>
+                        @if(request('search'))
+                            <a href="{{ route('sales_reports.customer') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> مسح
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Table --}}
+    <div class="card card-success card-outline">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-users ml-2"></i> تقرير المبيعات بالعميل</h3>
+            <div class="card-tools">
+                <a href="{{ route('sales_reports.index') }}" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-arrow-right ml-1"></i> رجوع
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-striped mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>العميل</th>
+                            <th>إجمالي الفواتير</th>
+                            <th>المحصّل</th>
+                            <th>المتبقي (رصيد)</th>
+                            <th>عدد الفواتير</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($data as $i => $row)
+                        <tr>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>
+                                <strong>{{ $row->customer_name ?? $row->name ?? '-' }}</strong>
+                                @if($row->customer_code ?? null)
+                                    <br><small class="text-muted">{{ $row->customer_code }}</small>
+                                @endif
+                            </td>
+                            <td><strong>{{ number_format($row->total_invoices ?? $row->total ?? 0, 2) }} ج.م</strong></td>
+                            <td class="text-success">{{ number_format($row->total_paid ?? $row->paid ?? 0, 2) }} ج.م</td>
+                            <td class="{{ ($row->total_remaining ?? $row->remaining ?? 0) > 0 ? 'text-danger font-weight-bold' : 'text-success' }}">
+                                {{ number_format($row->total_remaining ?? $row->remaining ?? 0, 2) }} ج.م
+                                @if(($row->total_remaining ?? $row->remaining ?? 0) > 0)
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                @endif
+                            </td>
+                            <td>
+                                <span class="badge badge-info badge-lg">
+                                    {{ number_format($row->invoices_count ?? 0) }}
+                                </span>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                لا توجد بيانات
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                    @if(count($data) > 0)
+                    <tfoot class="bg-light font-weight-bold">
+                        <tr class="table-success">
+                            <td colspan="2" class="text-left">الإجمالي</td>
+                            <td>{{ number_format(collect($data)->sum(fn($r) => $r->total_invoices ?? $r->total ?? 0), 2) }} ج.م</td>
+                            <td class="text-success">{{ number_format(collect($data)->sum(fn($r) => $r->total_paid ?? $r->paid ?? 0), 2) }} ج.م</td>
+                            <td class="text-danger">{{ number_format(collect($data)->sum(fn($r) => $r->total_remaining ?? $r->remaining ?? 0), 2) }} ج.م</td>
+                            <td>{{ collect($data)->sum(fn($r) => $r->invoices_count ?? 0) }}</td>
+                        </tr>
+                    </tfoot>
+                    @endif
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            @if(method_exists($data, 'links'))
+                {{ $data->appends(request()->query())->links() }}
+            @endif
+        </div>
+    </div>
+</div>
+@endsection

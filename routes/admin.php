@@ -547,6 +547,367 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::post('tax/invoices/{id}/unpost',  [TaxController::class, 'unpostInvoice'])->name('tax.unpost');
         Route::post('tax/invoices/post-bulk',    [TaxController::class, 'postBulk'])->name('tax.post_bulk');
     });
+
+    // ═════════════════════════════════════════════
+    //  موديول المبيعات — Sales Module
+    // ═════════════════════════════════════════════
+
+    // ── وحدات القياس ──
+    Route::middleware(['auth:admin', 'admin.permission:item_units,can_read'])->group(function () {
+        Route::get('sales/item-units',           [\App\Http\Controllers\Admin\Sales\ItemUnitsController::class, 'index'])->name('item_units.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:item_units,can_create'])->group(function () {
+        Route::get('sales/item-units/create',    [\App\Http\Controllers\Admin\Sales\ItemUnitsController::class, 'create'])->name('item_units.create');
+        Route::post('sales/item-units/store',    [\App\Http\Controllers\Admin\Sales\ItemUnitsController::class, 'store'])->name('item_units.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:item_units,can_update'])->group(function () {
+        Route::get('sales/item-units/{id}/edit', [\App\Http\Controllers\Admin\Sales\ItemUnitsController::class, 'edit'])->name('item_units.edit');
+        Route::post('sales/item-units/{id}',     [\App\Http\Controllers\Admin\Sales\ItemUnitsController::class, 'update'])->name('item_units.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:item_units,can_delete'])->group(function () {
+        Route::get('sales/item-units/{id}/delete', [\App\Http\Controllers\Admin\Sales\ItemUnitsController::class, 'delete'])->name('item_units.delete');
+    });
+
+    // ── مجموعات الأصناف ──
+    Route::middleware(['auth:admin', 'admin.permission:item_categories,can_read'])->group(function () {
+        Route::get('sales/item-categories',           [\App\Http\Controllers\Admin\Sales\ItemCategoriesController::class, 'index'])->name('item_categories.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:item_categories,can_create'])->group(function () {
+        Route::get('sales/item-categories/create',    [\App\Http\Controllers\Admin\Sales\ItemCategoriesController::class, 'create'])->name('item_categories.create');
+        Route::post('sales/item-categories/store',    [\App\Http\Controllers\Admin\Sales\ItemCategoriesController::class, 'store'])->name('item_categories.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:item_categories,can_update'])->group(function () {
+        Route::get('sales/item-categories/{id}/edit', [\App\Http\Controllers\Admin\Sales\ItemCategoriesController::class, 'edit'])->name('item_categories.edit');
+        Route::post('sales/item-categories/{id}',     [\App\Http\Controllers\Admin\Sales\ItemCategoriesController::class, 'update'])->name('item_categories.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:item_categories,can_delete'])->group(function () {
+        Route::get('sales/item-categories/{id}/delete', [\App\Http\Controllers\Admin\Sales\ItemCategoriesController::class, 'delete'])->name('item_categories.delete');
+    });
+
+    // ── الأصناف ──
+    Route::middleware(['auth:admin', 'admin.permission:items,can_read'])->group(function () {
+        Route::get('sales/items',                [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'index'])->name('items.index');
+        Route::get('sales/items/{id}',           [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'show'])->name('items.show');
+        Route::get('sales/items/ajax/search',    [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'ajaxSearch'])->name('items.ajax.search');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:items,can_create'])->group(function () {
+        Route::get('sales/items/create',         [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'create'])->name('items.create');
+        Route::post('sales/items/store',         [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'store'])->name('items.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:items,can_update'])->group(function () {
+        Route::get('sales/items/{id}/edit',      [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'edit'])->name('items.edit');
+        Route::post('sales/items/{id}',          [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'update'])->name('items.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:items,can_delete'])->group(function () {
+        Route::get('sales/items/{id}/delete',    [\App\Http\Controllers\Admin\Sales\ItemsController::class, 'delete'])->name('items.delete');
+    });
+
+    // ── العملاء ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_customers,can_read'])->group(function () {
+        Route::get('sales/customers',            [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'index'])->name('sales_customers.index');
+        Route::get('sales/customers/{id}',       [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'show'])->name('sales_customers.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_customers,can_create'])->group(function () {
+        Route::get('sales/customers/create',     [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'create'])->name('sales_customers.create');
+        Route::post('sales/customers/store',     [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'store'])->name('sales_customers.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_customers,can_update'])->group(function () {
+        Route::get('sales/customers/{id}/edit',  [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'edit'])->name('sales_customers.edit');
+        Route::post('sales/customers/{id}',      [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'update'])->name('sales_customers.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_customers,can_delete'])->group(function () {
+        Route::get('sales/customers/{id}/delete', [\App\Http\Controllers\Admin\Sales\CustomersController::class, 'delete'])->name('sales_customers.delete');
+    });
+
+    // ── عروض الأسعار ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_quotations,can_read'])->group(function () {
+        Route::get('sales/quotations',               [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'index'])->name('sales_quotations.index');
+        Route::get('sales/quotations/{id}',          [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'show'])->name('sales_quotations.show');
+        Route::get('sales/quotations/{id}/print',    [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'print'])->name('sales_quotations.print');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_quotations,can_create'])->group(function () {
+        Route::get('sales/quotations/create',        [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'create'])->name('sales_quotations.create');
+        Route::post('sales/quotations/store',        [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'store'])->name('sales_quotations.store');
+        Route::post('sales/quotations/{id}/convert', [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'convertToOrder'])->name('sales_quotations.convert');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_quotations,can_update'])->group(function () {
+        Route::get('sales/quotations/{id}/edit',     [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'edit'])->name('sales_quotations.edit');
+        Route::post('sales/quotations/{id}',         [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'update'])->name('sales_quotations.update');
+        Route::post('sales/quotations/{id}/status',  [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'updateStatus'])->name('sales_quotations.status');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_quotations,can_delete'])->group(function () {
+        Route::get('sales/quotations/{id}/delete',   [\App\Http\Controllers\Admin\Sales\SalesQuotationsController::class, 'delete'])->name('sales_quotations.delete');
+    });
+
+    // ── أوامر البيع ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_orders,can_read'])->group(function () {
+        Route::get('sales/orders',               [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'index'])->name('sales_orders.index');
+        Route::get('sales/orders/{id}',          [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'show'])->name('sales_orders.show');
+        Route::get('sales/orders/{id}/print',    [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'print'])->name('sales_orders.print');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_orders,can_create'])->group(function () {
+        Route::get('sales/orders/create',        [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'create'])->name('sales_orders.create');
+        Route::post('sales/orders/store',        [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'store'])->name('sales_orders.store');
+        Route::post('sales/orders/{id}/invoice', [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'createInvoice'])->name('sales_orders.invoice');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_orders,can_update'])->group(function () {
+        Route::get('sales/orders/{id}/edit',     [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'edit'])->name('sales_orders.edit');
+        Route::post('sales/orders/{id}',         [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'update'])->name('sales_orders.update');
+        Route::post('sales/orders/{id}/status',  [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'updateStatus'])->name('sales_orders.status');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_orders,can_delete'])->group(function () {
+        Route::get('sales/orders/{id}/delete',   [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'delete'])->name('sales_orders.delete');
+    });
+
+    // ── فواتير البيع ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_invoices,can_read'])->group(function () {
+        Route::get('sales/invoices',             [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'index'])->name('sales_invoices.index');
+        Route::get('sales/invoices/{id}',        [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'show'])->name('sales_invoices.show');
+        Route::get('sales/invoices/{id}/print',  [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'print'])->name('sales_invoices.print');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_invoices,can_create'])->group(function () {
+        Route::get('sales/invoices/create',      [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'create'])->name('sales_invoices.create');
+        Route::post('sales/invoices/store',      [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'store'])->name('sales_invoices.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_invoices,can_update'])->group(function () {
+        Route::get('sales/invoices/{id}/edit',   [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'edit'])->name('sales_invoices.edit');
+        Route::post('sales/invoices/{id}',       [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'update'])->name('sales_invoices.update');
+        Route::post('sales/invoices/{id}/cancel',[\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'cancel'])->name('sales_invoices.cancel');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_invoices,can_delete'])->group(function () {
+        Route::get('sales/invoices/{id}/delete', [\App\Http\Controllers\Admin\Sales\SalesInvoicesController::class, 'delete'])->name('sales_invoices.delete');
+    });
+
+    // ── مدفوعات العملاء ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_payments,can_read'])->group(function () {
+        Route::get('sales/payments',             [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'index'])->name('sales_payments.index');
+        Route::get('sales/payments/{id}',        [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'show'])->name('sales_payments.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_payments,can_create'])->group(function () {
+        Route::get('sales/payments/create',      [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'create'])->name('sales_payments.create');
+        Route::post('sales/payments/store',      [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'store'])->name('sales_payments.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_payments,can_delete'])->group(function () {
+        Route::get('sales/payments/{id}/delete', [\App\Http\Controllers\Admin\Sales\SalesPaymentsController::class, 'delete'])->name('sales_payments.delete');
+    });
+
+    // ── مرتجعات البيع ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_returns,can_read'])->group(function () {
+        Route::get('sales/returns',              [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'index'])->name('sales_returns.index');
+        Route::get('sales/returns/{id}',         [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'show'])->name('sales_returns.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_returns,can_create'])->group(function () {
+        Route::get('sales/returns/create',       [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'create'])->name('sales_returns.create');
+        Route::post('sales/returns/store',       [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'store'])->name('sales_returns.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_returns,can_update'])->group(function () {
+        Route::post('sales/returns/{id}/approve',[\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'approve'])->name('sales_returns.approve');
+        Route::post('sales/returns/{id}/reject', [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'reject'])->name('sales_returns.reject');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_returns,can_delete'])->group(function () {
+        Route::get('sales/returns/{id}/delete',  [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'delete'])->name('sales_returns.delete');
+    });
+
+    // ── تقارير المبيعات ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_reports,can_read'])->group(function () {
+        Route::get('sales/reports',              [\App\Http\Controllers\Admin\Sales\SalesReportsController::class, 'index'])->name('sales_reports.index');
+        Route::get('sales/reports/summary',      [\App\Http\Controllers\Admin\Sales\SalesReportsController::class, 'summary'])->name('sales_reports.summary');
+        Route::get('sales/reports/customer',     [\App\Http\Controllers\Admin\Sales\SalesReportsController::class, 'byCustomer'])->name('sales_reports.customer');
+        Route::get('sales/reports/item',         [\App\Http\Controllers\Admin\Sales\SalesReportsController::class, 'byItem'])->name('sales_reports.item');
+        Route::get('sales/reports/debt',         [\App\Http\Controllers\Admin\Sales\SalesReportsController::class, 'debt'])->name('sales_reports.debt');
+    });
+
+    // ═════════════════════════════════════════════
+    //  موديول المشتريات — Purchasing Module
+    // ═════════════════════════════════════════════
+
+    // ── الموردون ──
+    Route::middleware(['auth:admin', 'admin.permission:suppliers,can_read'])->group(function () {
+        Route::get('purchasing/suppliers',            [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'index'])->name('suppliers.index');
+        Route::get('purchasing/suppliers/{id}',        [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'show'])->name('suppliers.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:suppliers,can_create'])->group(function () {
+        Route::get('purchasing/suppliers/create',      [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'create'])->name('suppliers.create');
+        Route::post('purchasing/suppliers/store',      [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'store'])->name('suppliers.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:suppliers,can_update'])->group(function () {
+        Route::get('purchasing/suppliers/{id}/edit',   [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'edit'])->name('suppliers.edit');
+        Route::post('purchasing/suppliers/{id}',       [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'update'])->name('suppliers.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:suppliers,can_delete'])->group(function () {
+        Route::get('purchasing/suppliers/{id}/delete', [\App\Http\Controllers\Admin\Purchasing\SuppliersController::class, 'delete'])->name('suppliers.delete');
+    });
+
+    // ── طلبات الشراء ──
+    Route::middleware(['auth:admin', 'admin.permission:purchase_requests,can_read'])->group(function () {
+        Route::get('purchasing/requests',               [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'index'])->name('purchase_requests.index');
+        Route::get('purchasing/requests/{id}',          [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'show'])->name('purchase_requests.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_requests,can_create'])->group(function () {
+        Route::get('purchasing/requests/create',        [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'create'])->name('purchase_requests.create');
+        Route::post('purchasing/requests/store',        [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'store'])->name('purchase_requests.store');
+        Route::post('purchasing/requests/{id}/convert',  [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'convertToOrder'])->name('purchase_requests.convert');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_requests,can_update'])->group(function () {
+        Route::get('purchasing/requests/{id}/edit',     [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'edit'])->name('purchase_requests.edit');
+        Route::post('purchasing/requests/{id}',         [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'update'])->name('purchase_requests.update');
+        Route::post('purchasing/requests/{id}/status',  [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'updateStatus'])->name('purchase_requests.status');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_requests,can_delete'])->group(function () {
+        Route::get('purchasing/requests/{id}/delete',   [\App\Http\Controllers\Admin\Purchasing\PurchaseRequestsController::class, 'delete'])->name('purchase_requests.delete');
+    });
+
+    // ── أوامر الشراء ──
+    Route::middleware(['auth:admin', 'admin.permission:purchase_orders,can_read'])->group(function () {
+        Route::get('purchasing/orders',               [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'index'])->name('purchase_orders.index');
+        Route::get('purchasing/orders/{id}',          [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'show'])->name('purchase_orders.show');
+        Route::get('purchasing/orders/{id}/print',    [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'print'])->name('purchase_orders.print');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_orders,can_create'])->group(function () {
+        Route::get('purchasing/orders/create',        [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'create'])->name('purchase_orders.create');
+        Route::post('purchasing/orders/store',        [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'store'])->name('purchase_orders.store');
+        Route::post('purchasing/orders/{id}/invoice', [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'createInvoice'])->name('purchase_orders.invoice');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_orders,can_update'])->group(function () {
+        Route::get('purchasing/orders/{id}/edit',     [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'edit'])->name('purchase_orders.edit');
+        Route::post('purchasing/orders/{id}',         [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'update'])->name('purchase_orders.update');
+        Route::post('purchasing/orders/{id}/status',  [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'updateStatus'])->name('purchase_orders.status');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_orders,can_delete'])->group(function () {
+        Route::get('purchasing/orders/{id}/delete',   [\App\Http\Controllers\Admin\Purchasing\PurchaseOrdersController::class, 'delete'])->name('purchase_orders.delete');
+    });
+
+    // ── فواتير الشراء ──
+    Route::middleware(['auth:admin', 'admin.permission:purchase_invoices,can_read'])->group(function () {
+        Route::get('purchasing/invoices',             [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'index'])->name('purchase_invoices.index');
+        Route::get('purchasing/invoices/{id}',        [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'show'])->name('purchase_invoices.show');
+        Route::get('purchasing/invoices/{id}/print',  [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'print'])->name('purchase_invoices.print');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_invoices,can_create'])->group(function () {
+        Route::get('purchasing/invoices/create',      [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'create'])->name('purchase_invoices.create');
+        Route::post('purchasing/invoices/store',      [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'store'])->name('purchase_invoices.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_invoices,can_update'])->group(function () {
+        Route::get('purchasing/invoices/{id}/edit',   [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'edit'])->name('purchase_invoices.edit');
+        Route::post('purchasing/invoices/{id}',       [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'update'])->name('purchase_invoices.update');
+        Route::post('purchasing/invoices/{id}/cancel',[\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'cancel'])->name('purchase_invoices.cancel');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_invoices,can_delete'])->group(function () {
+        Route::get('purchasing/invoices/{id}/delete', [\App\Http\Controllers\Admin\Purchasing\PurchaseInvoicesController::class, 'delete'])->name('purchase_invoices.delete');
+    });
+
+    // ── مدفوعات الموردين ──
+    Route::middleware(['auth:admin', 'admin.permission:purchase_payments,can_read'])->group(function () {
+        Route::get('purchasing/payments',             [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'index'])->name('purchase_payments.index');
+        Route::get('purchasing/payments/{id}',        [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'show'])->name('purchase_payments.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_payments,can_create'])->group(function () {
+        Route::get('purchasing/payments/create',      [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'create'])->name('purchase_payments.create');
+        Route::post('purchasing/payments/store',      [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'store'])->name('purchase_payments.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_payments,can_delete'])->group(function () {
+        Route::get('purchasing/payments/{id}/delete', [\App\Http\Controllers\Admin\Purchasing\PurchasePaymentsController::class, 'delete'])->name('purchase_payments.delete');
+    });
+
+    // ── مرتجعات الشراء ──
+    Route::middleware(['auth:admin', 'admin.permission:purchase_returns,can_read'])->group(function () {
+        Route::get('purchasing/returns',              [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'index'])->name('purchase_returns.index');
+        Route::get('purchasing/returns/{id}',         [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'show'])->name('purchase_returns.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_returns,can_create'])->group(function () {
+        Route::get('purchasing/returns/create',       [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'create'])->name('purchase_returns.create');
+        Route::post('purchasing/returns/store',       [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'store'])->name('purchase_returns.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_returns,can_update'])->group(function () {
+        Route::post('purchasing/returns/{id}/approve',[\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'approve'])->name('purchase_returns.approve');
+        Route::post('purchasing/returns/{id}/reject', [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'reject'])->name('purchase_returns.reject');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:purchase_returns,can_delete'])->group(function () {
+        Route::get('purchasing/returns/{id}/delete',  [\App\Http\Controllers\Admin\Purchasing\PurchaseReturnsController::class, 'delete'])->name('purchase_returns.delete');
+    });
+
+    // ── تقارير المشتريات ──
+    Route::middleware(['auth:admin', 'admin.permission:purchase_reports,can_read'])->group(function () {
+        Route::get('purchasing/reports',              [\App\Http\Controllers\Admin\Purchasing\PurchaseReportsController::class, 'index'])->name('purchase_reports.index');
+        Route::get('purchasing/reports/summary',      [\App\Http\Controllers\Admin\Purchasing\PurchaseReportsController::class, 'summary'])->name('purchase_reports.summary');
+        Route::get('purchasing/reports/supplier',     [\App\Http\Controllers\Admin\Purchasing\PurchaseReportsController::class, 'bySupplier'])->name('purchase_reports.supplier');
+        Route::get('purchasing/reports/item',         [\App\Http\Controllers\Admin\Purchasing\PurchaseReportsController::class, 'byItem'])->name('purchase_reports.item');
+        Route::get('purchasing/reports/debt',         [\App\Http\Controllers\Admin\Purchasing\PurchaseReportsController::class, 'debt'])->name('purchase_reports.debt');
+    });
+
+    // ═════════════════════════════════════════════
+    //  موديول المخازن — Inventory Module
+    // ═════════════════════════════════════════════
+
+    // ── المخازن ──
+    Route::middleware(['auth:admin', 'admin.permission:warehouses,can_read'])->group(function () {
+        Route::get('inventory/warehouses',            [\App\Http\Controllers\Admin\Inventory\WarehousesController::class, 'index'])->name('warehouses.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:warehouses,can_create'])->group(function () {
+        Route::get('inventory/warehouses/create',     [\App\Http\Controllers\Admin\Inventory\WarehousesController::class, 'create'])->name('warehouses.create');
+        Route::post('inventory/warehouses/store',     [\App\Http\Controllers\Admin\Inventory\WarehousesController::class, 'store'])->name('warehouses.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:warehouses,can_update'])->group(function () {
+        Route::get('inventory/warehouses/{id}/edit',  [\App\Http\Controllers\Admin\Inventory\WarehousesController::class, 'edit'])->name('warehouses.edit');
+        Route::post('inventory/warehouses/{id}',      [\App\Http\Controllers\Admin\Inventory\WarehousesController::class, 'update'])->name('warehouses.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:warehouses,can_delete'])->group(function () {
+        Route::get('inventory/warehouses/{id}/delete',[\App\Http\Controllers\Admin\Inventory\WarehousesController::class, 'delete'])->name('warehouses.delete');
+    });
+
+    // ── أرصدة المخزون ──
+    Route::middleware(['auth:admin', 'admin.permission:stock_levels,can_read'])->group(function () {
+        Route::get('inventory/stock',                 [\App\Http\Controllers\Admin\Inventory\StockLevelsController::class, 'index'])->name('stock_levels.index');
+        Route::get('inventory/stock/{itemId}',        [\App\Http\Controllers\Admin\Inventory\StockLevelsController::class, 'show'])->name('stock_levels.show');
+    });
+
+    // ── حركة الأصناف ──
+    Route::middleware(['auth:admin', 'admin.permission:stock_movements,can_read'])->group(function () {
+        Route::get('inventory/movements',             [\App\Http\Controllers\Admin\Inventory\StockMovementsController::class, 'index'])->name('stock_movements.index');
+    });
+
+    // ── تسويات المخزون ──
+    Route::middleware(['auth:admin', 'admin.permission:stock_adjustments,can_read'])->group(function () {
+        Route::get('inventory/adjustments',           [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'index'])->name('stock_adjustments.index');
+        Route::get('inventory/adjustments/{id}',       [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'show'])->name('stock_adjustments.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:stock_adjustments,can_create'])->group(function () {
+        Route::get('inventory/adjustments/create',     [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'create'])->name('stock_adjustments.create');
+        Route::post('inventory/adjustments/store',     [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'store'])->name('stock_adjustments.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:stock_adjustments,can_update'])->group(function () {
+        Route::post('inventory/adjustments/{id}/approve', [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'approve'])->name('stock_adjustments.approve');
+        Route::post('inventory/adjustments/{id}/reject',  [\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'reject'])->name('stock_adjustments.reject');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:stock_adjustments,can_delete'])->group(function () {
+        Route::get('inventory/adjustments/{id}/delete',[\App\Http\Controllers\Admin\Inventory\StockAdjustmentsController::class, 'delete'])->name('stock_adjustments.delete');
+    });
+
+    // ── تحويلات المخازن ──
+    Route::middleware(['auth:admin', 'admin.permission:stock_transfers,can_read'])->group(function () {
+        Route::get('inventory/transfers',              [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'index'])->name('stock_transfers.index');
+        Route::get('inventory/transfers/{id}',         [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'show'])->name('stock_transfers.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:stock_transfers,can_create'])->group(function () {
+        Route::get('inventory/transfers/create',       [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'create'])->name('stock_transfers.create');
+        Route::post('inventory/transfers/store',       [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'store'])->name('stock_transfers.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:stock_transfers,can_update'])->group(function () {
+        Route::post('inventory/transfers/{id}/complete', [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'complete'])->name('stock_transfers.complete');
+        Route::post('inventory/transfers/{id}/cancel',   [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'cancel'])->name('stock_transfers.cancel');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:stock_transfers,can_delete'])->group(function () {
+        Route::get('inventory/transfers/{id}/delete',  [\App\Http\Controllers\Admin\Inventory\StockTransfersController::class, 'delete'])->name('stock_transfers.delete');
+    });
+
+    // ── تقارير المخازن ──
+    Route::middleware(['auth:admin', 'admin.permission:inventory_reports,can_read'])->group(function () {
+        Route::get('inventory/reports',                [\App\Http\Controllers\Admin\Inventory\InventoryReportsController::class, 'index'])->name('inventory_reports.index');
+        Route::get('inventory/reports/valuation',      [\App\Http\Controllers\Admin\Inventory\InventoryReportsController::class, 'valuation'])->name('inventory_reports.valuation');
+        Route::get('inventory/reports/low-stock',      [\App\Http\Controllers\Admin\Inventory\InventoryReportsController::class, 'lowStock'])->name('inventory_reports.low_stock');
+        Route::get('inventory/reports/movements-summary', [\App\Http\Controllers\Admin\Inventory\InventoryReportsController::class, 'movementsSummary'])->name('inventory_reports.movements_summary');
+    });
+
 });
 
 // ─────────────────────────────────────────────
