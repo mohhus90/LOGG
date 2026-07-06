@@ -16,7 +16,7 @@
 
 ## الفجوات الجوهرية لاعتبار النظام "ERP متكامل" (لشركات/مصانع/خدمية مصرية)
 
-- [ ] **المحاسبة العامة** — لا يوجد دليل حسابات ولا قيود يومية ولا ترحيل تلقائي ولا تقارير مالية.
+- [x] **المحاسبة العامة** — تم بناء دليل الحسابات، القيود اليومية، مراكز التكلفة، الفترات المحاسبية، خدمة الترحيل `JournalPostingService`، وتقارير (ميزان مراجعة/قائمة دخل/ميزانية عمومية/كشف حساب). الترحيل التلقائي من الموديولات الأخرى لسه في Phase 3.
 - [ ] **الخزينة والبنوك** — لا يوجد خزائن/حسابات بنكية/سندات قبض وصرف/شيكات (رغم أن SalesPayment/PurchasePayment فيهم حقول شبه-سند بدون ترحيل فعلي).
 - [ ] **الأصول الثابتة** — لا يوجد سجل أصول ولا إهلاك.
 - [ ] **التصنيع/الإنتاج** — لا يوجد BOM ولا أوامر إنتاج (لكن `items` جاهز بأنواع raw_material/semi_finished).
@@ -39,7 +39,7 @@
 ```
 Phase 0: هذا المستند (مرجع دائم)                                            [x] 2026-07-06
 Phase 1: نواة المحاسبة (دليل حسابات، قيود يومية، مراكز تكلفة، فترات،
-         خدمة الترحيل JournalPostingService، تقارير مالية)                  [ ]
+         خدمة الترحيل JournalPostingService، تقارير مالية)                  [x] 2026-07-06
 Phase 2: ترقية تكلفة المخزون (avg_cost/total_value على StockBalance،
          تعديل StockService::adjustStock لإرجاع تكلفة COGS)                 [ ]
 Phase 3: ربط الترحيل التلقائي بالموديولات القائمة
@@ -81,6 +81,13 @@ Phase 1 شرط أساسي لكل ما بعده. Phase 2 يجب أن يسبق Pha
 **module_keys (sort_order 50-55):** `chart_of_accounts`, `cost_centers`, `journal_entries`, `accounting_periods`, `gl_posting_rules`, `accounting_reports` — سيدر migration على نمط `2026_07_05_000013_seed_sales_admin_modules.php`.
 
 **Sidebar:** `resources/views/admin/includes/sidebar_accounting.blade.php`
+
+**✅ تم التنفيذ فعليًا (2026-07-06):** كل ما سبق منفَّذ ومُختبر (migrate + اختبار ترحيل/عكس قيد عبر tinker + `view:cache` نجح بدون أخطاء Blade). أضيف أيضًا:
+- `database/migrations/2026_07_06_000018_seed_default_chart_of_accounts.php` — يزرع دليل حسابات مصري مبسّط (27 حساب) + قواعد ترحيل أساسية لكل شركة موجودة في `admins` (لأي شركة جديدة تُنشأ لاحقًا، يجب تشغيل نفس المنطق يدويًا أو عبر إضافة hook عند إنشاء الشركة — TODO مستقبلي).
+- Layout مستقل: `resources/views/admin/layouts/accounting.blade.php` (لون بنفسجي مميز)، مطابق تمامًا لنمط `layouts/sales.blade.php`.
+- كل الواجهات (accounts/cost_centers/journal_entries/periods/posting_rules/reports) منفذة تحت `resources/views/admin/accounting/`.
+- تفعيل بطاقة "الحسابات" في `resources/views/admin/hub.blade.php` (كانت `coming-soon`، أصبحت `active-module` تشير لـ `accounting_reports.index`).
+- الأدوار (roles) المُهيّأة مسبقًا في `gl_posting_rules` تغطي: `sales_invoice_issued`, `sales_invoice_cogs`, `purchase_invoice_received`, `payroll_approved` — جاهزة لـ Phase 3 لاحقًا.
 
 ---
 

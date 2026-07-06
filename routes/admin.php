@@ -926,6 +926,84 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('inventory/reports/movements-summary', [\App\Http\Controllers\Admin\Inventory\InventoryReportsController::class, 'movementsSummary'])->name('inventory_reports.movements_summary');
     });
 
+    // ═════════════════════════════════════════════
+    //  موديول المحاسبة — Accounting Module
+    // ═════════════════════════════════════════════
+
+    // ── دليل الحسابات ──
+    Route::middleware(['auth:admin', 'admin.permission:chart_of_accounts,can_read'])->group(function () {
+        Route::get('accounting/accounts',            [\App\Http\Controllers\Admin\Accounting\ChartOfAccountsController::class, 'index'])->name('chart_of_accounts.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:chart_of_accounts,can_create'])->group(function () {
+        Route::get('accounting/accounts/create',     [\App\Http\Controllers\Admin\Accounting\ChartOfAccountsController::class, 'create'])->name('chart_of_accounts.create');
+        Route::post('accounting/accounts/store',     [\App\Http\Controllers\Admin\Accounting\ChartOfAccountsController::class, 'store'])->name('chart_of_accounts.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:chart_of_accounts,can_update'])->group(function () {
+        Route::get('accounting/accounts/{id}/edit',  [\App\Http\Controllers\Admin\Accounting\ChartOfAccountsController::class, 'edit'])->name('chart_of_accounts.edit');
+        Route::post('accounting/accounts/{id}',      [\App\Http\Controllers\Admin\Accounting\ChartOfAccountsController::class, 'update'])->name('chart_of_accounts.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:chart_of_accounts,can_delete'])->group(function () {
+        Route::get('accounting/accounts/{id}/delete',[\App\Http\Controllers\Admin\Accounting\ChartOfAccountsController::class, 'delete'])->name('chart_of_accounts.delete');
+    });
+
+    // ── مراكز التكلفة ──
+    Route::middleware(['auth:admin', 'admin.permission:cost_centers,can_read'])->group(function () {
+        Route::get('accounting/cost-centers',            [\App\Http\Controllers\Admin\Accounting\CostCentersController::class, 'index'])->name('cost_centers.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:cost_centers,can_create'])->group(function () {
+        Route::get('accounting/cost-centers/create',     [\App\Http\Controllers\Admin\Accounting\CostCentersController::class, 'create'])->name('cost_centers.create');
+        Route::post('accounting/cost-centers/store',     [\App\Http\Controllers\Admin\Accounting\CostCentersController::class, 'store'])->name('cost_centers.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:cost_centers,can_update'])->group(function () {
+        Route::get('accounting/cost-centers/{id}/edit',  [\App\Http\Controllers\Admin\Accounting\CostCentersController::class, 'edit'])->name('cost_centers.edit');
+        Route::post('accounting/cost-centers/{id}',      [\App\Http\Controllers\Admin\Accounting\CostCentersController::class, 'update'])->name('cost_centers.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:cost_centers,can_delete'])->group(function () {
+        Route::get('accounting/cost-centers/{id}/delete',[\App\Http\Controllers\Admin\Accounting\CostCentersController::class, 'delete'])->name('cost_centers.delete');
+    });
+
+    // ── القيود اليومية ──
+    Route::middleware(['auth:admin', 'admin.permission:journal_entries,can_read'])->group(function () {
+        Route::get('accounting/journal-entries',        [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'index'])->name('journal_entries.index');
+        Route::get('accounting/journal-entries/{id}',   [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'show'])->name('journal_entries.show');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:journal_entries,can_create'])->group(function () {
+        Route::get('accounting/journal-entries/create', [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'create'])->name('journal_entries.create');
+        Route::post('accounting/journal-entries/store', [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'store'])->name('journal_entries.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:journal_entries,can_update'])->group(function () {
+        Route::post('accounting/journal-entries/{id}/reverse', [\App\Http\Controllers\Admin\Accounting\JournalEntriesController::class, 'reverse'])->name('journal_entries.reverse');
+    });
+
+    // ── الفترات المحاسبية ──
+    Route::middleware(['auth:admin', 'admin.permission:accounting_periods,can_read'])->group(function () {
+        Route::get('accounting/periods',              [\App\Http\Controllers\Admin\Accounting\AccountingPeriodsController::class, 'index'])->name('accounting_periods.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:accounting_periods,can_create'])->group(function () {
+        Route::post('accounting/periods/generate',    [\App\Http\Controllers\Admin\Accounting\AccountingPeriodsController::class, 'generate'])->name('accounting_periods.generate');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:accounting_periods,can_update'])->group(function () {
+        Route::post('accounting/periods/{id}/close',  [\App\Http\Controllers\Admin\Accounting\AccountingPeriodsController::class, 'close'])->name('accounting_periods.close');
+        Route::post('accounting/periods/{id}/reopen', [\App\Http\Controllers\Admin\Accounting\AccountingPeriodsController::class, 'reopen'])->name('accounting_periods.reopen');
+    });
+
+    // ── إعدادات الترحيل التلقائي ──
+    Route::middleware(['auth:admin', 'admin.permission:gl_posting_rules,can_read'])->group(function () {
+        Route::get('accounting/posting-rules',        [\App\Http\Controllers\Admin\Accounting\GlPostingRulesController::class, 'index'])->name('gl_posting_rules.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:gl_posting_rules,can_update'])->group(function () {
+        Route::post('accounting/posting-rules',       [\App\Http\Controllers\Admin\Accounting\GlPostingRulesController::class, 'update'])->name('gl_posting_rules.update');
+    });
+
+    // ── التقارير المالية ──
+    Route::middleware(['auth:admin', 'admin.permission:accounting_reports,can_read'])->group(function () {
+        Route::get('accounting/reports',                   [\App\Http\Controllers\Admin\Accounting\AccountingReportsController::class, 'index'])->name('accounting_reports.index');
+        Route::get('accounting/reports/trial-balance',     [\App\Http\Controllers\Admin\Accounting\AccountingReportsController::class, 'trialBalance'])->name('accounting_reports.trial_balance');
+        Route::get('accounting/reports/income-statement',  [\App\Http\Controllers\Admin\Accounting\AccountingReportsController::class, 'incomeStatement'])->name('accounting_reports.income_statement');
+        Route::get('accounting/reports/balance-sheet',     [\App\Http\Controllers\Admin\Accounting\AccountingReportsController::class, 'balanceSheet'])->name('accounting_reports.balance_sheet');
+        Route::get('accounting/reports/ledger',            [\App\Http\Controllers\Admin\Accounting\AccountingReportsController::class, 'ledgerDetail'])->name('accounting_reports.ledger');
+    });
+
 });
 
 // ─────────────────────────────────────────────
