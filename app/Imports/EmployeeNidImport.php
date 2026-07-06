@@ -27,13 +27,25 @@ class EmployeeNidImport implements ToCollection, WithStartRow
         return 2;
     }
 
+    private function cleanExcelStr($val): string
+    {
+        $s = trim((string) ($val ?? ''));
+        if (preg_match('/^=""(.+)""$/', $s, $m)) {
+            return $m[1];
+        }
+        if (preg_match('/^="(.+)"$/', $s, $m)) {
+            return $m[1];
+        }
+        return $s;
+    }
+
     public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
-            $empCode = trim((string) ($row[0] ?? ''));
-            $nid     = trim((string) ($row[1] ?? ''));
+            $empCode = $this->cleanExcelStr($row[0] ?? '');
+            $nid     = $this->cleanExcelStr($row[1] ?? '');
 
-            if ($empCode === '' || $nid === '') {
+            if (empty($empCode) || empty($nid)) {
                 $this->skipped++;
                 continue;
             }

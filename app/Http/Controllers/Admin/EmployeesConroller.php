@@ -16,6 +16,7 @@ use App\Models\NameDictionary;
 use App\Models\EmployeeDocument;
 use App\Imports\EmployeeImport;
 use App\Imports\EmployeeNidImport;
+use App\Imports\EmployeeMedicalImport;
 use App\Exports\EmployeeExport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Services\SmsService;
 
 class EmployeesConroller extends Controller
 
@@ -30,6 +32,221 @@ class EmployeesConroller extends Controller
       public function export()
     {
         return Excel::download(new EmployeeExport, 'Employee.xlsx');
+    }
+
+    public function exportSystemCsv()
+    {
+        $comCode   = (int) Auth::guard('admin')->user()->com_code;
+        $employees = Employee::with(['jobs_categories', 'client'])
+            ->where('com_code', $comCode)
+            ->get();
+
+        // Pre-generate unique emails; reuse existing DB email only if not already taken
+        $usedEmails = [];
+        $emailMap   = [];
+        foreach ($employees as $emp) {
+            if (!empty($emp->emp_email) && !isset($usedEmails[$emp->emp_email])) {
+                $emailMap[$emp->id]          = $emp->emp_email;
+                $usedEmails[$emp->emp_email] = true;
+            }
+        }
+        foreach ($employees as $emp) {
+            if (!isset($emailMap[$emp->id])) {
+                $emailMap[$emp->id] = $this->generateUniqueEmail($emp, $usedEmails);
+            }
+        }
+
+        // Card No = bank_account; fallback → N0001, N0002, …
+        $usedCardNos = [];
+        $cardNoMap   = [];
+        foreach ($employees as $emp) {
+            if (!empty($emp->bank_account)) {
+                $cardNoMap[$emp->id]             = $emp->bank_account;
+                $usedCardNos[$emp->bank_account] = true;
+            }
+        }
+        $nSeq = 1;
+        foreach ($employees as $emp) {
+            if (!isset($cardNoMap[$emp->id])) {
+                do { $c = 'N' . str_pad($nSeq++, 8, '0', STR_PAD_LEFT); } while (isset($usedCardNos[$c]));
+                $cardNoMap[$emp->id] = $c;
+                $usedCardNos[$c]     = true;
+            }
+        }
+
+        // Medical ID = medical_id; fallback → M0001, M0002, …
+        $usedMedIds = [];
+        $medIdMap   = [];
+        foreach ($employees as $emp) {
+            if (!empty($emp->medical_id)) {
+                $medIdMap[$emp->id]           = $emp->medical_id;
+                $usedMedIds[$emp->medical_id] = true;
+            }
+        }
+        $mSeq = 1;
+        foreach ($employees as $emp) {
+            if (!isset($medIdMap[$emp->id])) {
+                do { $c = '1' . str_pad($mSeq++, 8, '0', STR_PAD_LEFT); } while (isset($usedMedIds[$c]));
+                $medIdMap[$emp->id] = $c;
+                $usedMedIds[$c]     = true;
+            }
+        }
+
+        $filename = 'System_Employees_' . date('Y-m-d') . '.csv';
+
+        return response()->streamDownload(function () use ($employees, $emailMap, $cardNoMap, $medIdMap) {
+            $out = fopen('php://output', 'w');
+            // UTF-8 BOM so Excel opens Arabic correctly
+            fwrite($out, "\xEF\xBB\xBF");
+
+            fputcsv($out, [
+                'Name', 'namear', 'Mobile', 'emergency contact', 'emergency mobile',
+                'Email', 'National Id', 'Medical Id', 'Social Number', 'social status',
+                'Job', 'Salary', 'Date Of Birth', 'Gender', 'Marital Status',
+                'Military Status', 'Company', 'Education', 'Cv', 'Extra Comments',
+                'Username', 'Password', 'Status', 'Photo', 'Bank', 'Payment Channel',
+                'Card No', 'Vacation Type', 'hire date', 'hrid', 'serial number',
+                'Education Filed',
+            ]);
+
+            foreach ($employees as $emp) {
+                fputcsv($out, $this->buildSystemCsvRow($emp, $emailMap[$emp->id] ?? '', $cardNoMap[$emp->id] ?? '', $medIdMap[$emp->id] ?? ''));
+            }
+
+            fclose($out);
+        }, $filename, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    private function buildSystemCsvRow(Employee $emp, string $email = '', string $cardNo = '', string $medId = ''): array
+    {
+        return [
+            $emp->employee_name_E                                ?: '',   // 0  Name
+            $emp->employee_name_A                                ?: '',   // 1  namear
+            $this->csvPhoneText($emp->emp_mobile),                        // 2  Mobile
+            $emp->relative_relation                              ?: '',   // 3  emergency contact
+            $this->csvPhoneText($emp->reference_mobile),                  // 4  emergency mobile
+            $email,                                                        // 5  Email
+            $this->csvNid($emp->national_id),                             // 6  National Id
+            $this->csvText($medId),                                        // 7  Medical Id (or M0001…)
+            $emp->insurance_no                                   ?: '',   // 8  Social Number
+            (int) $emp->insurance_status === 1 ? 'Yes' : '',             // 9  social status
+            optional($emp->jobs_categories)->job_name            ?: '',   // 10 Job
+            $emp->emp_sal !== null ? number_format((float)$emp->emp_sal, 2, '.', '') : '', // 11 Salary
+            $this->csvDateEn($emp->birth_date),                           // 12 Date Of Birth
+            $this->csvGender($emp->emp_gender),                           // 13 Gender
+            $this->csvMarital($emp->emp_social_status),                   // 14 Marital Status
+            $this->csvMilitary($emp->emp_military_status),                // 15 Military Status
+            optional($emp->client)->client_name                  ?: '',   // 16 Company
+            $emp->emp_qualification                              ?: '',   // 17 Education
+            $emp->emp_cv                                         ?: '',   // 18 Cv
+            $emp->client_notes                                   ?: '',   // 19 Extra Comments
+            $emp->employee_id                                    ?: '',   // 20 Username
+            $this->csvNid($emp->national_id),                             // 21 Password (NID)
+            $this->csvStatus($emp->functional_status),                    // 22 Status
+            $emp->emp_photo                                      ?: '',   // 23 Photo
+            $emp->bank_name                                      ?: '',   // 24 Bank
+            $this->csvPayment($emp->sal_cash_visa),                       // 25 Payment Channel
+            $this->csvText($cardNo),                                       // 26 Card No (bank_account or N0001…)
+            $this->csvVacation($emp->vacation_formula),                   // 27 Vacation Type
+            $this->csvDateEn($emp->emp_start_date),                       // 28 hire date
+            $emp->employee_id                                    ?: '',   // 29 hrid
+            $emp->employee_id                                    ?: '',   // 30 serial number
+            '',                                                            // 31 Education Filed
+        ];
+    }
+
+    private function csvDateEn($date): string
+    {
+        if (empty($date)) return '';
+        try {
+            return \Carbon\Carbon::parse((string) $date)->format('d/M/Y');
+        } catch (\Exception) {
+            return '';
+        }
+    }
+
+    private function csvPhoneText($value): string
+    {
+        $phone = trim((string) ($value ?? ''));
+        if ($phone === '') return '';
+        $phone = preg_split('/[\/,]/', $phone)[0];
+        $phone = trim($phone);
+        $digits = preg_replace('/\D/', '', $phone);
+        if ($digits === '') return '';
+        if (!str_starts_with($digits, '0')) {
+            $digits = '0' . $digits;
+        }
+        return $digits;
+    }
+
+    private function csvText(?string $value): string
+    {
+        return trim((string) ($value ?? ''));
+    }
+
+    private function csvNid(?string $value): string
+    {
+        return trim((string) ($value ?? ''));
+    }
+
+    private function generateUniqueEmail(Employee $emp, array &$usedEmails): string
+    {
+        $parts = preg_split('/\s+/', trim($emp->employee_name_E ?? ''));
+        $base  = preg_replace('/[^a-z0-9]/', '', strtolower($parts[0] ?? ''));
+        if ($base === '') $base = 'emp' . $emp->id;
+        $base  = substr($base, 0, 20);
+
+        $email = "{$base}@trilogy.com";
+        if (!isset($usedEmails[$email])) {
+            $usedEmails[$email] = true;
+            return $email;
+        }
+
+        $i = 2;
+        while (isset($usedEmails["{$base}{$i}@trilogy.com"])) {
+            $i++;
+        }
+        $email = "{$base}{$i}@trilogy.com";
+        $usedEmails[$email] = true;
+        return $email;
+    }
+
+    private function csvGender($v): string
+    {
+        return match((int) $v) { 1 => 'Male', 2 => 'Female', default => '' };
+    }
+
+    private function csvMarital($v): string
+    {
+        return match((int) $v) {
+            1 => 'Single', 2 => 'Married', 3 => 'Widowed', 4 => 'Divorced', default => ''
+        };
+    }
+
+    private function csvMilitary($v): string
+    {
+        return match((int) $v) {
+            1 => 'Completed', 2 => 'Exempted', 3 => 'Postponed',
+            4 => 'Exempted',  5 => 'Not Required', default => ''
+        };
+    }
+
+    private function csvStatus($v): string
+    {
+        return match((int) $v) { 1 => 'Hired', 2 => 'Resigned', default => '' };
+    }
+
+    private function csvPayment($v): string
+    {
+        return match((int) $v) { 1 => 'Cash', 2 => 'Bank', default => '' };
+    }
+
+    private function csvVacation($v): string
+    {
+        return match((int) $v) { 1 => 'default', 2 => 'instant', default => '' };
     }
 
     public function getDictionary()
@@ -180,6 +397,39 @@ class EmployeesConroller extends Controller
         }
     }
 
+    public function doUploadMedicalExcel(Request $request)
+    {
+        $request->validate([
+            'medical_file' => 'required|mimes:xlsx,xls,csv',
+        ], [
+            'medical_file.required' => 'اختر ملف Excel أو CSV',
+            'medical_file.mimes'    => 'يجب أن يكون الملف بصيغة xlsx أو xls أو csv',
+        ]);
+
+        try {
+            $comCode = (int) auth()->guard('admin')->user()->com_code;
+            $adminId = (int) auth()->guard('admin')->user()->id;
+            $import  = new EmployeeMedicalImport($comCode, $adminId);
+            Excel::import($import, $request->file('medical_file'));
+
+            $msg = "تم تحديث {$import->updated} موظف | غير موجود: {$import->notFound} | تخطي: {$import->skipped}";
+
+            if ($import->errors > 0) {
+                $msg .= " | أخطاء: {$import->errors}";
+                if (!empty($import->errorDetails)) {
+                    $msg .= ' (' . implode(' / ', array_slice($import->errorDetails, 0, 3)) . ')';
+                }
+                return redirect()->route('employees.uploadexcel')->with('error', $msg);
+            }
+
+            return redirect()->route('employees.uploadexcel')->with('success', $msg);
+        } catch (\Exception $e) {
+            Log::error('Medical import error: ' . $e->getMessage());
+            return redirect()->route('employees.uploadexcel')
+                ->with('error', 'فشل استيراد الملف: ' . $e->getMessage());
+        }
+    }
+
     public function create()
     {
         $com_code        = auth()->guard('admin')->user()->com_code;
@@ -205,11 +455,7 @@ public function store(Request $request)
         'national_id' => 'nullable|unique:employees,national_id',
         'insurance_no' => 'nullable|unique:employees,insurance_no',
         'bank_account' => 'nullable|unique:employees,bank_account',
-        'emp_departments_id' => 'required|exists:departments,id',
-        'shifts_types_id' => 'required|exists:shifts_types,id',
-        'branches_id' => 'required|exists:branches,id',
         'emp_jobs_id' => 'required|exists:jobs_categories,id',
-        'daily_work_hours' => 'numeric|min:1|max:24',
         'finger_id' => 'nullable|string',
         'employee_address' => 'nullable|string',
         'emp_gender' => 'nullable|string',
@@ -231,16 +477,9 @@ public function store(Request $request)
         'employee_id.unique' => 'كود الموظف تم إدخاله مسبقًا',
         'national_id.unique' => 'هذا الرقم القومي تم إدخاله مسبقًا',
         'bank_account.unique' => 'هذا الحساب البنكي تم إدخاله مسبقًا',
-        'branches_id.required' => 'حقل الفرع مطلوب',
-        'branches_id.exists' => 'الفرع المحدد غير موجود',
-        'shifts_types_id.required' => 'حقل الشيفت مطلوب',
-        'shifts_types_id.exists' => 'الشيفت المحدد غير موجود',
-        'emp_departments_id.required' => 'حقل الإدارة مطلوب',
-        'emp_departments_id.exists' => 'الإدارة المحددة غير موجودة',
         'emp_jobs_id.required' => 'حقل الوظيفة مطلوب',
         'emp_jobs_id.exists' => 'الوظيفة المحددة غير موجودة',
-        'daily_work_hours.min' => 'يجب ألا يقل عدد الساعات عن 1',
-        'daily_work_hours.max' => 'يجب ألا يزيد عدد الساعات عن 24',
+
     ]);
 
     DB::beginTransaction();
@@ -300,6 +539,9 @@ public function store(Request $request)
             'form1_notes'             => $request->form1_notes ?: null,
             'form6_notes'             => $request->form6_notes ?: null,
             'client_notes'            => $request->client_notes ?: null,
+            'medical_id'              => $request->medical_id ?: null,
+            'medical_status'          => $request->medical_status ?: null,
+            'medical_progress'        => $request->medical_progress ?: null,
             'created_at'               => now(),
             'updated_at'               => now(),
         ];
@@ -308,6 +550,17 @@ public function store(Request $request)
         $newEmployee = Employee::create($employeeData);
 
         DB::commit();
+
+        // SMS ترحيب
+        if ($newEmployee->emp_mobile) {
+            try {
+                (new SmsService((int)auth()->guard('admin')->user()->com_code))
+                    ->sendWelcomeEmployee($newEmployee->emp_mobile, $newEmployee->employee_name_A);
+            } catch (\Exception $e) {
+                Log::warning('SMS welcome failed: ' . $e->getMessage());
+            }
+        }
+
         return redirect()->route('employees.edit', $newEmployee->id)
             ->with('success', 'تم إضافة الموظف بنجاح — يمكنك الآن رفع ملفات التعيين من الأسفل');
     } catch (\Exception $e) {
@@ -398,11 +651,7 @@ public function store(Request $request)
         'employee_name_E' => 'required|string',
         'employee_id' => 'required',
         'national_id' => 'nullable',
-        'emp_departments_id' => 'required|exists:departments,id',
-        'shifts_types_id' => 'required|exists:shifts_types,id',
-        'branches_id' => 'required|exists:branches,id',
         'emp_jobs_id' => 'required|exists:jobs_categories,id',
-        'daily_work_hours' => 'numeric|min:1|max:24',
         'finger_id' => 'nullable|string',
         'employee_address' => 'nullable|string',
         'emp_gender' => 'nullable|string',
@@ -423,16 +672,9 @@ public function store(Request $request)
         'employee_name_E.required' => 'حقل اسم الموظف مطلوب',
         'employee_id.required' => 'حقل كود الموظف مطلوب',
         'national_id.required' => 'حقل الرقم القومي مطلوب',
-        'branches_id.required' => 'حقل الفرع مطلوب',
-        'branches_id.exists' => 'الفرع المحدد غير موجود',
-        'shifts_types_id.required' => 'حقل الشيفت مطلوب',
-        'shifts_types_id.exists' => 'الشيفت المحدد غير موجود',
-        'emp_departments_id.required' => 'حقل الإدارة مطلوب',
-        'emp_departments_id.exists' => 'الإدارة المحددة غير موجودة',
         'emp_jobs_id.required' => 'حقل الوظيفة مطلوب',
         'emp_jobs_id.exists' => 'الوظيفة المحددة غير موجودة',
-        'daily_work_hours.min' => 'يجب ألا يقل عدد الساعات عن 1',
-        'daily_work_hours.max' => 'يجب ألا يزيد عدد الساعات عن 24',
+
     ]);
 
     DB::beginTransaction();
@@ -498,6 +740,9 @@ public function store(Request $request)
             'form1_notes'             => $request->form1_notes ?: null,
             'form6_notes'             => $request->form6_notes ?: null,
             'client_notes'            => $request->client_notes ?: null,
+            'medical_id'              => $request->medical_id ?: null,
+            'medical_status'          => $request->medical_status ?: null,
+            'medical_progress'        => $request->medical_progress ?: null,
             'updated_at'              => now(),
         ];
 

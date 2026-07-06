@@ -12,9 +12,11 @@ use App\Models\Commission;
 use App\Models\Deduction;
 use App\Models\KpiEmployeeScore;
 use App\Models\Admin_panel_setting;
+use App\Services\SmsService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PayrollController extends Controller
 {
@@ -335,6 +337,22 @@ class PayrollController extends Controller
         }
 
         $payroll->update(['status' => 2, 'updated_by' => Auth::guard('admin')->id()]);
+
+        // SMS إشعار الراتب
+        $employee = $payroll->employee;
+        if ($employee && $employee->emp_mobile) {
+            try {
+                (new SmsService($this->comCode()))->sendPayrollApproved(
+                    $employee->emp_mobile,
+                    $employee->employee_name_A,
+                    (float)$payroll->net_salary,
+                    (int)$payroll->month,
+                    (int)$payroll->year
+                );
+            } catch (\Exception $e) {
+                Log::warning('SMS payroll failed: ' . $e->getMessage());
+            }
+        }
 
         if ($payroll->advance_installment > 0) {
             $advance = Advance::where('employee_id', $payroll->employee_id)

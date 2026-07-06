@@ -24,8 +24,11 @@
         <div class="form-group text-center " >
           <div class="form-group form-inline" style="padding: 5px">
             <label for="job_name" class="col-sm-2 ">{{ __('admin.job_name') }}</label>
-            <div class=" ">
-              <input type="text" class="col-sm-10 form-control" name="job_name_search" value="" id="job_name_search">
+            <div class="d-flex gap-2">
+              <input type="text" class="form-control" name="job_name_search" value="" id="job_name_search">
+              <button type="button" id="bulk_delete_btn" class="btn btn-danger">
+                <i class="fas fa-trash"></i> مسح السجلات
+              </button>
             </div>
         </div>
         <div class="card-body" id="ajax_res_search_div">
@@ -84,9 +87,26 @@
   <script>
     $(document).ready(function () {
         ajax_search();
-        $(document).on('change', '#job_name_search', function (e) {
+        $(document).on('input', '#job_name_search', function (e) {
           e.preventDefault();
             ajax_search();
+        });
+        $(document).on('click', '#bulk_delete_btn', function () {
+            var search = $('#job_name_search').val();
+            var label  = search !== '' ? 'السجلات التي تحتوي على "' + search + '"' : 'جميع سجلات الوظائف';
+            if (!confirm('هل أنت متأكد من حذف ' + label + '؟')) return;
+            $.ajax({
+                url: '{{ route('jobs_categories.bulk_delete') }}',
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}', job_name_search: search },
+                success: function (res) {
+                    alert(res.message);
+                    ajax_search();
+                },
+                error: function () {
+                    alert('حدث خطأ أثناء الحذف');
+                }
+            });
         });
         $(document).on('click', '#ajax_pagination_in_search a', function (e) {
             e.preventDefault();

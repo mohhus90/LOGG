@@ -1,7 +1,7 @@
 @extends('admin.layouts.admin')
 @section('title') تفاصيل الراتب @endsection
 @section('start') الرواتب @endsection
-@section('home') <a href="{{ route('payroll.index') }}">مسير الرواتب</a> @endsection
+@section('home') <a href="{{ route('payroll.index') }}">كشف الرواتب</a> @endsection
 @section('startpage') تفاصيل @endsection
 
 @section('css')
@@ -180,8 +180,8 @@
                 @if($payroll->status == 1)
                 <a href="{{ route('payroll.approve', $payroll->id) }}"
                    class="btn btn-success"
-                   onclick="return confirm('اعتماد هذا المسير؟')">
-                    <i class="fas fa-check ml-1"></i> اعتماد المسير
+                   onclick="return confirm('اعتماد هذا الكشف؟')">
+                    <i class="fas fa-check ml-1"></i> اعتماد الكشف
                 </a>
                 @endif
                 <button class="btn btn-secondary mr-2" onclick="window.print()">

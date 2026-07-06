@@ -9,9 +9,11 @@ use App\Models\EmployeeVacationBalance;
 use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\Admin_panel_setting;
+use App\Services\SmsService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EmployeeRequestsController extends Controller
 {
@@ -70,6 +72,20 @@ class EmployeeRequestsController extends Controller
             }
 
             DB::commit();
+
+            // SMS إشعار قبول الطلب
+            if ($employee && $employee->emp_mobile) {
+                try {
+                    (new SmsService($this->comCode()))->sendRequestApproved(
+                        $employee->emp_mobile,
+                        $employee->employee_name_A,
+                        $req->request_type
+                    );
+                } catch (\Exception $e) {
+                    Log::warning('SMS request-approve failed: ' . $e->getMessage());
+                }
+            }
+
             return back()->with('success', 'تم قبول الطلب وتطبيق التعديلات تلقائياً');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -94,6 +110,20 @@ class EmployeeRequestsController extends Controller
             'reviewed_at'  => now(),
             'review_notes' => $request->review_notes,
         ]);
+
+        // SMS إشعار رفض الطلب
+        $employee = $req->employee;
+        if ($employee && $employee->emp_mobile) {
+            try {
+                (new SmsService($this->comCode()))->sendRequestRejected(
+                    $employee->emp_mobile,
+                    $employee->employee_name_A,
+                    $req->request_type
+                );
+            } catch (\Exception $e) {
+                Log::warning('SMS request-reject failed: ' . $e->getMessage());
+            }
+        }
 
         return back()->with('success', 'تم رفض الطلب');
     }

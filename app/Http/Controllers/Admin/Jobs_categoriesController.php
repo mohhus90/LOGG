@@ -169,6 +169,38 @@ public function store(Request $request)
         }
         
     }
+    public function bulkDelete(Request $request)
+    {
+        $com_code = auth()->guard('admin')->user()->com_code;
+        $search   = trim($request->job_name_search ?? '');
+
+        $query = Jobs_categories::where('com_code', $com_code);
+        if ($search !== '') {
+            $query->where('job_name', 'LIKE', '%' . $search . '%');
+        }
+
+        $ids = $query->pluck('id');
+
+        // Skip jobs that are assigned to employees
+        $usedIds = \App\Models\Employee::whereIn('emp_jobs_id', $ids)
+            ->pluck('emp_jobs_id')->unique();
+
+        $toDelete  = $ids->diff($usedIds);
+        $skipped   = $usedIds->count();
+        $deleted   = 0;
+
+        if ($toDelete->isNotEmpty()) {
+            $deleted = Jobs_categories::whereIn('id', $toDelete)->delete();
+        }
+
+        $message = "تم حذف {$deleted} وظيفة.";
+        if ($skipped > 0) {
+            $message .= " تم تخطي {$skipped} وظيفة مرتبطة بموظفين.";
+        }
+
+        return response()->json(['success' => true, 'message' => $message]);
+    }
+
     public function ajaxsearch(Request $request){
        
         if($request->ajax()){

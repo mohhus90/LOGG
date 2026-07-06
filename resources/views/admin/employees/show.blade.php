@@ -398,6 +398,45 @@
           <div class="info-val">{{ number_format($data['medical_insurance'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
         </div>
         <div class="info-item">
+          <label>رقم التأمين الطبي (Medical ID)</label>
+          <div class="info-val {{ empty($data['medical_id']) ? 'empty' : 'highlighted' }}">{{ $data['medical_id'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>حالة التأمين الطبي (Medical Status)</label>
+          <div class="info-val {{ empty($data['medical_status']) ? 'empty' : '' }}">
+            @php
+              $msColor = match($data['medical_status'] ?? '') {
+                'Active'     => 'color:#059669;font-weight:700',
+                'Resigned', 'Terminated' => 'color:#dc2626;font-weight:700',
+                'Cancelled'  => 'color:#d97706;font-weight:700',
+                default => ''
+              };
+            @endphp
+            @if(!empty($data['medical_status']))
+              <span style="{{ $msColor }}">{{ $data['medical_status'] }}</span>
+            @else —
+            @endif
+          </div>
+        </div>
+        <div class="info-item">
+          <label>تقدم التأمين الطبي (Medical Progress)</label>
+          <div class="info-val {{ empty($data['medical_progress']) ? 'empty' : '' }}">
+            @php
+              $mpColor = match($data['medical_progress'] ?? '') {
+                'Completed'              => 'color:#059669;font-weight:700',
+                'In Progress','In process' => 'color:#2563eb;font-weight:700',
+                'Not Started'            => 'color:#9ca3af;font-weight:700',
+                'Cancelled'              => 'color:#dc2626;font-weight:700',
+                default => ''
+              };
+            @endphp
+            @if(!empty($data['medical_progress']))
+              <span style="{{ $mpColor }}">{{ $data['medical_progress'] }}</span>
+            @else —
+            @endif
+          </div>
+        </div>
+        <div class="info-item">
           <label>{{ __('admin.emp_payment_method') }}</label>
           <div class="info-val">
             @if($data['sal_cash_visa'] == 1) {{ __('admin.emp_cash') }}

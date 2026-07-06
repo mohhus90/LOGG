@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\EmployeeSanction;
 use App\Models\Employee;
+use App\Services\SmsService;
 
 class SanctionController extends Controller
 {
@@ -98,6 +100,16 @@ class SanctionController extends Controller
             'status'          => 1,
             'added_by'        => Auth::guard('admin')->id(),
         ]);
+
+        // SMS إشعار الجزاء
+        $employee = Employee::find($request->employee_id);
+        if ($employee && $employee->emp_mobile) {
+            try {
+                (new SmsService($comCode))->sendSanctionCreated($employee->emp_mobile, $employee->employee_name_A);
+            } catch (\Exception $e) {
+                Log::warning('SMS sanction failed: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('sanctions.index')
             ->with('success', 'تم إضافة الجزاء بنجاح');

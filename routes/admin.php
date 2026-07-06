@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\TaxController;
 use App\Http\Controllers\Admin\EtaFreeZoneController;
 use App\Http\Controllers\Admin\ClientsController;
+use App\Http\Controllers\Admin\SmsController;
 
 defined('paginate_counter') || define('paginate_counter', 20);
 
@@ -70,6 +71,17 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     // });
     Route::middleware(['auth:admin', 'admin.permission:general_settings,can_update'])->group(function () {
         Route::post('generalsetting/update', [AdminPanelSettingController::class, 'update'])->name('generalsetting.update');
+    });
+    Route::middleware(['auth:admin'])->group(function () {
+        Route::post('sms/test',    [AdminPanelSettingController::class, 'testSms'])->name('sms.test');
+    });
+    // ─────────────────────────────────────────────
+    //  SMS — إرسال رسائل جماعية
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin'])->group(function () {
+        Route::get('sms/compose',  [SmsController::class, 'compose'])->name('sms.compose');
+        Route::get('sms/filter',   [SmsController::class, 'filterEmployees'])->name('sms.filter');
+        Route::post('sms/send',    [SmsController::class, 'send'])->name('sms.send');
     });
     // ─────────────────────────────────────────────
     //  العملاء — clients
@@ -167,6 +179,8 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         ->name('jobs_categories.delete')->middleware(['auth:admin', 'admin.permission:jobs_categories,can_delete']);
     Route::get('jobs_categores/delete/{id}', [Jobs_categoriesController::class, 'delete'])
         ->name('jobs_categores.delete')->middleware(['auth:admin', 'admin.permission:jobs_categories,can_delete']);
+    Route::post('jobs_categories/bulk-delete', [Jobs_categoriesController::class, 'bulkDelete'])
+        ->name('jobs_categories.bulk_delete')->middleware(['auth:admin', 'admin.permission:jobs_categories,can_delete']);
 
     // ─────────────────────────────────────────────
     //  الهيكل الوظيفي — org_levels
@@ -188,7 +202,8 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     Route::middleware(['auth:admin', 'admin.permission:employees,can_read'])->group(function () {
         Route::get('employees',           [EmployeesConroller::class, 'index'])->name('employees.index');
         Route::get('employees/show/{id}', [EmployeesConroller::class, 'show'])->name('employees.show');
-        Route::get('employees/export',    [EmployeesConroller::class, 'export'])->name('employees.export');
+        Route::get('employees/export',            [EmployeesConroller::class, 'export'])->name('employees.export');
+        Route::get('employees/export-system-csv', [EmployeesConroller::class, 'exportSystemCsv'])->name('employees.export.system.csv');
     });
     Route::middleware(['auth:admin', 'admin.permission:employees,can_create'])->group(function () {
         Route::get('employees/create',          [EmployeesConroller::class, 'create'])->name('employees.create');
@@ -203,6 +218,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('employees/{id}/documents/{docId}/download', [EmployeesConroller::class, 'downloadDocument'])->name('employees.document.download');
         Route::get('employees/{id}/documents/{docId}/delete', [EmployeesConroller::class, 'deleteDocument'])->name('employees.document.delete');
         Route::post('employees/update-nid-excel', [EmployeesConroller::class, 'updateNidFromExcel'])->name('employees.update.nid.excel');
+        Route::post('employees/do-upload-medical', [EmployeesConroller::class, 'doUploadMedicalExcel'])->name('employees.do.upload.medical');
     });
     Route::get('employees/delete/{id}', [EmployeesConroller::class, 'delete'])
         ->name('employees.delete')->middleware(['auth:admin', 'admin.permission:employees,can_delete']);

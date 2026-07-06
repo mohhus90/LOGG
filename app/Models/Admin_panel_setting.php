@@ -60,6 +60,18 @@ class Admin_panel_setting extends Model
         'early_departure_halfday_minutes',
         'early_departure_fullday_minutes',
         'early_departure_fullplushalf_minutes',
+        // إعدادات SMS
+        'sms_enabled',
+        'sms_api_url',
+        'sms_username',
+        'sms_password',
+        'sms_sender',
+        'sms_on_employee_create',
+        'sms_on_payroll_approve',
+        'sms_on_request_approve',
+        'sms_on_request_reject',
+        'sms_on_advance_create',
+        'sms_on_sanction_create',
         'created_at',
         'updated_at',
     ];

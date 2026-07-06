@@ -427,7 +427,45 @@
                                 </div>
                             </div>
 
-                            <div class="row">
+                            {{-- ── بيانات التأمين الطبي ── --}}
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6 class="text-info border-bottom pb-1"><i class="fas fa-shield-alt mr-1"></i>بيانات التأمين الطبي</h6>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label for="medical_id">رقم التأمين الطبي (Medical ID)</label>
+                                        <input type="text" class="form-control" name="medical_id" id="medical_id" value="{{ old('medical_id') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label for="medical_status">حالة التأمين الطبي (Medical Status)</label>
+                                        <select class="form-control" name="medical_status" id="medical_status">
+                                            <option value="">— اختر —</option>
+                                            <option value="Active"      {{ old('medical_status') == 'Active'      ? 'selected' : '' }}>Active</option>
+                                            <option value="Resigned"    {{ old('medical_status') == 'Resigned'    ? 'selected' : '' }}>Resigned</option>
+                                            <option value="Cancelled"   {{ old('medical_status') == 'Cancelled'   ? 'selected' : '' }}>Cancelled</option>
+                                            <option value="Terminated"  {{ old('medical_status') == 'Terminated'  ? 'selected' : '' }}>Terminated</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label for="medical_progress">تقدم التأمين الطبي (Medical Progress)</label>
+                                        <select class="form-control" name="medical_progress" id="medical_progress">
+                                            <option value="">— اختر —</option>
+                                            <option value="Completed"   {{ old('medical_progress') == 'Completed'   ? 'selected' : '' }}>Completed</option>
+                                            <option value="Not Started" {{ old('medical_progress') == 'Not Started' ? 'selected' : '' }}>Not Started</option>
+                                            <option value="In Progress" {{ old('medical_progress') == 'In Progress' ? 'selected' : '' }}>In Progress</option>
+                                            <option value="In process"  {{ old('medical_progress') == 'In process'  ? 'selected' : '' }}>In process</option>
+                                            <option value="Cancelled"   {{ old('medical_progress') == 'Cancelled'   ? 'selected' : '' }}>Cancelled</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
                                 <div class="col-md-4">
                                     <div class="">
                                         <label for="bank_name">{{ __('admin.emp_bank_name') }}</label>

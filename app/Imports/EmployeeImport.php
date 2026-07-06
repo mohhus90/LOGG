@@ -14,14 +14,26 @@ class EmployeeImport implements ToCollection, WithStartRow
         return 2;
     }
 
+    private function cleanExcelStr($val): ?string
+    {
+        $s = trim((string) ($val ?? ''));
+        if (preg_match('/^=""(.+)""$/', $s, $m)) {
+            return $m[1];
+        }
+        if (preg_match('/^="(.+)"$/', $s, $m)) {
+            return $m[1];
+        }
+        return $s !== '' ? $s : null;
+    }
+
     public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
             Employee::create([
                 'added_by' => auth()->guard('admin')->user()->id,
                 'com_code' => auth()->guard('admin')->user()->com_code,
-                'employee_id' => $row[0],
-                'finger_id' => $row[1],
+                'employee_id' => $this->cleanExcelStr($row[0]),
+                'finger_id' => $this->cleanExcelStr($row[1]),
                 'employee_name_A' => $row[2],
                 'employee_name_E' => $row[3],
                 'employee_address' => $row[4],
@@ -41,16 +53,16 @@ class EmployeeImport implements ToCollection, WithStartRow
                 'motivation' => $row[18],
                 'sal_cash_visa' => $row[19],
                 'bank_name' => $row[20],
-                'bank_account' => $row[21],
-                'bank_ID' => $row[22],
+                'bank_account' => $this->cleanExcelStr($row[21]),
+                'bank_ID' => $this->cleanExcelStr($row[22]),
                 'bank_branch' => $row[23],
                 'daily_work_hours' => $row[24],
                 'emp_jobs_id' => is_numeric($row[25]) ? $row[25] : null,
-                'national_id' => $row[26],
-                'insurance_no' => $row[27],
+                'national_id' => $this->cleanExcelStr($row[26]),
+                'insurance_no' => $this->cleanExcelStr($row[27]),
                 'emp_departments_id' => is_numeric($row[28]) ? $row[28] : null,
-                'emp_home_tel' => $row[29],
-                'emp_mobile' => $row[30],
+                'emp_home_tel' => $this->cleanExcelStr($row[29]),
+                'emp_mobile' => $this->cleanExcelStr($row[30]),
                 'emp_email' => $row[31],
                 'emp_photo' => $row[32],
                 'birth_date' => $row[33],

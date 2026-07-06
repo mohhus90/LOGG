@@ -2,7 +2,7 @@
 @section('title') استيراد موظفي {{ $client->client_name }} @endsection
 @section('start') العملاء @endsection
 @section('home') <a href="{{ route('clients.index') }}">العملاء</a> @endsection
-@section('startpage') استيراد CSV @endsection
+@section('startpage') استيراد Excel @endsection
 
 @section('content')
 <div class="col-12">
@@ -24,7 +24,7 @@
             <div class="alert alert-info">
                 <strong>تعليمات الاستيراد:</strong>
                 <ul class="mb-0 mt-1">
-                    <li>يجب أن يكون الملف بصيغة <code>.csv</code></li>
+                    <li>يجب أن يكون الملف بصيغة <code>.xlsx</code> أو <code>.xls</code> (Excel)</li>
                     <li>يجب أن يحتوي الملف على الأعمدة التالية في الصف الأول (Header):</li>
                 </ul>
                 <code class="ltr-text d-block mt-1 small" style="text-align:left; padding:8px; background:#f8f9fa; border-radius:4px;">
@@ -44,9 +44,9 @@
                   enctype="multipart/form-data">
                 @csrf
                 <div class="form-group row mb-4">
-                    <label class="col-sm-2 col-form-label">اختر ملف CSV <span class="text-danger">*</span></label>
+                    <label class="col-sm-2 col-form-label">اختر ملف Excel <span class="text-danger">*</span></label>
                     <div class="col-sm-5">
-                        <input type="file" class="form-control" name="csv_file" accept=".csv,.txt" required>
+                        <input type="file" class="form-control" name="csv_file" accept=".xlsx,.xls,.csv" required>
                         @error('csv_file')<span class="text-danger">{{ $message }}</span>@enderror
                     </div>
                 </div>

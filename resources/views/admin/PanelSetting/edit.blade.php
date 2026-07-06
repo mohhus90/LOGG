@@ -474,6 +474,100 @@
       @endforeach
     </div>
 
+    <hr>
+
+    {{-- ══ إعدادات SMS ══ --}}
+    <h5 class="section-title"><i class="fas fa-sms ml-2 text-success"></i>إعدادات الرسائل القصيرة (SMS)</h5>
+    <div class="alert alert-info py-2">
+      <i class="fas fa-info-circle ml-1"></i>
+      أدخل بيانات الاتصال بمزوّد SMS (مثل VLServ). يمكن تفعيل كل حدث بشكل مستقل.
+      <br>كلمة المرور <strong>لن تُعرض</strong> مرة أخرى — اتركها فارغة إذا لم تُرد تغييرها.
+    </div>
+
+    {{-- تفعيل SMS --}}
+    <div class="row">
+      <div class="col-md-3 form-group">
+        <label class="d-block mb-1">تفعيل خدمة SMS</label>
+        <div class="custom-control custom-switch">
+          <input type="checkbox" class="custom-control-input" id="sms_enabled" name="sms_enabled"
+            value="1" {{ old('sms_enabled', $data->sms_enabled ?? false) ? 'checked' : '' }}
+            onchange="toggleSmsFields()">
+          <label class="custom-control-label" for="sms_enabled">تفعيل</label>
+        </div>
+      </div>
+    </div>
+
+    <div id="smsFieldsWrapper" style="{{ old('sms_enabled', $data->sms_enabled ?? false) ? '' : 'display:none' }}">
+      <div class="row">
+        <div class="col-md-6 form-group">
+          <label>رابط API للمزوّد</label>
+          <input type="url" class="form-control" name="sms_api_url"
+            value="{{ old('sms_api_url', $data->sms_api_url ?? 'https://smsvas.vlserv.com') }}"
+            placeholder="https://smsvas.vlserv.com">
+          <small class="text-muted">
+            الرابط الأساسي لخادم VLServ — مثال: <code>https://smsvas.vlserv.com</code>
+          </small>
+        </div>
+        <div class="col-md-3 form-group">
+          <label>اسم المرسل (Sender Name)</label>
+          <input type="text" class="form-control" name="sms_sender"
+            value="{{ old('sms_sender', $data->sms_sender ?? '') }}"
+            placeholder="GoPartners">
+          <small class="text-muted">الاسم الذي يظهر للمستقبل</small>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4 form-group">
+          <label>اسم المستخدم (Username)</label>
+          <input type="text" class="form-control" name="sms_username"
+            value="{{ old('sms_username', $data->sms_username ?? '') }}"
+            placeholder="GoPartnersCompany" autocomplete="off">
+        </div>
+        <div class="col-md-4 form-group">
+          <label>كلمة المرور (Password)</label>
+          <div class="input-group">
+            <input type="password" class="form-control" name="sms_password" id="smsPasswordInput"
+              placeholder="{{ $data->sms_password ? '••••••••  (محفوظة — اتركها فارغة للإبقاء)' : 'أدخل كلمة المرور' }}"
+              autocomplete="new-password">
+            <div class="input-group-append">
+              <button type="button" class="btn btn-outline-secondary" onclick="toggleSmsPassword()">
+                <i class="fas fa-eye" id="smsEyeIcon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 form-group d-flex align-items-end">
+          <button type="button" class="btn btn-outline-info btn-sm" onclick="testSmsConnection()">
+            <i class="fas fa-plug ml-1"></i> اختبار الاتصال
+          </button>
+          <span id="smsTestResult" class="mr-2 small"></span>
+        </div>
+      </div>
+
+      <hr class="my-2">
+      <h6 class="font-weight-bold mb-2"><i class="fas fa-bell ml-1"></i>تفعيل الإشعارات لكل حدث</h6>
+      <div class="row">
+        @foreach([
+          ['sms_on_employee_create', 'ترحيب بالموظف الجديد',     'fas fa-user-plus'],
+          ['sms_on_payroll_approve',  'اعتماد مسير الراتب',       'fas fa-money-bill-wave'],
+          ['sms_on_request_approve',  'قبول طلب الموظف',          'fas fa-check-circle'],
+          ['sms_on_request_reject',   'رفض طلب الموظف',           'fas fa-times-circle'],
+          ['sms_on_advance_create',   'تسجيل سلفة جديدة',         'fas fa-hand-holding-usd'],
+          ['sms_on_sanction_create',  'تسجيل جزاء تأديبي',        'fas fa-exclamation-triangle'],
+        ] as [$field, $label, $icon])
+        <div class="col-md-4 mb-2">
+          <div class="custom-control custom-switch">
+            <input type="checkbox" class="custom-control-input" id="{{ $field }}" name="{{ $field }}"
+              value="1" {{ old($field, $data->$field ?? true) ? 'checked' : '' }}>
+            <label class="custom-control-label" for="{{ $field }}">
+              <i class="{{ $icon }} ml-1 text-secondary"></i> {{ $label }}
+            </label>
+          </div>
+        </div>
+        @endforeach
+      </div>
+    </div>
+
   </div>{{-- end card-body --}}
 
   <div class="card-footer">
@@ -564,5 +658,78 @@ document.addEventListener('DOMContentLoaded', function() {
   updateRatePreview();
   toggleDelayMode();
 });
+
+function toggleSmsFields() {
+  var enabled = document.getElementById('sms_enabled').checked;
+  document.getElementById('smsFieldsWrapper').style.display = enabled ? '' : 'none';
+}
+
+function toggleSmsPassword() {
+  var input = document.getElementById('smsPasswordInput');
+  var icon  = document.getElementById('smsEyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+
+function testSmsConnection() {
+  var result = document.getElementById('smsTestResult');
+  var url      = document.querySelector('[name=sms_api_url]').value;
+  var username = document.querySelector('[name=sms_username]').value;
+  var password = document.getElementById('smsPasswordInput').value;
+  var sender   = document.querySelector('[name=sms_sender]').value;
+
+  if (!username || !sender) {
+    result.innerHTML = '<span class="text-danger">يُرجى إدخال اسم المستخدم والمرسل أولاً</span>';
+    return;
+  }
+
+  result.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin ml-1"></i>جاري الاختبار...</span>';
+
+  fetch('{{ route("sms.test") }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+    body: JSON.stringify({ sms_api_url: url, sms_username: username, sms_password: password, sms_sender: sender })
+  })
+  .then(r => r.json())
+  .then(data => {
+    var icon = data.success
+      ? '<i class="fas fa-check-circle ml-1"></i>'
+      : '<i class="fas fa-times-circle ml-1"></i>';
+    var cls  = data.success ? 'text-success' : 'text-danger';
+
+    var html = '<span class="' + cls + '">' + icon + data.message + '</span>';
+
+    if (data.raw) {
+      html += '<div class="mt-1 p-2 rounded" style="background:#f8f9fa;border:1px solid #dee2e6;font-size:.75rem;direction:ltr;text-align:left;max-height:80px;overflow:auto">'
+            + '<strong>Server response:</strong> ' + data.raw + '</div>';
+    }
+    if (data.hint) {
+      html += '<div class="mt-1 small text-info"><i class="fas fa-lightbulb ml-1"></i>' + data.hint + '</div>';
+    }
+
+    // إذا وجد URL صحيح مختلف عن المُدخل → اقترح تعديله تلقائياً
+    if (data.success && data.working_url) {
+      var currentUrl = document.querySelector('[name=sms_api_url]').value;
+      if (data.working_url !== currentUrl) {
+        html += '<div class="mt-2 alert alert-warning py-2">'
+              + '<i class="fas fa-magic ml-1"></i> تم اكتشاف الـ URL الصحيح تلقائياً!'
+              + '<br><code>' + data.working_url + '</code>'
+              + '<button type="button" class="btn btn-sm btn-warning mr-2 mt-1" onclick="document.querySelector(\'[name=sms_api_url]\').value=\'' + data.working_url + '\'">'
+              + '<i class="fas fa-arrow-down ml-1"></i>تعبئة تلقائياً</button>'
+              + '</div>';
+      }
+    }
+
+    result.innerHTML = html;
+  })
+  .catch(() => {
+    result.innerHTML = '<span class="text-danger">فشل الاتصال بالخادم</span>';
+  });
+}
 </script>
 @endsection

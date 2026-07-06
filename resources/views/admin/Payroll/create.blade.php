@@ -1,7 +1,7 @@
 @extends('admin.layouts.admin')
-@section('title') احتساب مسير الرواتب @endsection
+@section('title') احتساب كشف الرواتب @endsection
 @section('start') الرواتب @endsection
-@section('home') <a href="{{ route('payroll.index') }}">مسير الرواتب</a> @endsection
+@section('home') <a href="{{ route('payroll.index') }}">كشف الرواتب</a> @endsection
 @section('startpage') احتساب @endsection
 
 @section('content')

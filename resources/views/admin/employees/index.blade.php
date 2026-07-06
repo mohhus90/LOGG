@@ -180,6 +180,7 @@ $activeFilters = array_filter(request()->only([
       <span class="badge badge-light mr-1">{{ $data->total() }}</span>
       <a href="{{ route('employees.create') }}" class="btn btn-sm btn-success mr-2"><i class="fas fa-plus"></i> {{ __('admin.add') }}</a>
       <a href="{{ route('employees.uploadexcel') }}" class="btn btn-sm btn-info mr-1"><i class="fas fa-file-excel"></i> Excel</a>
+      <a href="{{ route('employees.export.system.csv') }}" class="btn btn-sm btn-secondary mr-1"><i class="fas fa-file-csv"></i> تصدير CSV</a>
       @if(count($activeFilters) > 0)
       <button type="button" class="btn btn-sm btn-danger mr-1" id="btnDeleteFiltered"
               data-count="{{ $data->total() }}">

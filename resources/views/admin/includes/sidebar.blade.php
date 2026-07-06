@@ -17,6 +17,7 @@
     $onVacations     = request()->routeIs('vacations*');
     $onMainVacations = request()->is('admin/dashboard/Main_vacations*');
     $onEmpRequests   = request()->is('admin/dashboard/employee_requests*');
+    $onSms           = request()->is('admin/dashboard/sms*');
     $hrMenuOpen      = $onEmployees || $onVacations || $onMainVacations || $onEmpRequests;
     $isRtl           = app()->getLocale() === 'ar';
   @endphp
@@ -123,6 +124,12 @@
                   <span class="badge badge-danger badge-pill mr-1">{{ $pendingReqs }}</span>
                 @endif
               </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('sms.compose') }}" class="nav-link {{ $onSms ? 'active' : '' }}">
+              <i class="nav-icon fas fa-sms"></i>
+              <p>رسائل SMS</p>
             </a>
           </li>
         </ul>

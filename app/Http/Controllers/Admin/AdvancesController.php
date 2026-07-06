@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Advance;
 use App\Models\Employee;
+use App\Services\SmsService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AdvancesController extends Controller
 {
@@ -59,6 +61,17 @@ class AdvancesController extends Controller
             'com_code'             => Auth::guard('admin')->user()->com_code,
             'added_by'             => Auth::guard('admin')->id(),
         ]);
+
+        // SMS إشعار السلفة
+        $employee = Employee::find($request->employee_id);
+        if ($employee && $employee->emp_mobile) {
+            try {
+                (new SmsService((int)Auth::guard('admin')->user()->com_code))
+                    ->sendAdvanceCreated($employee->emp_mobile, $employee->employee_name_A, (float)$request->amount);
+            } catch (\Exception $e) {
+                Log::warning('SMS advance failed: ' . $e->getMessage());
+            }
+        }
 
         return redirect()->route('advances.index')->with('success', 'تم إضافة السلفة بنجاح');
     }

@@ -44,7 +44,7 @@ return [
     'monthly_sales'             => 'إدخال مبيعات الشهر',
     'calculate_commissions'     => 'احتساب العمولات',
     'deductions'                => 'الخصومات',
-    'payroll'                   => 'مسير الرواتب',
+    'payroll'                   => 'كشف الرواتب',
     'tax_menu'                  => 'الضرائب والفواتير الإلكترونية',
     'tax_dashboard'             => 'لوحة الضرائب',
     'sales_invoices'            => 'فواتير المبيعات',
