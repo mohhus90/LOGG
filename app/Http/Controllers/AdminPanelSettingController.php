@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class AdminPanelSettingController extends Controller
 {
@@ -143,23 +142,12 @@ class AdminPanelSettingController extends Controller
                 return $this->store($request);
             }
 
-            $logoPath = $setting->image ?? $setting->logo ?? null;
-            if ($request->hasFile('logo_file') && $request->file('logo_file')->isValid()) {
-                if ($logoPath && Storage::disk('public')->exists($logoPath)) {
-                    Storage::disk('public')->delete($logoPath);
-                }
-                $logoPath = $request->file('logo_file')->store('logos', 'public');
-            }
-
+            // ✅ بيانات هوية الشركة (الاسم/الهاتف/العنوان/الشعار/الحالة) انتقلت
+            // لشاشة "بيانات شركتي" ضمن موديول النظام (CompanyProfileController) —
+            // هذه الشاشة لم تعد تعدّلها، فتبقى كما ضبطها آخر تحديث من هناك.
             $updatedData = [
                 'updated_by'                     => Auth::guard('admin')->id(),
-                'com_name'                       => $request->com_name            ?? $setting->com_name,
                 'com_code'                       => $this->getComCode(),
-                'saysem_status'                  => $request->saysem_status       ?? 1,
-                'phone'                          => $request->phone               ?? '',
-                'email'                          => $request->email               ?? '',
-                'address'                        => $request->address             ?? '',
-                'image'                          => $logoPath,
                 'after_minute_calc_delay'        => $request->after_minute_calc_delay        ?? 0,
                 'after_minute_calc_early'        => $request->after_minute_calc_early        ?? 0,
                 'after_minute_quarterday'        => $request->after_minute_quarterday        ?? 0,

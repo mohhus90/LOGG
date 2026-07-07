@@ -219,6 +219,24 @@
                                         @error('insurance_status')<div class="text-danger">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label for="probation_end_date">نهاية فترة الاختبار</label>
+                                        <input type="date" class="form-control" name="probation_end_date" id="probation_end_date" value="{{ old('probation_end_date', $data['probation_end_date']) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="">
+                                        <label for="contract_end_date">نهاية العقد (فارغ = غير محدد المدة)</label>
+                                        <input type="date" class="form-control" name="contract_end_date" id="contract_end_date" value="{{ old('contract_end_date', $data['contract_end_date']) }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="custom-control custom-switch mt-4">
+                                        <input type="checkbox" class="custom-control-input" id="apply_income_tax" name="apply_income_tax" value="1" {{ old('apply_income_tax', $data['apply_income_tax']) ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="apply_income_tax">خصم ضريبة كسب العمل من هذا الموظف</label>
+                                    </div>
+                                </div>
 
                                 <div class="col-md-4">
                                     <div class="">

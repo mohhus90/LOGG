@@ -10,38 +10,43 @@ use App\Http\Controllers\Admin\auth\AdminRegisterController;
 
 // ── الأقسام القديمة ──
 use App\Http\Controllers\AdminPanelSettingController;
-use App\Http\Controllers\Admin\branchesController;
-use App\Http\Controllers\Admin\Finance_calendersController;
-use App\Http\Controllers\Admin\Finance_cln_periodsController;
-use App\Http\Controllers\Admin\Shifts_typeController;
-use App\Http\Controllers\Admin\DepartmentsController;
-use App\Http\Controllers\Admin\Jobs_categoriesController;
-use App\Http\Controllers\Admin\EmployeesConroller;
-use App\Http\Controllers\Admin\Main_vacations_balanceController;
+use App\Http\Controllers\Admin\HR\branchesController;
+use App\Http\Controllers\Admin\HR\Finance_calendersController;
+use App\Http\Controllers\Admin\HR\Finance_cln_periodsController;
+use App\Http\Controllers\Admin\HR\Shifts_typeController;
+use App\Http\Controllers\Admin\HR\DepartmentsController;
+use App\Http\Controllers\Admin\HR\Jobs_categoriesController;
+use App\Http\Controllers\Admin\HR\EmployeesConroller;
+use App\Http\Controllers\Admin\HR\Main_vacations_balanceController;
 
 // ── الأقسام الجديدة (الإضافة الأولى) ──
 use App\Http\Controllers\Admin\AdminPermissionsController;
-use App\Http\Controllers\Admin\AttendanceController;
-use App\Http\Controllers\Admin\AdvancesController;
-use App\Http\Controllers\Admin\CommissionsController;
-use App\Http\Controllers\Admin\DeductionsController;
-use App\Http\Controllers\Admin\PayrollController;
-use App\Http\Controllers\Admin\FingerprintDevicesController;
+use App\Http\Controllers\Admin\HR\AttendanceController;
+use App\Http\Controllers\Admin\HR\AdvancesController;
+use App\Http\Controllers\Admin\HR\CommissionsController;
+use App\Http\Controllers\Admin\HR\DeductionsController;
+use App\Http\Controllers\Admin\HR\PayrollController;
+use App\Http\Controllers\Admin\HR\FingerprintDevicesController;
 
 // ── الأقسام الجديدة (الإضافة الثانية) ──
-use App\Http\Controllers\Admin\KpiController;
-use App\Http\Controllers\Admin\EmployeeRequestsController;
-use App\Http\Controllers\Admin\CommissionsV2Controller;
+use App\Http\Controllers\Admin\HR\KpiController;
+use App\Http\Controllers\Admin\HR\EmployeeRequestsController;
+use App\Http\Controllers\Admin\HR\CommissionsV2Controller;
 use App\Http\Controllers\Employee\EmployeePortalController;
-use App\Http\Controllers\Admin\VacationsController;
-use App\Http\Controllers\Admin\OrgLevelsController;
+use App\Http\Controllers\Admin\HR\VacationsController;
+use App\Http\Controllers\Admin\HR\OrgLevelsController;
 use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\TaxController;
 use App\Http\Controllers\Admin\EtaFreeZoneController;
-use App\Http\Controllers\Admin\ClientsController;
-use App\Http\Controllers\Admin\SmsController;
-use App\Http\Controllers\Admin\BranchCommissionsController;
-use App\Http\Controllers\Admin\BonusesController;
+use App\Http\Controllers\Admin\HR\ClientsController;
+use App\Http\Controllers\Admin\HR\SmsController;
+use App\Http\Controllers\Admin\HR\BranchCommissionsController;
+use App\Http\Controllers\Admin\HR\BonusesController;
+
+// ── موديول النظام (الشركات) ──
+use App\Http\Controllers\Admin\System\CompaniesController;
+use App\Http\Controllers\Admin\System\CompanyProfileController;
+use App\Http\Controllers\Admin\HR\IncomeTaxBracketsController;
 
 defined('paginate_counter') || define('paginate_counter', 20);
 
@@ -76,6 +81,39 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     });
     Route::middleware(['auth:admin', 'admin.permission:general_settings,can_update'])->group(function () {
         Route::post('sms/test',    [AdminPanelSettingController::class, 'testSms'])->name('sms.test');
+    });
+
+    // ─────────────────────────────────────────────
+    //  موديول النظام — بيانات شركتي + سجل الشركات
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin', 'admin.permission:company_profile,can_read'])->group(function () {
+        Route::get('company-profile', [CompanyProfileController::class, 'edit'])->name('company_profile.edit');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:company_profile,can_update'])->group(function () {
+        Route::post('company-profile', [CompanyProfileController::class, 'update'])->name('company_profile.update');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:companies,can_read'])->group(function () {
+        Route::get('companies', [CompaniesController::class, 'index'])->name('companies.index');
+        Route::get('companies/{company}/edit', [CompaniesController::class, 'edit'])->name('companies.edit')->where('company', '[0-9]+');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:companies,can_update'])->group(function () {
+        Route::post('companies/{company}', [CompaniesController::class, 'update'])->name('companies.update')->where('company', '[0-9]+');
+    });
+
+    // ─────────────────────────────────────────────
+    //  شرائح ضريبة كسب العمل
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin', 'admin.permission:income_tax_brackets,can_read'])->group(function () {
+        Route::get('income-tax-brackets', [IncomeTaxBracketsController::class, 'index'])->name('income_tax_brackets.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:income_tax_brackets,can_create'])->group(function () {
+        Route::post('income-tax-brackets', [IncomeTaxBracketsController::class, 'store'])->name('income_tax_brackets.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:income_tax_brackets,can_update'])->group(function () {
+        Route::post('income-tax-brackets/exemption', [IncomeTaxBracketsController::class, 'updateExemption'])->name('income_tax_brackets.update_exemption');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:income_tax_brackets,can_delete'])->group(function () {
+        Route::delete('income-tax-brackets/{id}', [IncomeTaxBracketsController::class, 'destroy'])->where('id', '[0-9]+')->name('income_tax_brackets.destroy');
     });
     // ─────────────────────────────────────────────
     //  SMS — إرسال رسائل جماعية
@@ -484,21 +522,21 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     //  بدل الإجازة — leave_compensation
     // ─────────────────────────────────────────────
     Route::middleware('auth:admin')->group(function () {
-        Route::get('leave-compensation',       [\App\Http\Controllers\Admin\LeaveCompensationController::class, 'index'])->name('leave_compensation.index');
-        Route::post('leave-compensation/save', [\App\Http\Controllers\Admin\LeaveCompensationController::class, 'update'])->name('leave_compensation.update');
+        Route::get('leave-compensation',       [\App\Http\Controllers\Admin\HR\LeaveCompensationController::class, 'index'])->name('leave_compensation.index');
+        Route::post('leave-compensation/save', [\App\Http\Controllers\Admin\HR\LeaveCompensationController::class, 'update'])->name('leave_compensation.update');
     });
 
     // ─────────────────────────────────────────────
     //  الجزاءات — sanctions
     // ─────────────────────────────────────────────
     Route::middleware('auth:admin')->group(function () {
-        Route::get('sanctions',              [\App\Http\Controllers\Admin\SanctionController::class, 'index'])->name('sanctions.index');
-        Route::get('sanctions/create',       [\App\Http\Controllers\Admin\SanctionController::class, 'create'])->name('sanctions.create');
-        Route::post('sanctions/store',       [\App\Http\Controllers\Admin\SanctionController::class, 'store'])->name('sanctions.store');
-        Route::get('sanctions/{id}/edit',    [\App\Http\Controllers\Admin\SanctionController::class, 'edit'])->name('sanctions.edit');
-        Route::post('sanctions/update/{id}', [\App\Http\Controllers\Admin\SanctionController::class, 'update'])->name('sanctions.update');
-        Route::post('sanctions/cancel/{id}', [\App\Http\Controllers\Admin\SanctionController::class, 'cancel'])->name('sanctions.cancel');
-        Route::post('sanctions/delete/{id}', [\App\Http\Controllers\Admin\SanctionController::class, 'delete'])->name('sanctions.delete');
+        Route::get('sanctions',              [\App\Http\Controllers\Admin\HR\SanctionController::class, 'index'])->name('sanctions.index');
+        Route::get('sanctions/create',       [\App\Http\Controllers\Admin\HR\SanctionController::class, 'create'])->name('sanctions.create');
+        Route::post('sanctions/store',       [\App\Http\Controllers\Admin\HR\SanctionController::class, 'store'])->name('sanctions.store');
+        Route::get('sanctions/{id}/edit',    [\App\Http\Controllers\Admin\HR\SanctionController::class, 'edit'])->name('sanctions.edit');
+        Route::post('sanctions/update/{id}', [\App\Http\Controllers\Admin\HR\SanctionController::class, 'update'])->name('sanctions.update');
+        Route::post('sanctions/cancel/{id}', [\App\Http\Controllers\Admin\HR\SanctionController::class, 'cancel'])->name('sanctions.cancel');
+        Route::post('sanctions/delete/{id}', [\App\Http\Controllers\Admin\HR\SanctionController::class, 'delete'])->name('sanctions.delete');
     });
 
     // ─────────────────────────────────────────────
@@ -514,14 +552,15 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     //  التقارير — reports
     // ─────────────────────────────────────────────
     Route::middleware('auth:admin')->group(function () {
-        Route::get('reports',            [\App\Http\Controllers\Admin\ReportsController::class, 'index'])->name('reports.index');
-        Route::get('reports/attendance', [\App\Http\Controllers\Admin\ReportsController::class, 'attendance'])->name('reports.attendance');
-        Route::get('reports/employees',  [\App\Http\Controllers\Admin\ReportsController::class, 'employees'])->name('reports.employees');
-        Route::get('reports/advances',     [\App\Http\Controllers\Admin\ReportsController::class, 'advances'])->name('reports.advances');
-        Route::get('reports/vacations',    [\App\Http\Controllers\Admin\ReportsController::class, 'vacations'])->name('reports.vacations');
-        Route::get('reports/commissions',  [\App\Http\Controllers\Admin\ReportsController::class, 'commissions'])->name('reports.commissions');
-        Route::get('reports/kpi',          [\App\Http\Controllers\Admin\ReportsController::class, 'kpiReport'])->name('reports.kpi');
-        Route::get('reports/payroll',      [\App\Http\Controllers\Admin\ReportsController::class, 'payroll'])->name('reports.payroll');
+        Route::get('reports',            [\App\Http\Controllers\Admin\HR\ReportsController::class, 'index'])->name('reports.index');
+        Route::get('reports/attendance', [\App\Http\Controllers\Admin\HR\ReportsController::class, 'attendance'])->name('reports.attendance');
+        Route::get('reports/employees',  [\App\Http\Controllers\Admin\HR\ReportsController::class, 'employees'])->name('reports.employees');
+        Route::get('reports/contracts-expiring', [\App\Http\Controllers\Admin\HR\ReportsController::class, 'contractsExpiring'])->name('reports.contracts_expiring');
+        Route::get('reports/advances',     [\App\Http\Controllers\Admin\HR\ReportsController::class, 'advances'])->name('reports.advances');
+        Route::get('reports/vacations',    [\App\Http\Controllers\Admin\HR\ReportsController::class, 'vacations'])->name('reports.vacations');
+        Route::get('reports/commissions',  [\App\Http\Controllers\Admin\HR\ReportsController::class, 'commissions'])->name('reports.commissions');
+        Route::get('reports/kpi',          [\App\Http\Controllers\Admin\HR\ReportsController::class, 'kpiReport'])->name('reports.kpi');
+        Route::get('reports/payroll',      [\App\Http\Controllers\Admin\HR\ReportsController::class, 'payroll'])->name('reports.payroll');
     });
 
     // ─────────────────────────────────────────────
@@ -726,6 +765,37 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_returns,can_delete'])->group(function () {
         Route::get('sales/returns/{id}/delete',  [\App\Http\Controllers\Admin\Sales\SalesReturnsController::class, 'delete'])->name('sales_returns.delete');
+    });
+
+    // ── نقاط البيع (POS) ──
+    Route::middleware(['auth:admin', 'admin.permission:pos_registers,can_read'])->group(function () {
+        Route::get('sales/pos-registers',           [\App\Http\Controllers\Admin\Sales\PosRegistersController::class, 'index'])->name('pos_registers.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:pos_registers,can_create'])->group(function () {
+        Route::get('sales/pos-registers/create',    [\App\Http\Controllers\Admin\Sales\PosRegistersController::class, 'create'])->name('pos_registers.create');
+        Route::post('sales/pos-registers',          [\App\Http\Controllers\Admin\Sales\PosRegistersController::class, 'store'])->name('pos_registers.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:pos_registers,can_update'])->group(function () {
+        Route::get('sales/pos-registers/{id}/edit', [\App\Http\Controllers\Admin\Sales\PosRegistersController::class, 'edit'])->where('id', '[0-9]+')->name('pos_registers.edit');
+        Route::post('sales/pos-registers/{id}',     [\App\Http\Controllers\Admin\Sales\PosRegistersController::class, 'update'])->where('id', '[0-9]+')->name('pos_registers.update');
+    });
+
+    Route::middleware(['auth:admin', 'admin.permission:pos_terminal,can_read'])->group(function () {
+        Route::get('sales/pos',                     [\App\Http\Controllers\Admin\Sales\PosController::class, 'selectRegister'])->name('pos.select_register');
+        Route::get('sales/pos/{register}',          [\App\Http\Controllers\Admin\Sales\PosController::class, 'terminal'])->where('register', '[0-9]+')->name('pos.terminal');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:pos_terminal,can_create'])->group(function () {
+        Route::post('sales/pos/{register}/open-session', [\App\Http\Controllers\Admin\Sales\PosController::class, 'openSession'])->where('register', '[0-9]+')->name('pos.open_session');
+        Route::post('sales/pos/checkout',           [\App\Http\Controllers\Admin\Sales\PosController::class, 'store'])->name('pos.checkout');
+    });
+
+    Route::middleware(['auth:admin', 'admin.permission:pos_sessions,can_read'])->group(function () {
+        Route::get('sales/pos-sessions',                    [\App\Http\Controllers\Admin\Sales\PosController::class, 'sessionsIndex'])->name('pos_sessions.index');
+        Route::get('sales/pos-sessions/{id}',               [\App\Http\Controllers\Admin\Sales\PosController::class, 'sessionShow'])->where('id', '[0-9]+')->name('pos_sessions.show');
+        Route::get('sales/pos-sessions/{id}/close',         [\App\Http\Controllers\Admin\Sales\PosController::class, 'closeSessionForm'])->where('id', '[0-9]+')->name('pos_sessions.close_form');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:pos_sessions,can_update'])->group(function () {
+        Route::post('sales/pos-sessions/{id}/close',        [\App\Http\Controllers\Admin\Sales\PosController::class, 'closeSession'])->where('id', '[0-9]+')->name('pos_sessions.close');
     });
 
     // ── تقارير المبيعات ──

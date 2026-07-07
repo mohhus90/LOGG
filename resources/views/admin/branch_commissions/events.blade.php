@@ -304,7 +304,7 @@
     <div class="card-body p-0">
       @foreach($plans as $plan)
       @php
-        $effectiveTargets = app(\App\Http\Controllers\Admin\BranchCommissionsController::class)
+        $effectiveTargets = app(\App\Http\Controllers\Admin\HR\BranchCommissionsController::class)
             ->getEffectiveTargets($plan, $month, $year);
         if (empty($effectiveTargets)) continue;
         $branchTarget = \App\Models\BranchTarget::where('com_code', auth()->guard('admin')->user()->com_code)

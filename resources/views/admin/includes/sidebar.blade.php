@@ -53,7 +53,8 @@
           'admin/dashboard/generalsetting*','admin/dashboard/branches*',
           'admin/dashboard/shifts*','admin/dashboard/departs*',
           'admin/dashboard/jobs*','admin/dashboard/finance*',
-          'admin/dashboard/org_levels*','admin/dashboard/clients*'
+          'admin/dashboard/org_levels*','admin/dashboard/clients*',
+          'admin/dashboard/income-tax-brackets*'
         );
       @endphp
       <li class="nav-item has-treeview {{ $settingsOpen ? 'menu-open' : '' }}">
@@ -64,7 +65,12 @@
         <ul class="nav nav-treeview">
           <li class="nav-item">
             <a href="{{ route('generalsetting.index') }}" class="nav-link {{ request()->is('admin/dashboard/generalsetting*') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-sliders-h"></i><p>{{ __('admin.general_settings') }}</p>
+              <i class="nav-icon fas fa-sliders-h"></i><p>إعدادات الموارد البشرية</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('income_tax_brackets.index') }}" class="nav-link {{ request()->is('admin/dashboard/income-tax-brackets*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-percentage"></i><p>شرائح ضريبة كسب العمل</p>
             </a>
           </li>
           <li class="nav-item">
@@ -331,63 +337,25 @@
         </ul>
       </li>
 
-      {{-- Tax & E-Invoices --}}
-      @php $taxOpen = request()->is('admin/dashboard/tax*'); @endphp
-      <li class="nav-item has-treeview {{ $taxOpen ? 'menu-open' : '' }}">
-        <a href="#" class="nav-link {{ $taxOpen ? 'active' : '' }}">
-          <i class="nav-icon fas fa-file-invoice-dollar"></i>
-          <p>{{ __('admin.tax_menu') }} <i class="right fas fa-angle-left"></i></p>
+      {{-- Reports --}}
+      @php $reportsMenuOpen = request()->is('admin/dashboard/reports*'); @endphp
+      <li class="nav-item has-treeview {{ $reportsMenuOpen ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ $reportsMenuOpen ? 'active' : '' }}">
+          <i class="nav-icon fas fa-chart-bar"></i>
+          <p>{{ __('admin.reports') }} <i class="right fas fa-angle-left"></i></p>
         </a>
         <ul class="nav nav-treeview">
           <li class="nav-item">
-            <a href="{{ route('tax.index') }}" class="nav-link {{ request()->routeIs('tax.index') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-tachometer-alt"></i><p>{{ __('admin.tax_dashboard') }}</p>
+            <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.index') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-chart-bar"></i><p>كل التقارير</p>
             </a>
           </li>
           <li class="nav-item">
-            <a href="{{ route('tax.invoices', ['direction' => 'Sent']) }}" class="nav-link {{ request()->is('admin/dashboard/tax/invoices*') && request('direction')=='Sent' ? 'active' : '' }}">
-              <i class="nav-icon fas fa-arrow-up text-success"></i><p>{{ __('admin.sales_invoices') }}</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ route('tax.invoices', ['direction' => 'Received']) }}" class="nav-link {{ request()->is('admin/dashboard/tax/invoices*') && request('direction')=='Received' ? 'active' : '' }}">
-              <i class="nav-icon fas fa-arrow-down text-primary"></i><p>{{ __('admin.purchase_invoices') }}</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ route('tax.sync.form') }}" class="nav-link {{ request()->routeIs('tax.sync.form') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-cloud-download-alt"></i><p>{{ __('admin.pull_from_eta') }}</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ route('tax.vat_report') }}" class="nav-link {{ request()->routeIs('tax.vat_report') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-file-alt"></i><p>{{ __('admin.tax_declaration') }}</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ route('tax.export.csv_form') }}" class="nav-link {{ request()->routeIs('tax.export.csv_form') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-file-csv"></i><p>{{ __('admin.reports_export') }}</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ route('tax.free_zones.index') }}" class="nav-link {{ request()->routeIs('tax.free_zones.*') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-warehouse"></i><p>{{ __('admin.free_zones') }}</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="{{ route('tax.credentials') }}" class="nav-link {{ request()->routeIs('tax.credentials') ? 'active' : '' }}">
-              <i class="nav-icon fas fa-key"></i><p>{{ __('admin.eta_settings') }}</p>
+            <a href="{{ route('reports.contracts_expiring') }}" class="nav-link {{ request()->routeIs('reports.contracts_expiring') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-file-signature text-danger"></i><p>تنبيهات العقود/الاختبار</p>
             </a>
           </li>
         </ul>
-      </li>
-
-      {{-- Reports --}}
-      <li class="nav-item">
-        <a href="{{ route('reports.index') }}" class="nav-link {{ request()->is('admin/dashboard/reports*') ? 'active' : '' }}">
-          <i class="nav-icon fas fa-chart-bar"></i>
-          <p>{{ __('admin.reports') }}</p>
-        </a>
       </li>
 
       {{-- Maintenance --}}

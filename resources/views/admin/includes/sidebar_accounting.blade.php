@@ -112,6 +112,57 @@
         </ul>
       </li>
 
+      {{-- Tax & E-Invoices --}}
+      @php $taxOpen = request()->is('admin/dashboard/tax*'); @endphp
+      <li class="nav-item has-treeview {{ $taxOpen ? 'menu-open' : '' }}">
+        <a href="#" class="nav-link {{ $taxOpen ? 'active' : '' }}">
+          <i class="nav-icon fas fa-file-invoice-dollar"></i>
+          <p>{{ __('admin.tax_menu') }} <i class="right fas fa-angle-left"></i></p>
+        </a>
+        <ul class="nav nav-treeview">
+          <li class="nav-item">
+            <a href="{{ route('tax.index') }}" class="nav-link {{ request()->routeIs('tax.index') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-tachometer-alt"></i><p>{{ __('admin.tax_dashboard') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('tax.invoices', ['direction' => 'Sent']) }}" class="nav-link {{ request()->is('admin/dashboard/tax/invoices*') && request('direction')=='Sent' ? 'active' : '' }}">
+              <i class="nav-icon fas fa-arrow-up text-success"></i><p>{{ __('admin.sales_invoices') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('tax.invoices', ['direction' => 'Received']) }}" class="nav-link {{ request()->is('admin/dashboard/tax/invoices*') && request('direction')=='Received' ? 'active' : '' }}">
+              <i class="nav-icon fas fa-arrow-down text-primary"></i><p>{{ __('admin.purchase_invoices') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('tax.sync.form') }}" class="nav-link {{ request()->routeIs('tax.sync.form') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-cloud-download-alt"></i><p>{{ __('admin.pull_from_eta') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('tax.vat_report') }}" class="nav-link {{ request()->routeIs('tax.vat_report') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-file-alt"></i><p>{{ __('admin.tax_declaration') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('tax.export.csv_form') }}" class="nav-link {{ request()->routeIs('tax.export.csv_form') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-file-csv"></i><p>{{ __('admin.reports_export') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('tax.free_zones.index') }}" class="nav-link {{ request()->routeIs('tax.free_zones.*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-warehouse"></i><p>{{ __('admin.free_zones') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('tax.credentials') }}" class="nav-link {{ request()->routeIs('tax.credentials') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-key"></i><p>{{ __('admin.eta_settings') }}</p>
+            </a>
+          </li>
+        </ul>
+      </li>
+
     </ul>
   </nav>
 </div>

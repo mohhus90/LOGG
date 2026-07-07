@@ -369,6 +369,7 @@
         .mod-bi     { --module-color: rgba(236,72,153,.5);  }
         .mod-doc    { --module-color: rgba(234,179,8,.5);   }
         .mod-treasury { --module-color: rgba(202,138,4,.5); }
+        .mod-sys    { --module-color: rgba(100,116,139,.5); }
 
         .icon-hr     { background: rgba(99,102,241,.15);   color: #818cf8; }
         .icon-sales  { background: rgba(16,185,129,.15);  color: #34d399; }
@@ -383,6 +384,7 @@
         .icon-bi     { background: rgba(236,72,153,.15);   color: #f472b6; }
         .icon-doc    { background: rgba(234,179,8,.15);    color: #facc15; }
         .icon-treasury { background: rgba(202,138,4,.15);  color: #eab308; }
+        .icon-sys    { background: rgba(100,116,139,.15);  color: #94a3b8; }
 
         /* Active module glow on hover */
         .active-module.mod-hr:hover     { box-shadow: 0 20px 50px -10px rgba(99,102,241,.4),  0 0 0 1px rgba(99,102,241,.3); }
@@ -858,6 +860,25 @@
                         <span class="feature-tag">الموافقات</span>
                         <span class="feature-tag">الفئات</span>
                         <span class="feature-tag">التحميل</span>
+                    </div>
+                </a>
+            </div>
+
+            {{-- 13. System / Companies --}}
+            <div class="col-xl-3 col-lg-4 col-md-6 reveal">
+                <a href="{{ Auth::guard('admin')->user()->is_super_admin ? route('companies.index') : route('company_profile.edit') }}" class="module-card active-module mod-sys">
+                    <div class="module-icon-wrap icon-sys">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="module-title">النظام</div>
+                    <div class="module-subtitle">System &amp; Companies</div>
+                    <span class="module-badge badge-active">
+                        <i class="fas fa-circle" style="font-size:7px; margin-left:5px;"></i>
+                        مفعّل
+                    </span>
+                    <div class="module-features">
+                        <span class="feature-tag">بيانات الشركة</span>
+                        <span class="feature-tag">سجل الشركات</span>
                     </div>
                 </a>
             </div>

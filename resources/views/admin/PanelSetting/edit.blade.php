@@ -1,14 +1,19 @@
 @extends('admin.layouts.admin')
-@section('title') تعديل الضبط العام @endsection
-@section('start') الضبط العام @endsection
-@section('home') <a href="{{ route('generalsetting.index') }}">الضبط العام</a> @endsection
+@section('title') إعدادات الموارد البشرية @endsection
+@section('start') إعدادات الموارد البشرية @endsection
+@section('home') <a href="{{ route('generalsetting.index') }}">إعدادات الموارد البشرية</a> @endsection
 @section('startpage') تعديل @endsection
 
 @section('content')
 <div class="col-12">
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-cog ml-2"></i>تعديل إعدادات الشركة</h3>
+    <h3 class="card-title"><i class="fas fa-cog ml-2"></i>تعديل إعدادات الموارد البشرية</h3>
+    <div class="card-tools">
+      <a href="{{ route('company_profile.edit') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-building ml-1"></i> بيانات الشركة انتقلت لموديول "النظام"
+      </a>
+    </div>
   </div>
 
 @if(!isset($data) || empty($data))
@@ -38,55 +43,6 @@
         {{ session('errorUpdate') }}
       </div>
     @endif
-
-    {{-- ══ بيانات الشركة ══ --}}
-    <h5 class="section-title"><i class="fas fa-building ml-2"></i>بيانات الشركة</h5>
-    <div class="row">
-      <div class="col-md-4 form-group">
-        <label>اسم الشركة <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" name="com_name"
-          value="{{ old('com_name', $data->com_name) }}" required>
-      </div>
-      <div class="col-md-4 form-group">
-        <label>هاتف الشركة</label>
-        <input type="text" class="form-control" name="phone"
-          value="{{ old('phone', $data->phone) }}" placeholder="01xxxxxxxxx">
-      </div>
-      <div class="col-md-4 form-group">
-        <label>البريد الإلكتروني</label>
-        <input type="email" class="form-control" name="email"
-          value="{{ old('email', $data->email) }}">
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-6 form-group">
-        <label>العنوان</label>
-        <input type="text" class="form-control" name="address"
-          value="{{ old('address', $data->address) }}">
-      </div>
-      <div class="col-md-2 form-group">
-        <label>حالة النظام</label>
-        <select class="form-control" name="saysem_status">
-          <option value="1" {{ ($data->saysem_status ?? 1) == 1 ? 'selected' : '' }}>✅ مفعّل</option>
-          <option value="0" {{ ($data->saysem_status ?? 1) == 0 ? 'selected' : '' }}>❌ معطّل</option>
-        </select>
-      </div>
-      <div class="col-md-4 form-group">
-        <label>شعار الشركة (Logo)</label>
-        <div class="d-flex align-items-center">
-          @if($data->image)
-            <img src="{{ asset('storage/' . $data->image) }}"
-              alt="Logo" style="height:50px;margin-left:10px;border-radius:6px;border:1px solid #dee2e6;object-fit:contain;padding:2px">
-          @endif
-        </div>
-        <input type="file" name="logo_file" class="form-control-file mt-1" accept="image/*"
-          onchange="previewLogo(this)">
-        <small class="text-muted">PNG, JPG, SVG — أقصى 2MB</small>
-        <div id="logoPreview" class="mt-1"></div>
-      </div>
-    </div>
-
-    <hr>
 
     {{-- ══ إعدادات التأخير والانصراف المبكر ══ --}}
     <h5 class="section-title"><i class="fas fa-clock ml-2"></i>إعدادات التأخير والانصراف المبكر</h5>
@@ -587,17 +543,6 @@
 
 @section('script')
 <script>
-function previewLogo(input) {
-  if (input.files && input.files[0]) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      document.getElementById('logoPreview').innerHTML =
-        '<img src="' + e.target.result + '" style="height:55px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px">';
-    };
-    reader.readAsDataURL(input.files[0]);
-  }
-}
-
 function toggleDelayMode() {
   var mode = parseInt(document.getElementById('delayCalcMode').value);
   // وضع 1: مضاعف الدقيقة فقط

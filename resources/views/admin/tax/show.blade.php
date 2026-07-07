@@ -1,4 +1,4 @@
-@extends('admin.layouts.admin')
+@extends('admin.layouts.accounting')
 @section('title') تفاصيل الفاتورة @endsection
 @section('start') الضرائب @endsection
 @section('home') <a href="{{ route('tax.invoices', ['direction' => $invoice->direction]) }}">{{ $invoice->direction_label }}</a> @endsection

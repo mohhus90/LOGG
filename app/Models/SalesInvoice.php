@@ -12,6 +12,7 @@ class SalesInvoice extends Model
     public function customer()  { return $this->belongsTo(Customer::class, 'customer_id'); }
     public function branch()    { return $this->belongsTo(Branche::class, 'branch_id'); }
     public function order()     { return $this->belongsTo(SalesOrder::class, 'order_id'); }
+    public function posSession(){ return $this->belongsTo(PosSession::class, 'pos_session_id'); }
     public function items()     { return $this->hasMany(SalesInvoiceItem::class, 'invoice_id'); }
     public function payments()  { return $this->hasMany(SalesPayment::class, 'invoice_id'); }
     public function createdBy() { return $this->belongsTo(Admin::class, 'created_by'); }

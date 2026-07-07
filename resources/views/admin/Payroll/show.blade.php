@@ -196,10 +196,17 @@
                     <span class="value minus">− {{ number_format($payroll->sanctions_deduction, 2) }}</span>
                 </div>
                 @endif
+                @if(($payroll->income_tax_deduction ?? 0) > 0)
+                <div class="payslip-row">
+                    <span class="label">ضريبة كسب العمل</span>
+                    <span class="value minus">− {{ number_format($payroll->income_tax_deduction, 2) }}</span>
+                </div>
+                @endif
                 @php
                     $totalDeductions = $payroll->late_deductions + $payroll->absence_deductions
                         + $payroll->deductions_amount + $payroll->advance_installment + $payroll->insurance_deduction
-                        + ($payroll->kpi_deduction_amount ?? 0) + ($payroll->sanctions_deduction ?? 0);
+                        + ($payroll->kpi_deduction_amount ?? 0) + ($payroll->sanctions_deduction ?? 0)
+                        + ($payroll->income_tax_deduction ?? 0);
                 @endphp
                 <div class="payslip-row border-top pt-2 mt-1">
                     <span class="label"><strong>إجمالي الخصومات</strong></span>

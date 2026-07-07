@@ -1,4 +1,4 @@
-@extends('admin.layouts.admin')
+@extends('admin.layouts.accounting')
 @section('title') تصدير لمنظومة الضرائب @endsection
 @section('start') الضرائب @endsection
 @section('home') <a href="{{ route('tax.index') }}">الضرائب</a> @endsection
