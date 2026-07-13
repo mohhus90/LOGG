@@ -30,8 +30,8 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             'Email', 'Photo', 'Birth Date', 'Salary', 'Fixed Allowances', 
             'Salary Insurance', 'Medical Insurance', 'Has Fixed Shift', 
             'Shift Type', 'Has Finger', 'Vacation Formula', 'Sensitive Data', 
-            'Branch', 'Company', 'Added By', 'Updated By', 
-            'Created At', 'Updated At'
+            'Branch', 'Company', 'Added By', 'Updated By',
+            'Created At', 'Updated At', 'Username', 'Password'
         ];
     }
 
@@ -87,7 +87,9 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
             $employee->added->name ?? 'غير محدد',
             $employee->updatedBy->name ?? 'غير محدد',
             $employee->created_at,
-            $employee->updated_at
+            $employee->updated_at,
+            $employee->login_username,
+            $employee->login_password,
         ];
     }
 
@@ -211,8 +213,11 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
         }
     public function styles(Worksheet $sheet)
     {
+        $highestColumn = $sheet->getHighestColumn();
+        $highestRow    = $sheet->getHighestRow();
+
         // تنسيق رؤوس الأعمدة
-        $sheet->getStyle('A1:AW1')->applyFromArray([
+        $sheet->getStyle('A1:' . $highestColumn . '1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => '000000']
@@ -232,13 +237,13 @@ class EmployeeExport implements FromCollection, WithHeadings, ShouldAutoSize, Wi
         ]);
 
         // تنسيق الحدود لجميع الخلايا
-        $sheet->getStyle('A1:AW' . ($sheet->getHighestRow()))
+        $sheet->getStyle('A1:' . $highestColumn . $highestRow)
               ->getBorders()
               ->getAllBorders()
               ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
         // محاذاة النص لجميع الخلايا
-        $sheet->getStyle('A2:AW' . ($sheet->getHighestRow()))
+        $sheet->getStyle('A2:' . $highestColumn . $highestRow)
               ->getAlignment()
               ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
               ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);

@@ -17,6 +17,7 @@ use App\Models\EmployeeDocument;
 use App\Imports\EmployeeImport;
 use App\Imports\EmployeeNidImport;
 use App\Imports\EmployeeMedicalImport;
+use App\Imports\EmployeeCredentialsImport;
 use App\Exports\EmployeeExport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -430,6 +431,38 @@ class EmployeesConroller extends Controller
         }
     }
 
+    public function importCredentials(Request $request)
+    {
+        $request->validate([
+            'credentials_file' => 'required|mimes:xlsx,xls,csv',
+        ], [
+            'credentials_file.required' => 'اختر ملف Excel أو CSV',
+            'credentials_file.mimes'    => 'يجب أن يكون الملف بصيغة xlsx أو xls أو csv',
+        ]);
+
+        try {
+            $comCode = (int) auth()->guard('admin')->user()->com_code;
+            $import  = new EmployeeCredentialsImport($comCode);
+            Excel::import($import, $request->file('credentials_file'));
+
+            $msg = "تم تحديث بيانات الدخول لـ {$import->updated} موظف | غير موجود: {$import->notFound} | تخطي: {$import->skipped}";
+
+            if ($import->errors > 0) {
+                $msg .= " | أخطاء: {$import->errors}";
+                if (!empty($import->errorDetails)) {
+                    $msg .= ' (' . implode(' / ', array_slice($import->errorDetails, 0, 3)) . ')';
+                }
+                return redirect()->route('employees.uploadexcel')->with('error', $msg);
+            }
+
+            return redirect()->route('employees.uploadexcel')->with('success', $msg);
+        } catch (\Exception $e) {
+            Log::error('Credentials import error: ' . $e->getMessage());
+            return redirect()->route('employees.uploadexcel')
+                ->with('error', 'فشل استيراد الملف: ' . $e->getMessage());
+        }
+    }
+
     public function create()
     {
         $com_code        = auth()->guard('admin')->user()->com_code;
@@ -471,6 +504,9 @@ public function store(Request $request)
         'bank_name' => 'nullable|string',
         'bank_ID' => 'nullable|string',
         'bank_branch' => 'nullable|string',
+        'login_username' => ['nullable', 'string', 'max:100', Rule::unique('employees')->where(
+            fn($q) => $q->where('com_code', auth()->guard('admin')->user()->com_code)
+        )],
     ], [
         'employee_name_A.required' => 'حقل اسم الموظف مطلوب',
         'employee_id.required' => 'حقل كود الموظف مطلوب',
@@ -479,6 +515,7 @@ public function store(Request $request)
         'bank_account.unique' => 'هذا الحساب البنكي تم إدخاله مسبقًا',
         'emp_jobs_id.required' => 'حقل الوظيفة مطلوب',
         'emp_jobs_id.exists' => 'الوظيفة المحددة غير موجودة',
+        'login_username.unique' => 'اسم المستخدم هذا مستخدم بالفعل',
 
     ]);
 
@@ -528,6 +565,10 @@ public function store(Request $request)
             'emp_jobs_id'              => $request->emp_jobs_id,
             'shifts_types_id'          => $request->shifts_types_id,
             'branches_id'              => $request->branches_id ?: null,
+            'weekly_off_day'          => $request->weekly_off_day !== '' && $request->filled('weekly_off_day') ? (int)$request->weekly_off_day : null,
+            'custom_overtime_multiplier' => $request->custom_overtime_multiplier ?: null,
+            'overtime_enabled'           => $request->overtime_enabled       ?? 1,
+            'late_deduction_enabled'     => $request->late_deduction_enabled ?? 1,
             // Client-specific fields
             'client_id'               => $request->client_id ?: null,
             'hrid'                    => $request->hrid ?: null,
@@ -545,6 +586,8 @@ public function store(Request $request)
             'apply_income_tax'        => $request->boolean('apply_income_tax'),
             'probation_end_date'      => $request->probation_end_date ?: null,
             'contract_end_date'       => $request->contract_end_date ?: null,
+            'login_username'          => $request->filled('login_username') ? $request->login_username : ('EMP' . $request->employee_id),
+            'login_password'          => $request->filled('login_password') ? $request->login_password : Employee::generateLoginPassword(),
             'created_at'               => now(),
             'updated_at'               => now(),
         ];
@@ -580,7 +623,7 @@ public function store(Request $request)
      */
     public function show($id)
     {
-        $data = Employee::with(['client', 'documents'])->where(['id' => $id])->first();
+        $data = Employee::with(['client', 'documents', 'salaryHistory.addedBy'])->where(['id' => $id])->first();
         if (empty($data)) {
             return redirect()->back()->with(['error' => 'عفوا حدث خطأ '])->withInput();
         }
@@ -606,7 +649,7 @@ public function store(Request $request)
         $com_code        = auth()->guard('admin')->user()->com_code;
         $departments     = Department::where('com_code', $com_code)->get(['id', 'dep_name']);
         $jobs_categories = Jobs_categories::where('com_code', $com_code)->get(['id', 'job_name']);
-        $shifts_types    = Shifts_type::where('com_code', $com_code)->get(['id', 'type']);
+        $shifts_types    = Shifts_type::where('com_code', $com_code)->get(['id', 'type', 'from_time', 'to_time', 'total_hour']);
         $branches        = Branche::where('com_code', $com_code)->get(['id', 'branch_name']);
         $clients         = Client::where('com_code', $com_code)->where('active', 1)->get(['id', 'client_name']);
         $documents       = $data->documents->keyBy('doc_type');
@@ -646,6 +689,15 @@ public function store(Request $request)
     ]);
     if ($validator4->fails()) {
         return redirect()->back()->with(['error' => 'قد تم إدخال حساب البنك هذا لموظف آخر'])->withInput();
+    }
+
+    $validator5 = Validator::make($request->all(), [
+        'login_username' => ['nullable', 'string', 'max:100', Rule::unique('employees')->ignore($id)->where(
+            fn($q) => $q->where('com_code', auth()->guard('admin')->user()->com_code)
+        )],
+    ]);
+    if ($validator5->fails()) {
+        return redirect()->back()->with(['error' => 'اسم المستخدم هذا مستخدم بالفعل لموظف آخر'])->withInput();
     }
 
     // التحقق من الحقول الأخرى
@@ -749,6 +801,8 @@ public function store(Request $request)
             'apply_income_tax'        => $request->boolean('apply_income_tax'),
             'probation_end_date'      => $request->probation_end_date ?: null,
             'contract_end_date'       => $request->contract_end_date ?: null,
+            'login_username'          => $request->filled('login_username') ? $request->login_username : ('EMP' . $request->employee_id),
+            'login_password'          => $request->filled('login_password') ? $request->login_password : Employee::generateLoginPassword(),
             'updated_at'              => now(),
         ];
 

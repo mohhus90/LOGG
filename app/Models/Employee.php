@@ -55,4 +55,20 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeDocument::class, 'employee_id');
     }
+
+    public function salaryHistory()
+    {
+        return $this->hasMany(EmployeeSalaryHistory::class, 'employee_id')->latest('effective_date');
+    }
+
+    public static function generateLoginPassword(): string
+    {
+        $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $password = '';
+        for ($i = 0; $i < 4; $i++) {
+            $password .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+
+        return $password . random_int(1000, 9999);
+    }
 }

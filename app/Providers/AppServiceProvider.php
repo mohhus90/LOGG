@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use App\Models\Employee;
+use App\Observers\EmployeeObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,5 +15,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::defaultView('vendor.pagination.default');
         Paginator::defaultSimpleView('vendor.pagination.default');
+
+        Employee::observe(EmployeeObserver::class);
     }
 }

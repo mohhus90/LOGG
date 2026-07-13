@@ -66,22 +66,27 @@ class SmsController extends Controller
             if ($request->has_phone === 'yes')  $query->whereNotNull('emp_mobile')->where('emp_mobile', '!=', '');
             if ($request->has_phone === 'no')   $query->where(fn($q) => $q->whereNull('emp_mobile')->orWhere('emp_mobile', ''));
         }
+        if ($request->filled('has_credentials')) {
+            if ($request->has_credentials === 'yes') $query->whereNotNull('login_username')->where('login_username', '!=', '');
+            if ($request->has_credentials === 'no')  $query->where(fn($q) => $q->whereNull('login_username')->orWhere('login_username', ''));
+        }
 
         $employees = $query->with(['department', 'jobs_categories'])
             ->orderBy('employee_name_A')
-            ->get(['id','employee_name_A','employee_id','emp_mobile','emp_departments_id','emp_jobs_id','functional_status']);
+            ->get(['id','employee_name_A','employee_id','emp_mobile','emp_departments_id','emp_jobs_id','functional_status','login_username']);
 
         return response()->json([
             'count'     => $employees->count(),
             'withPhone' => $employees->filter(fn($e) => !empty($e->emp_mobile))->count(),
             'employees' => $employees->map(fn($e) => [
-                'id'           => $e->id,
-                'name'         => $e->employee_name_A,
-                'code'         => $e->employee_id,
-                'phone'        => $e->emp_mobile ?? '',
-                'department'   => $e->department->dep_name ?? '—',
-                'job'          => $e->jobs_categories->job_name ?? '—',
-                'status'       => $e->functional_status,
+                'id'             => $e->id,
+                'name'           => $e->employee_name_A,
+                'code'           => $e->employee_id,
+                'phone'          => $e->emp_mobile ?? '',
+                'department'     => $e->department->dep_name ?? '—',
+                'job'            => $e->jobs_categories->job_name ?? '—',
+                'status'         => $e->functional_status,
+                'hasCredentials' => !empty($e->login_username),
             ])->values(),
         ]);
     }
@@ -165,6 +170,80 @@ class SmsController extends Controller
                 'total'   => count($results),
             ],
             'results' => $results,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────
+    //  شاشة إرسال بيانات الدخول (يوزر/باسورد) عبر SMS
+    // ─────────────────────────────────────────────
+    public function composeCredentials()
+    {
+        $comCode     = $this->comCode();
+        $setting     = Admin_panel_setting::getByComCode($comCode);
+        $smsEnabled  = $setting && $setting->sms_enabled && $setting->sms_username;
+
+        $departments     = Department::where('com_code', $comCode)->orderBy('dep_name')->get(['id','dep_name']);
+        $jobs_categories = Jobs_categories::where('com_code', $comCode)->orderBy('job_name')->get(['id','job_name']);
+        $branches        = Branche::where('com_code', $comCode)->orderBy('branch_name')->get(['id','branch_name']);
+        $shifts          = Shifts_type::where('com_code', $comCode)->orderBy('type')->get(['id','type']);
+        $clients         = Client::where('com_code', $comCode)->where('active', 1)->orderBy('client_name')->get(['id','client_name']);
+
+        return view('admin.sms.credentials', compact(
+            'smsEnabled', 'departments', 'jobs_categories', 'branches', 'shifts', 'clients', 'setting'
+        ));
+    }
+
+    // ─────────────────────────────────────────────
+    //  AJAX: إرسال رسالة بيانات الدخول لموظف واحد
+    //
+    //  الواجهة الأمامية تستدعي هذا الـ endpoint مرة واحدة لكل موظف، بفاصل
+    //  زمني بينهما (وليس دفعة واحدة عبر sendBatch)، لأن كل رسالة هنا نصها
+    //  مختلف عن الأخرى (يوزر/باسورد كل موظف). VLServ يفرض فترة تهدئة بين
+    //  استدعاءات Create المتتالية على نفس الحساب — راجع sendBatch أعلاه
+    //  و memory: project-vlserv-sso لتفاصيل هذا القيد.
+    // ─────────────────────────────────────────────
+    public function sendCredentialsOne(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'required|integer',
+            'template'    => 'required|string|max:800',
+        ], [
+            'employee_id.required' => 'الموظف مطلوب',
+            'template.required'    => 'نص الرسالة مطلوب',
+        ]);
+
+        $comCode = $this->comCode();
+        $emp = Employee::where('com_code', $comCode)->find($request->employee_id);
+
+        if (!$emp) {
+            return response()->json(['success' => false, 'status' => 'not_found', 'message' => 'الموظف غير موجود'], 404);
+        }
+        if (empty($emp->emp_mobile)) {
+            return response()->json(['success' => true, 'status' => 'no_phone', 'message' => 'لا يوجد رقم هاتف']);
+        }
+        if (empty($emp->login_username) || empty($emp->login_password)) {
+            return response()->json(['success' => true, 'status' => 'no_credentials', 'message' => 'لا توجد بيانات دخول لهذا الموظف']);
+        }
+
+        $sms = new SmsService($comCode);
+        if (!$sms->isEnabled()) {
+            return response()->json(['success' => false, 'status' => 'disabled', 'message' => 'خدمة SMS غير مفعّلة'], 422);
+        }
+
+        $message = strtr($request->template, [
+            '{name}'     => $emp->employee_name_A,
+            '{name_en}'  => $emp->employee_name_E,
+            '{username}' => $emp->login_username,
+            '{password}' => $emp->login_password,
+            '{code}'     => $emp->employee_id,
+        ]);
+
+        $sent = $sms->send($emp->emp_mobile, $message);
+
+        return response()->json([
+            'success' => true,
+            'status'  => $sent ? 'sent' : 'failed',
+            'message' => $sent ? 'تم الإرسال' : 'فشل الإرسال — تحقق من بيانات الاتصال',
         ]);
     }
 }

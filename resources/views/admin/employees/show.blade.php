@@ -210,9 +210,11 @@
       <button class="emp-tab" data-target="tab-job"><i class="fas fa-briefcase me-1"></i>{{ __('admin.emp_tab_job') }}</button>
       <button class="emp-tab" data-target="tab-other"><i class="fas fa-info-circle me-1"></i>{{ __('admin.emp_tab_other') }}</button>
       <button class="emp-tab" data-target="tab-salary"><i class="fas fa-money-bill-wave me-1"></i>{{ __('admin.emp_tab_salary') }}</button>
+      <button class="emp-tab" data-target="tab-salary-history"><i class="fas fa-history me-1"></i>سجل الراتب</button>
       @if($data['client_id'])
       <button class="emp-tab" data-target="tab-client"><i class="fas fa-building me-1"></i>بيانات العميل</button>
       @endif
+      <button class="emp-tab" data-target="tab-login"><i class="fas fa-key me-1"></i>{{ __('admin.emp_tab_login') }}</button>
       <button class="emp-tab" data-target="tab-docs"><i class="fas fa-folder-open me-1"></i>ملفات التعيين</button>
     </div>
 
@@ -391,7 +393,7 @@
         </div>
         <div class="info-item">
           <label>{{ __('admin.emp_incentive') }}</label>
-          <div class="info-val">{{ number_format($data['mtivation'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
+          <div class="info-val">{{ number_format($data['motivation'] ?? 0, 2) }} {{ __('admin.egp') }}</div>
         </div>
         <div class="info-item">
           <label>{{ __('admin.emp_health_insurance') }}</label>
@@ -510,6 +512,66 @@
       </div>
     </div>
     @endif
+
+    {{-- ── TAB: Login Credentials (reference only) ── --}}
+    <div class="emp-tab-pane section-body" id="tab-login">
+      <div class="alert alert-secondary py-2">
+        <i class="fas fa-info-circle me-1"></i>
+        {{ __('admin.emp_login_hint') }}
+      </div>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>{{ __('admin.emp_login_username') }}</label>
+          <div class="info-val {{ empty($data['login_username']) ? 'empty' : 'highlighted' }}" id="show-login-username">{{ $data['login_username'] ?? '—' }}</div>
+        </div>
+        <div class="info-item">
+          <label>{{ __('admin.emp_login_password') }}</label>
+          <div class="info-val {{ empty($data['login_password']) ? 'empty' : 'highlighted' }}" id="show-login-password">{{ $data['login_password'] ?? '—' }}</div>
+        </div>
+      </div>
+      @if(!empty($data['login_username']) || !empty($data['login_password']))
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="navigator.clipboard.writeText('{{ __('admin.emp_login_username') }}: {{ $data['login_username'] }}\n{{ __('admin.emp_login_password') }}: {{ $data['login_password'] }}')">
+          <i class="fas fa-copy me-1"></i> نسخ
+        </button>
+      @endif
+    </div>
+
+    {{-- ── TAB: Salary History ── --}}
+    <div class="emp-tab-pane section-body" id="tab-salary-history">
+      @if($data->salaryHistory->isEmpty())
+        <div class="text-muted">لا يوجد سجل تغييرات راتب لهذا الموظف بعد.</div>
+      @else
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered">
+            <thead class="thead-light">
+              <tr>
+                <th>التاريخ</th>
+                <th>الراتب القديم</th>
+                <th>الراتب الجديد</th>
+                <th>الطريقة</th>
+                <th>المصدر</th>
+                <th>بواسطة</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($data->salaryHistory as $h)
+                <tr>
+                  <td>{{ $h->effective_date }}</td>
+                  <td>{{ number_format($h->old_salary, 2) }}</td>
+                  <td>{{ number_format($h->new_salary, 2) }}</td>
+                  <td>{{ $h->method ?? '—' }}</td>
+                  <td>
+                    @php $srcLabels = ['manual_edit' => 'تعديل يدوي', 'excel_import' => 'استيراد إكسيل', 'bulk_increase' => 'زيادة جماعية']; @endphp
+                    {{ $srcLabels[$h->source] ?? $h->source }}
+                  </td>
+                  <td>{{ optional($h->addedBy)->name ?? '—' }}</td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      @endif
+    </div>
 
     {{-- ── TAB: Documents ── --}}
     <div class="emp-tab-pane section-body" id="tab-docs">

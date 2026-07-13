@@ -166,5 +166,40 @@
     </div>
   </div>
 
+  {{-- ── تحديث بيانات الدخول (اسم مستخدم / كلمة مرور) ── --}}
+  <div class="card mt-4">
+    <div class="card-header bg-primary">
+      <h3 class="card-title text-white"><i class="fas fa-key mr-2"></i>تحديث بيانات الدخول (اسم مستخدم / كلمة مرور)</h3>
+    </div>
+    <div class="card-body">
+
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle mr-1"></i>
+        استخدم ملف تصدير بيانات الموظفين (<a href="{{ route('employees.export') }}">Employee.xlsx</a>) بعد تعديل عمودي
+        <strong>Username</strong> و<strong>Password</strong> في نهايته، ثم أعد رفعه هنا — سيتم تحديث
+        <strong>اسم المستخدم وكلمة المرور فقط</strong> بناءً على كود الموظف (العمود الثاني)، دون أي تأثير على باقي البيانات.
+      </div>
+
+      <form enctype="multipart/form-data" action="{{ route('employees.import.credentials') }}" method="post">
+        @csrf
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>اختر ملف Excel أو CSV</label>
+              <input type="file" name="credentials_file" class="form-control" accept=".xlsx,.xls,.csv">
+            </div>
+            @error('credentials_file')<div class="text-danger">{{ $message }}</div>@enderror
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-primary" type="submit">
+            <i class="fas fa-upload mr-1"></i>تحديث بيانات الدخول
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
 </div>
 @endsection

@@ -145,9 +145,15 @@
             </a>
           </li>
           <li class="nav-item">
-            <a href="{{ route('sms.compose') }}" class="nav-link {{ $onSms ? 'active' : '' }}">
+            <a href="{{ route('sms.compose') }}" class="nav-link {{ request()->routeIs('sms.compose') ? 'active' : '' }}">
               <i class="nav-icon fas fa-sms"></i>
               <p>رسائل SMS</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('sms.credentials.compose') }}" class="nav-link {{ request()->routeIs('sms.credentials.compose') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-key"></i>
+              <p>إرسال بيانات الدخول (SMS)</p>
             </a>
           </li>
         </ul>
@@ -332,6 +338,11 @@
           <li class="nav-item">
             <a href="{{ route('payroll.index') }}" class="nav-link {{ request()->is('admin/dashboard/payroll*') ? 'active' : '' }}">
               <i class="nav-icon fas fa-money-check-alt"></i><p>{{ __('admin.payroll') }}</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{{ route('salary_increases.index') }}" class="nav-link {{ request()->is('admin/dashboard/salary-increases*') ? 'active' : '' }}">
+              <i class="nav-icon fas fa-arrow-trend-up"></i><p>زيادات الرواتب</p>
             </a>
           </li>
         </ul>

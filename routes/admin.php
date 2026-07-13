@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\HR\AdvancesController;
 use App\Http\Controllers\Admin\HR\CommissionsController;
 use App\Http\Controllers\Admin\HR\DeductionsController;
 use App\Http\Controllers\Admin\HR\PayrollController;
+use App\Http\Controllers\Admin\HR\SalaryIncreasesController;
 use App\Http\Controllers\Admin\HR\FingerprintDevicesController;
 
 // ── الأقسام الجديدة (الإضافة الثانية) ──
@@ -119,11 +120,13 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     //  SMS — إرسال رسائل جماعية
     // ─────────────────────────────────────────────
     Route::middleware(['auth:admin', 'admin.permission:sms,can_read'])->group(function () {
-        Route::get('sms/compose',  [SmsController::class, 'compose'])->name('sms.compose');
-        Route::get('sms/filter',   [SmsController::class, 'filterEmployees'])->name('sms.filter');
+        Route::get('sms/compose',     [SmsController::class, 'compose'])->name('sms.compose');
+        Route::get('sms/filter',      [SmsController::class, 'filterEmployees'])->name('sms.filter');
+        Route::get('sms/credentials', [SmsController::class, 'composeCredentials'])->name('sms.credentials.compose');
     });
     Route::middleware(['auth:admin', 'admin.permission:sms,can_create'])->group(function () {
-        Route::post('sms/send',    [SmsController::class, 'send'])->name('sms.send');
+        Route::post('sms/send',              [SmsController::class, 'send'])->name('sms.send');
+        Route::post('sms/credentials/send-one', [SmsController::class, 'sendCredentialsOne'])->name('sms.credentials.send');
     });
     // ─────────────────────────────────────────────
     //  العملاء — clients
@@ -261,6 +264,7 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('employees/{id}/documents/{docId}/delete', [EmployeesConroller::class, 'deleteDocument'])->name('employees.document.delete');
         Route::post('employees/update-nid-excel', [EmployeesConroller::class, 'updateNidFromExcel'])->name('employees.update.nid.excel');
         Route::post('employees/do-upload-medical', [EmployeesConroller::class, 'doUploadMedicalExcel'])->name('employees.do.upload.medical');
+        Route::post('employees/import-credentials', [EmployeesConroller::class, 'importCredentials'])->name('employees.import.credentials');
     });
     Route::get('employees/delete/{id}', [EmployeesConroller::class, 'delete'])
         ->name('employees.delete')->middleware(['auth:admin', 'admin.permission:employees,can_delete']);
@@ -517,6 +521,19 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
     Route::get('payroll/{id}', [PayrollController::class, 'show'])
         ->name('payroll.show')->middleware(['auth:admin', 'admin.permission:payroll,can_read'])
         ->where('id', '[0-9]+');
+
+    // ─────────────────────────────────────────────
+    //  زيادات الرواتب — salary_increases
+    // ─────────────────────────────────────────────
+    Route::middleware(['auth:admin', 'admin.permission:salary_increases,can_read'])->group(function () {
+        Route::get('salary-increases', [SalaryIncreasesController::class, 'index'])->name('salary_increases.index');
+        Route::get('salary-increases/employee/{id}/history', [SalaryIncreasesController::class, 'history'])->name('salary_increases.history');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:salary_increases,can_create'])->group(function () {
+        Route::get('salary-increases/create',  [SalaryIncreasesController::class, 'create'])->name('salary_increases.create');
+        Route::post('salary-increases/preview', [SalaryIncreasesController::class, 'preview'])->name('salary_increases.preview');
+        Route::post('salary-increases/store',   [SalaryIncreasesController::class, 'store'])->name('salary_increases.store');
+    });
 
     // ─────────────────────────────────────────────
     //  بدل الإجازة — leave_compensation
