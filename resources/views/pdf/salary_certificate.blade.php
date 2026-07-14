@@ -6,7 +6,8 @@
     body { font-family: 'DejaVu Sans', sans-serif; font-size: 13px; direction: rtl; line-height: 1.9; }
     .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
     .header img { max-height: 60px; }
-    .title { text-align: center; font-size: 18px; font-weight: bold; margin: 25px 0; text-decoration: underline; }
+    .title { text-align: center; font-size: 18px; font-weight: bold; margin: 25px 0 4px 0; }
+    .title-rule { width: 160px; margin: 0 auto 20px auto; border-bottom: 1px solid #333; }
     .body { margin: 0 20px; text-align: justify; }
     .footer { margin-top: 60px; }
 </style>
@@ -20,6 +21,7 @@
     </div>
 
     <div class="title">شهادة راتب</div>
+    <div class="title-rule"></div>
 
     <div class="body">
         <p>

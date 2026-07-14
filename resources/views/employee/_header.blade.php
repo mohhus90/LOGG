@@ -8,7 +8,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ $__title }} — {{ $employee->employee_name_A }}</title>
   <link rel="stylesheet" href="{{ asset('assets/admin/plugins/fontawesome-free/css/all.min.css') }}">
-  <link rel="stylesheet" href="{{ asset('assets/admin/plugins/bootstrap/css/bootstrap.rtl.min.css') }}">
+  <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap_rtl-v4.2.1/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ asset('assets/admin/css/bootstrap_rtl-v4.2.1/custom_rtl.css') }}">
   <style>
     body { background:#f0f4f8; font-family:'Segoe UI',sans-serif; }
     .emp-header { background:linear-gradient(135deg,#11998e,#38ef7d); color:#fff; padding:20px 0; }
