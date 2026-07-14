@@ -594,6 +594,17 @@
                         @error('login_password')<div class="text-danger">{{ $message }}</div>@enderror
                     </div>
                 </div>
+                <div class="row mt-3">
+                    <div class="col-md-8">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" name="location_tracking_enabled" id="location_tracking_enabled" value="1"
+                                   {{ old('location_tracking_enabled', optional($emp)->location_tracking_enabled ?? true) ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="location_tracking_enabled">
+                                تفعيل تحديد الموقع (GPS) عند الحضور والانصراف من تطبيق الموظف
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             @if($mode === 'create')

@@ -36,6 +36,8 @@
   </div>
 </div>
 
+@include('employee._nav')
+
 <div class="container mt-4">
 
   @if(session('success'))

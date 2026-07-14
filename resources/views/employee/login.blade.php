@@ -30,10 +30,10 @@
         <form method="POST" action="{{ route('employee.login.check') }}">
           @csrf
           <div class="form-group">
-            <label>كود الموظف</label>
+            <label>اسم المستخدم</label>
             <div class="input-group">
               <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-id-badge"></i></span></div>
-              <input type="text" name="employee_code" class="form-control form-control-lg"
+              <input type="text" name="employee_code" class="form-control form-control-lg" dir="ltr"
                 placeholder="EMP001" required value="{{ old('employee_code') }}">
             </div>
           </div>
@@ -44,7 +44,7 @@
               <input type="password" name="password" class="form-control form-control-lg"
                 placeholder="••••••" required>
             </div>
-            <small class="text-muted">كلمة المرور الافتراضية هي رقم الهاتف</small>
+            <small class="text-muted">بيانات الدخول تُسلَّم لك من إدارة الموارد البشرية</small>
           </div>
           <button type="submit" class="btn btn-block btn-lg text-white" style="background:#11998e;border-radius:8px;font-weight:700">
             <i class="fas fa-sign-in-alt ml-2"></i>دخول

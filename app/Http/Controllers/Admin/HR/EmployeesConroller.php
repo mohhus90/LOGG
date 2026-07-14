@@ -588,6 +588,7 @@ public function store(Request $request)
             'contract_end_date'       => $request->contract_end_date ?: null,
             'login_username'          => $request->filled('login_username') ? $request->login_username : ('EMP' . $request->employee_id),
             'login_password'          => $request->filled('login_password') ? $request->login_password : Employee::generateLoginPassword(),
+            'location_tracking_enabled' => $request->boolean('location_tracking_enabled'),
             'created_at'               => now(),
             'updated_at'               => now(),
         ];
@@ -803,6 +804,7 @@ public function store(Request $request)
             'contract_end_date'       => $request->contract_end_date ?: null,
             'login_username'          => $request->filled('login_username') ? $request->login_username : ('EMP' . $request->employee_id),
             'login_password'          => $request->filled('login_password') ? $request->login_password : Employee::generateLoginPassword(),
+            'location_tracking_enabled' => $request->boolean('location_tracking_enabled'),
             'updated_at'              => now(),
         ];
 

@@ -4,21 +4,27 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Admin_panel_setting;
+use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\EmployeeDocument;
 use App\Models\EmployeeRequest;
 use App\Models\EmployeeVacationBalance;
-use App\Models\Attendance;
+use App\Models\MonthlyPayroll;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Session;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
 class EmployeePortalController extends Controller
 {
+    private const VACATION_TYPES = ['annual_vacation', 'casual_vacation'];
+
     private function guard(): Employee
     {
-        $id = session('employee_portal_id');
-        if (!$id) abort(redirect()->route('employee.login'));
-        return Employee::findOrFail($id);
+        $employee = Auth::guard('employee')->user();
+        if (!$employee) abort(redirect()->route('employee.login'));
+        return $employee;
     }
 
     // =========================================================
@@ -26,7 +32,7 @@ class EmployeePortalController extends Controller
     // =========================================================
     public function loginForm()
     {
-        if (session('employee_portal_id')) {
+        if (Auth::guard('employee')->check()) {
             return redirect()->route('employee.dashboard');
         }
         return view('employee.login');
@@ -39,30 +45,27 @@ class EmployeePortalController extends Controller
             'password'      => 'required|string',
         ]);
 
-        $employee = Employee::where('employee_id', $request->employee_code)->first();
+        $employee = Employee::where('login_username', $request->employee_code)
+            ->where('functional_status', 1)
+            ->first();
 
-        if (!$employee) {
-            return back()->with('error', 'كود الموظف غير موجود')->withInput();
+        if (!$employee || !$employee->login_password_hash
+            || !Hash::check($request->password, $employee->login_password_hash)) {
+            return back()->with('error', 'كود الموظف أو كلمة المرور غير صحيحة')->withInput();
         }
 
-        // كلمة المرور الافتراضية = رقم الهاتف
-        $defaultPassword = $employee->emp_mobile ?? $employee->employee_id;
-        $password        = $employee->password ?? $defaultPassword;
+        $request->session()->regenerate();
+        Auth::guard('employee')->login($employee);
 
-        $valid = Hash::check($request->password, $password)
-            || $request->password === $password;
-
-        if (!$valid) {
-            return back()->with('error', 'كلمة المرور غير صحيحة')->withInput();
-        }
-
-        session(['employee_portal_id' => $employee->id]);
         return redirect()->route('employee.dashboard');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->forget('employee_portal_id');
+        Auth::guard('employee')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('employee.login')->with('success', 'تم تسجيل الخروج');
     }
 
@@ -83,13 +86,17 @@ class EmployeePortalController extends Controller
             ->where('status', 1)
             ->whereMonth('start_date', now()->month)->count();
 
+        $todayAttendance = Attendance::where('employee_id', $employee->id)
+            ->where('attendance_date', now()->toDateString())
+            ->first();
+
         return view('employee.dashboard', compact(
-            'employee', 'vacationBalance', 'requests', 'pendingRequests', 'approvedRequests'
+            'employee', 'vacationBalance', 'requests', 'pendingRequests', 'approvedRequests', 'todayAttendance'
         ));
     }
 
     // =========================================================
-    //  إرسال طلب
+    //  إرسال طلب إجازة / إذن
     // =========================================================
     public function storeRequest(Request $request)
     {
@@ -120,8 +127,7 @@ class EmployeePortalController extends Controller
             $timeTo    = null;
         }
 
-        // التحقق من رصيد الإجازة
-        if (in_array($request->request_type, ['annual_vacation', 'casual_vacation'])) {
+        if (in_array($request->request_type, self::VACATION_TYPES)) {
             $balance = EmployeeVacationBalance::where('employee_id', $employee->id)
                 ->where('year', now()->year)->first();
 
@@ -153,5 +159,154 @@ class EmployeePortalController extends Controller
         ]);
 
         return back()->with('success', 'تم إرسال طلبك بنجاح. في انتظار موافقة المدير.');
+    }
+
+    public function cancelRequest(int $id)
+    {
+        $employee = $this->guard();
+
+        $leaveRequest = EmployeeRequest::where('employee_id', $employee->id)->findOrFail($id);
+
+        if ($leaveRequest->status !== 0) {
+            return back()->with('error', 'لا يمكن إلغاء طلب تمت معالجته مسبقاً');
+        }
+
+        $leaveRequest->update(['status' => 3]);
+
+        return back()->with('success', 'تم إلغاء الطلب');
+    }
+
+    // =========================================================
+    //  قسائم الراتب
+    // =========================================================
+    public function payslips()
+    {
+        $employee = $this->guard();
+
+        $payslips = MonthlyPayroll::where('employee_id', $employee->id)
+            ->where('status', '>=', 2)
+            ->orderByDesc('year')->orderByDesc('month')
+            ->get();
+
+        return view('employee.payslips', compact('employee', 'payslips'));
+    }
+
+    public function payslipPdf(int $id)
+    {
+        $employee = $this->guard();
+
+        $payslip = MonthlyPayroll::where('employee_id', $employee->id)
+            ->where('status', '>=', 2)
+            ->findOrFail($id);
+
+        $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
+
+        $pdf = Pdf::loadView('pdf.payslip', compact('payslip', 'employee', 'company'));
+
+        return $pdf->download('payslip-' . $payslip->year . '-' . $payslip->month . '.pdf');
+    }
+
+    // =========================================================
+    //  شهادة الراتب (خطاب HR)
+    // =========================================================
+    public function salaryCertificate()
+    {
+        $employee = $this->guard();
+        $company  = Admin_panel_setting::where('com_code', $employee->com_code)->first();
+
+        $pdf = Pdf::loadView('pdf.salary_certificate', compact('employee', 'company'));
+
+        return $pdf->download('salary-certificate-' . $employee->id . '.pdf');
+    }
+
+    // =========================================================
+    //  المستندات الشخصية
+    // =========================================================
+    public function documents()
+    {
+        $employee  = $this->guard();
+        $documents = EmployeeDocument::where('employee_id', $employee->id)
+            ->orderByDesc('created_at')->get();
+
+        return view('employee.documents', compact('employee', 'documents'));
+    }
+
+    public function documentDownload(int $id)
+    {
+        $employee = $this->guard();
+        $document = EmployeeDocument::where('employee_id', $employee->id)->findOrFail($id);
+
+        $path = public_path($document->doc_path);
+        if (!file_exists($path)) {
+            return back()->with('error', 'الملف غير موجود');
+        }
+
+        return response()->download($path, $document->doc_original_name);
+    }
+
+    // =========================================================
+    //  طلب استقالة
+    // =========================================================
+    public function resignationForm()
+    {
+        $employee = $this->guard();
+
+        $resignation = EmployeeRequest::where('employee_id', $employee->id)
+            ->where('request_type', 'resignation')
+            ->orderByDesc('created_at')->first();
+
+        return view('employee.resignation', compact('employee', 'resignation'));
+    }
+
+    public function resignationStore(Request $request)
+    {
+        $employee = $this->guard();
+
+        $request->validate([
+            'last_working_date' => 'required|date|after_or_equal:today',
+            'reason'            => 'nullable|string|max:1000',
+        ]);
+
+        $existing = EmployeeRequest::where('employee_id', $employee->id)
+            ->where('request_type', 'resignation')
+            ->where('status', 0)
+            ->first();
+
+        if ($existing) {
+            return back()->with('error', 'لديك طلب استقالة قيد الانتظار بالفعل');
+        }
+
+        EmployeeRequest::create([
+            'employee_id'  => $employee->id,
+            'request_type' => 'resignation',
+            'request_date' => now()->toDateString(),
+            'start_date'   => $request->last_working_date,
+            'days_count'   => 1,
+            'reason'       => $request->reason,
+            'status'       => 0,
+            'com_code'     => $employee->com_code,
+        ]);
+
+        return redirect()->route('employee.resignation')->with('success', 'تم إرسال طلب الاستقالة بنجاح');
+    }
+
+    // =========================================================
+    //  سجل الحضور والانصراف
+    // =========================================================
+    public function attendanceHistory(Request $request)
+    {
+        $employee = $this->guard();
+
+        $month = (int) ($request->month ?: now()->month);
+        $year  = (int) ($request->year ?: now()->year);
+
+        $attendances = Attendance::with('shift')
+            ->where('employee_id', $employee->id)
+            ->whereMonth('attendance_date', $month)
+            ->whereYear('attendance_date', $year)
+            ->orderByDesc('attendance_date')
+            ->get();
+
+        return view('employee.attendance', compact('employee', 'attendances', 'month', 'year'));
     }
 }

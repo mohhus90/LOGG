@@ -1430,6 +1430,19 @@ Route::group(['prefix' => 'employee'], function () {
     Route::get('logout',    [EmployeePortalController::class, 'logout'])->name('employee.logout');
     Route::get('dashboard', [EmployeePortalController::class, 'dashboard'])->name('employee.dashboard');
     Route::post('request',  [EmployeePortalController::class, 'storeRequest'])->name('employee.request.store');
+    Route::post('request/{id}/cancel', [EmployeePortalController::class, 'cancelRequest'])->name('employee.request.cancel');
+
+    Route::get('payslips',            [EmployeePortalController::class, 'payslips'])->name('employee.payslips');
+    Route::get('payslips/{id}/pdf',   [EmployeePortalController::class, 'payslipPdf'])->name('employee.payslips.pdf');
+    Route::get('letters/salary-certificate', [EmployeePortalController::class, 'salaryCertificate'])->name('employee.letters.salary_certificate');
+
+    Route::get('documents',              [EmployeePortalController::class, 'documents'])->name('employee.documents');
+    Route::get('documents/{id}/download', [EmployeePortalController::class, 'documentDownload'])->name('employee.documents.download');
+
+    Route::get('resignation',  [EmployeePortalController::class, 'resignationForm'])->name('employee.resignation');
+    Route::post('resignation', [EmployeePortalController::class, 'resignationStore'])->name('employee.resignation.store');
+
+    Route::get('attendance', [EmployeePortalController::class, 'attendanceHistory'])->name('employee.attendance');
 });
 
 // ─────────────────────────────────────────────

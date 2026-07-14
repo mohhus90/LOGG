@@ -47,6 +47,9 @@ class branchesController extends Controller
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'active' => $request->active,
+                'latitude' => $request->latitude ?: null,
+                'longitude' => $request->longitude ?: null,
+                'geofence_radius_m' => $request->geofence_radius_m ?: null,
             ];
             $Branche->create($createdData);
             DB::commit();
@@ -94,6 +97,9 @@ class branchesController extends Controller
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'active' => $request->active,
+                'latitude' => $request->latitude ?: null,
+                'longitude' => $request->longitude ?: null,
+                'geofence_radius_m' => $request->geofence_radius_m ?: null,
             ];
             Branche::where(['id'=>$id])->update($updatedData);
             DB::commit();

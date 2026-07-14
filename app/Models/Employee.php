@@ -3,17 +3,37 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\HasApiTokens;
 use App\Models\EmployeeVacationBalance;
 
 
-class Employee extends Model
+class Employee extends Authenticatable
 {
-    use HasFactory;
-    
+    use HasFactory, HasApiTokens;
+
     protected $table = "employees";
     protected $guarded = [];
- 
+    protected $hidden = ['login_password', 'login_password_hash'];
+    protected $casts = [
+        'location_tracking_enabled' => 'boolean',
+    ];
+
+    protected static function booted()
+    {
+        static::saving(function (Employee $employee) {
+            if ($employee->isDirty('login_password') && filled($employee->login_password)) {
+                $employee->login_password_hash = Hash::make($employee->login_password);
+            }
+        });
+    }
+
+    public function getAuthPassword()
+    {
+        return $this->login_password_hash;
+    }
+
     public function addedBy(){
         return $this->belongsTo(Admin::class,'added_by');
     }
@@ -59,6 +79,21 @@ class Employee extends Model
     public function salaryHistory()
     {
         return $this->hasMany(EmployeeSalaryHistory::class, 'employee_id')->latest('effective_date');
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'employee_id');
+    }
+
+    public function employeeRequests()
+    {
+        return $this->hasMany(EmployeeRequest::class, 'employee_id');
+    }
+
+    public function monthlyPayrolls()
+    {
+        return $this->hasMany(MonthlyPayroll::class, 'employee_id');
     }
 
     public static function generateLoginPassword(): string

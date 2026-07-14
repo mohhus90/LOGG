@@ -69,6 +69,8 @@ class EmployeeRequestsController extends Controller
                 $this->handleLatePermission($req, $employee);
             } elseif ($req->request_type === 'early_leave') {
                 $this->handleEarlyLeavePermission($req, $employee);
+            } elseif ($req->request_type === 'resignation') {
+                $this->handleResignationApproval($req, $employee);
             }
 
             DB::commit();
@@ -161,6 +163,19 @@ class EmployeeRequestsController extends Controller
             );
             $current->addDay();
         }
+    }
+
+    // ─────────────────────────────────────────────
+    //  معالجة قبول الاستقالة
+    // ─────────────────────────────────────────────
+    private function handleResignationApproval(EmployeeRequest $req, Employee $employee): void
+    {
+        $employee->update([
+            'resignation_status' => 1, // استقالة
+            'resignation_date'   => $req->start_date,
+            'resignation_cause'  => $req->reason,
+            'functional_status'  => 2, // لا يعمل
+        ]);
     }
 
     // ─────────────────────────────────────────────

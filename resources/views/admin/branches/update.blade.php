@@ -57,6 +57,19 @@
                     <input type="text" class="form-control" name="active" id="active" value="{{ old('active',$data['active']) }}" >
                   </div>
                 </div>
+                <div class="form-group row">
+                  <label class="col-sm-2 col-form-label">موقع الفرع (اختياري)</label>
+                  <div class="col-sm-3">
+                    <input type="text" class="form-control" name="latitude" placeholder="Latitude" value="{{ old('latitude', $data['latitude']) }}">
+                  </div>
+                  <div class="col-sm-3">
+                    <input type="text" class="form-control" name="longitude" placeholder="Longitude" value="{{ old('longitude', $data['longitude']) }}">
+                  </div>
+                  <div class="col-sm-3">
+                    <input type="number" class="form-control" name="geofence_radius_m" placeholder="نطاق السماح (متر)" value="{{ old('geofence_radius_m', $data['geofence_radius_m']) }}">
+                  </div>
+                  <small class="col-sm-10 offset-sm-2 text-muted">إذا تُركت فارغة، لن يتم التحقق من موقع الموظف عند تسجيل الحضور من التطبيق — يُسجَّل فقط للمراجعة.</small>
+                </div>
                 <div class="text-center">
                   <button type="submit" class="text-center btn btn-primary btn-lg col-2">{{ __('admin.update') }}</button>
                   <a class="btn btn-warning btn-lg col-2" href="{{ route('branches.index') }}">{{ __('admin.cancel') }}</a>

@@ -46,6 +46,7 @@ class EmployeeRequest extends Model
             'late_permission' => '⏰ إذن تأخير',
             'early_leave'     => '🚪 إذن انصراف مبكر',
             'mission'         => '🏢 مأمورية',
+            'resignation'     => '📝 طلب استقالة',
             default           => $this->request_type,
         };
     }
