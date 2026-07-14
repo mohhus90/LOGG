@@ -378,7 +378,38 @@ function updateSelectedCount() {
 
 function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 
-async function startSending() {
+// الرسالة الواحدة ممكن تاخد أكتر من ساعة بالفاصل الزمني بين الرسائل — الـ CSRF token
+// المأخوذ عند تحميل الصفحة يبقى قديم (Laravel session قد ينتهي/يتجدد أثناء الإرسال)،
+// فكل استدعاء لاحق يفشل بـ 419 CSRF mismatch للأبد لحد ما تعمل رفرش للصفحة.
+// الحل: نقرأ التوكن الحالي من كوكي XSRF-TOKEN قبل كل طلب — Laravel يجدد هذه الكوكي
+// تلقائياً مع كل response فتبقى دايماً صالحة حتى لو الـ session تجدد.
+function getFreshCsrfToken() {
+  const m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+  return m ? decodeURIComponent(m[1]) : CSRF;
+}
+
+async function postSendOne(payload) {
+  const r = await fetch(SEND_ONE_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': getFreshCsrfToken(), 'Accept': 'application/json' },
+    body:    JSON.stringify(payload),
+  });
+  if (r.status === 419) {
+    // توكن قديم بشكل استثنائي (سباق توقيت) — أعد المحاولة مرة واحدة بتوكن محدّث
+    await sleep(500);
+    return fetch(SEND_ONE_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': getFreshCsrfToken(), 'Accept': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+  }
+  return r;
+}
+
+// حالات لا تستحق إعادة محاولة (مش هتنجح لو اتكررت): تم الإرسال، أو الموظف مالوش هاتف/بيانات دخول أصلاً
+const NON_RETRYABLE_STATUSES = ['sent', 'no_phone', 'no_credentials', 'not_found'];
+
+async function startSending(skipIntroConfirm = false) {
   const template = document.getElementById('smsMessage').value.trim();
   if (!template) { alert('يُرجى كتابة نص الرسالة أولاً'); return; }
   if (!template.includes('{username}') || !template.includes('{password}')) {
@@ -394,10 +425,12 @@ async function startSending() {
     return { id: c.dataset.id, name: tr.dataset.name, code: tr.dataset.code, phone: tr.dataset.phone };
   });
 
-  const estMin = Math.ceil((targets.length - 1) * delaySec / 60);
-  const confirmMsg = `سيتم إرسال ${targets.length} رسالة، برسالة كل ${delaySec} ثانية (~${estMin} دقيقة تقريباً).\n` +
-                      `يُرجى إبقاء هذه الصفحة مفتوحة حتى الانتهاء.\n\nهل تريد المتابعة؟`;
-  if (!confirm(confirmMsg)) return;
+  if (!skipIntroConfirm) {
+    const estMin = Math.ceil((targets.length - 1) * delaySec / 60);
+    const confirmMsg = `سيتم إرسال ${targets.length} رسالة، برسالة كل ${delaySec} ثانية (~${estMin} دقيقة تقريباً).\n` +
+                        `يُرجى إبقاء هذه الصفحة مفتوحة حتى الانتهاء.\n\nهل تريد المتابعة؟`;
+    if (!confirm(confirmMsg)) return;
+  }
 
   sending = true; stopRequested = false;
   sentCount = 0; failedCount = 0; skippedCount = 0;
@@ -408,6 +441,8 @@ async function startSending() {
   document.getElementById('resultsBody').innerHTML = '';
   updateSummaryBoxes();
 
+  const statusById = {};
+
   for (let i = 0; i < targets.length; i++) {
     if (stopRequested) break;
     const emp = targets[i];
@@ -415,16 +450,13 @@ async function startSending() {
 
     let data;
     try {
-      const r = await fetch(SEND_ONE_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-        body:    JSON.stringify({ employee_id: emp.id, template }),
-      });
+      const r = await postSendOne({ employee_id: emp.id, template });
       data = await r.json();
     } catch (e) {
       data = { status: 'failed', message: 'خطأ في الاتصال' };
     }
 
+    statusById[emp.id] = data.status || 'failed';
     appendResultRow(i + 1, emp, data);
 
     if (i < targets.length - 1 && !stopRequested) {
@@ -434,8 +466,28 @@ async function startSending() {
 
   sending = false;
   document.getElementById('stopBtn').style.display = 'none';
-  updateSelectedCount();
   updateProgress(targets.length, targets.length, stopRequested ? 'تم الإيقاف' : 'اكتمل الإرسال');
+
+  // بعد الانتهاء (أو الإيقاف): نلغي تحديد اللي اتبعتله بنجاح أو اللي مش هيفيد إعادة
+  // المحاولة معاه، ونسيب محدد بس اللي فشل و اللي لسه ما اتبعتلوش (وقف قبل ما يوصله)
+  targets.forEach(emp => {
+    const status = statusById[emp.id];
+    if (status && NON_RETRYABLE_STATUSES.includes(status)) {
+      const cb = document.querySelector(`.emp-check[data-id="${emp.id}"]`);
+      if (cb) cb.checked = false;
+    }
+  });
+  updateSelectedCount();
+
+  const remaining = document.querySelectorAll('.emp-check:checked').length;
+  if (remaining > 0) {
+    const msg = failedCount > 0
+      ? `فشل إرسال ${failedCount} رسالة${stopRequested ? ' (وتم إيقاف الباقي)' : ''}. باقي ${remaining} موظف محدد.\nهل تريد إعادة المحاولة الآن؟`
+      : `تم إيقاف الإرسال قبل الوصول لـ ${remaining} موظف. هل تريد استكمال الإرسال لهم الآن؟`;
+    if (confirm(msg)) {
+      startSending(true);
+    }
+  }
 }
 
 function stopSending() { stopRequested = true; }
