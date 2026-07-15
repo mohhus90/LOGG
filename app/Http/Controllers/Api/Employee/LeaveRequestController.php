@@ -14,6 +14,30 @@ class LeaveRequestController extends Controller
     private const VACATION_TYPES = ['annual_vacation', 'casual_vacation'];
     private const PERMISSION_TYPES = ['late_permission', 'early_leave', 'mission'];
 
+    public function balance(Request $request)
+    {
+        $employee = $request->user();
+
+        $balance = EmployeeVacationBalance::where('employee_id', $employee->id)
+            ->where('year', now()->year)
+            ->first();
+
+        $pendingRequests = EmployeeRequest::where('employee_id', $employee->id)
+            ->where('status', 0)
+            ->count();
+
+        $approvedRequests = EmployeeRequest::where('employee_id', $employee->id)
+            ->where('status', 1)
+            ->whereMonth('start_date', now()->month)
+            ->count();
+
+        return response()->json([
+            'balance'           => $balance,
+            'pending_requests'  => $pendingRequests,
+            'approved_requests' => $approvedRequests,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $requests = EmployeeRequest::where('employee_id', $request->user()->id)

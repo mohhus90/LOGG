@@ -52,6 +52,7 @@ Route::prefix('employee')->group(function () {
         Route::get('/documents', [EmployeeDocumentController::class, 'index']);
         Route::get('/documents/{id}/download', [EmployeeDocumentController::class, 'download']);
 
+        Route::get('/leave-requests/balance', [LeaveRequestController::class, 'balance']);
         Route::get('/leave-requests', [LeaveRequestController::class, 'index']);
         Route::post('/leave-requests', [LeaveRequestController::class, 'store']);
         Route::post('/leave-requests/{id}/cancel', [LeaveRequestController::class, 'cancel']);
