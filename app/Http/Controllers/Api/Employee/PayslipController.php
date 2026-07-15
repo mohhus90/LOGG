@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\Admin_panel_setting;
 use App\Models\MonthlyPayroll;
+use App\Services\ArabicPdfService;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class PayslipController extends Controller
 {
@@ -40,8 +40,6 @@ class PayslipController extends Controller
 
         $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
 
-        $pdf = Pdf::loadView('pdf.payslip', compact('payslip', 'employee', 'company'));
-
-        return $pdf->download('payslip-' . $payslip->year . '-' . $payslip->month . '.pdf');
+        return ArabicPdfService::download('pdf.payslip', compact('payslip', 'employee', 'company'), 'payslip-' . $payslip->year . '-' . $payslip->month . '.pdf');
     }
 }

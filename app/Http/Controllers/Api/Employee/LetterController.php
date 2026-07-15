@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\Admin_panel_setting;
 use App\Models\EmployeeRequest;
+use App\Services\ArabicPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class LetterController extends Controller
 {
@@ -74,10 +74,8 @@ class LetterController extends Controller
 
         $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
 
-        $pdf = Pdf::loadView('pdf.salary_certificate', compact('employee', 'company'));
-
         $accessRequest->markDownloaded();
 
-        return $pdf->download('salary-certificate-' . $employee->id . '.pdf');
+        return ArabicPdfService::download('pdf.salary_certificate', compact('employee', 'company'), 'salary-certificate-' . $employee->id . '.pdf');
     }
 }

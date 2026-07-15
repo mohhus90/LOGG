@@ -13,7 +13,7 @@ use App\Models\EmployeeVacationBalance;
 use App\Models\MonthlyPayroll;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\ArabicPdfService;
 use Carbon\Carbon;
 
 class EmployeePortalController extends Controller
@@ -201,9 +201,7 @@ class EmployeePortalController extends Controller
 
         $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
 
-        $pdf = Pdf::loadView('pdf.payslip', compact('payslip', 'employee', 'company'));
-
-        return $pdf->download('payslip-' . $payslip->year . '-' . $payslip->month . '.pdf');
+        return ArabicPdfService::download('pdf.payslip', compact('payslip', 'employee', 'company'), 'payslip-' . $payslip->year . '-' . $payslip->month . '.pdf');
     }
 
     // =========================================================
@@ -262,11 +260,9 @@ class EmployeePortalController extends Controller
 
         $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
 
-        $pdf = Pdf::loadView('pdf.salary_certificate', compact('employee', 'company'));
-
         $accessRequest->markDownloaded();
 
-        return $pdf->download('salary-certificate-' . $employee->id . '.pdf');
+        return ArabicPdfService::download('pdf.salary_certificate', compact('employee', 'company'), 'salary-certificate-' . $employee->id . '.pdf');
     }
 
     // =========================================================
