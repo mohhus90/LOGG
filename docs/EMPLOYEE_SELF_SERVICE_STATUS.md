@@ -3,8 +3,8 @@
 > هذا المستند مرجعي دائم داخل المستودع. أي جلسة عمل جديدة (من أي جهاز) يجب أن تبدأ بقراءته لمعرفة ما تم إنجازه وما هو التالي، بنفس أسلوب `docs/ROADMAP_ERP_COMPLETION.md`.
 > عند إنجاز أي بند ضع علامة `[x]` وأضف تاريخ الإنجاز.
 
-> **✅ حالة الخطة (2026-07-14): الـ Backend API + بوابة الويب (Blade) مكتملان ومُختبران end-to-end فعليًا (تسجيل دخول → حضور/انصراف → قسيمة راتب → مستندات → طلب إجازة → استقالة → إلغاء → تسجيل خروج، عبر HTTP حقيقي بجلسة كوكيز).**
-> **⏸️ تطبيق الموبايل (Flutter) مؤجَّل عمدًا** — Flutter SDK غير مثبت في بيئة التطوير المستخدمة، والمستخدم اختار تأجيله وبناء بوابة الويب أولًا بدلاً منه. الـ API جاهز بالكامل لاستهلاك الموبايل لاحقًا (Sanctum bearer tokens) دون أي إعادة تصميم.
+> **✅ حالة الخطة (2026-07-15): الـ Backend API + بوابة الويب (Blade) مكتملان ومُختبران end-to-end فعليًا (تسجيل دخول → حضور/انصراف → قسيمة راتب → مستندات → طلب إجازة → استقالة → إلغاء → تسجيل خروج، عبر HTTP حقيقي بجلسة كوكيز).**
+> **🚧 تطبيق الموبايل (Flutter) بدأ فعليًا** — تم تجهيز بيئة التطوير بالكامل (Flutter SDK + Android SDK + JDK محمول، بدون Android Studio) وتم إنشاء مشروع Flutter فارغ (`mobile_app/`) وتم التحقق من أن كامل السلسلة (toolchain) تعمل ببناء تجريبي ناجح فعليًا. **لم تُكتب أي شاشة أو منطق للتطبيق نفسه بعد** — هذا هو نقطة الاستئناف التالية (راجع Phase 2 تحت).
 
 ## الطلب الأصلي
 
@@ -14,7 +14,8 @@
 
 | # | القرار |
 |---|---|
-| D1 | الموبايل: **Flutter** (كود واحد لـ Android/iOS/Web) — لم يُنفَّذ بعد، مؤجَّل. |
+| D1 | الموبايل: **Flutter** (كود واحد لـ Android/Web؛ iOS يحتاج جهاز Mac غير متاح). المشروع في `mobile_app/` بجذر المستودع، package name `com.trilogy.nexa.employee_app`. |
+| D8 | بيئة تطوير Flutter على Windows تُثبَّت **بدون Android Studio** (تجنبًا لحوار UAC الذي يوقف أي تثبيت آلي عبر winget/MSI للـ JDK) — بدلًا من ذلك: JDK 17 محمول (zip، من Microsoft Build of OpenJDK) + Android `cmdline-tools` + `sdkmanager` لتثبيت `platform-tools`/`platforms;android-34`/`platforms;android-36`/`build-tools;28.0.3`/`build-tools;34.0.0` مباشرةً بدون واجهة رسومية. هذا الإعداد **محلي لكل جهاز** (المسارات مثل `C:\src\flutter` لا تُرفع على الـ repo) — أي جهاز جديد يحتاج نفس الخطوات من الصفر (راجع Phase 2 تحت لملاحظة مهمة عن Git Bash). |
 | D2 | التحقق أثناء الحضور بالموبايل: **بصمة/وجه الجهاز نفسه محليًا** (local_auth من جهة العميل)، وليس مطابقة وجه عبر خدمة سحابية. الحقل `attendances.device_verified` تسجيل تدقيقي (audit) فقط وليس تحققًا مشفّرًا من السيرفر. |
 | D3 | تتبع الموقع: **لحظي وقت الحضور/الانصراف فقط** (لا تتبع مستمر في الخلفية حاليًا). التفعيل/الإلغاء لكل موظف عبر `employees.location_tracking_enabled` (يتحكم فيه الأدمن من فورم تعديل الموظف). |
 | D4 | أمان كلمة المرور: عمود `employees.login_password` كان نصًا صريحًا (plaintext) ومُصمَّم عمدًا لغرض تصدير Excel فقط — **لم يُحذف**. أُضيف عمود جديد `login_password_hash` يُملأ تلقائيًا (Eloquent `saving` event) عند تغيّر `login_password`، والتحقق الحقيقي عند الدخول يتم عبر الـ hash فقط. |
@@ -52,15 +53,29 @@
 
 **اختُبر فعليًا** (ليس فقط مراجعة كود): تسجيل دخول بجلسة كوكيز حقيقية → حضور/انصراف → تحميل PDF (شهادة راتب) → إرسال طلب إجازة وظهوره في اللوحة → إلغاء الطلب → تقديم استقالة وظهورها → تسجيل خروج ومنع الوصول بعده. تم اكتشاف وإصلاح خطأ فعلي أثناء الاختبار: تاريخ التعيين كان يظهر فارغًا في PDF شهادة الراتب بسبب `optional()->format()` على قيمة نصية وليست Carbon.
 
-## ⏸️ غير منجز — Phase 2: تطبيق الموبايل (Flutter)
+## 🚧 قيد التنفيذ — Phase 2: تطبيق الموبايل (Flutter)
 
-- [ ] لم يبدأ التنفيذ إطلاقًا. **السبب**: Flutter SDK غير مثبت على جهاز التطوير المستخدم في هذه الجلسة (تم التحقق: لا يوجد `flutter` في PATH ولا في المسارات الشائعة). لا يمكن تشغيل `flutter create` أو التحقق من أن أي كود Dutch مكتوب فعليًا يبني/يعمل بدون الـ SDK.
-- **نقطة البدء عند الاستئناف** (من أي جهاز فيه Flutter مثبت):
-  1. تحقق أولاً: `flutter --version` يعمل، ثم `flutter create mobile_app` داخل جذر المستودع (نفس مستوى `branch-agent/`).
-  2. الـ API جاهز بالكامل ولا يحتاج أي تعديل: base URL = `/api/employee`, تسجيل الدخول `POST /login` بـ `{login_username, login_password, com_code, device_name}` يرجّع `token` (Sanctum) يُستخدم كـ `Authorization: Bearer` في كل الطلبات التالية. راجع `app/Http/Controllers/Api/Employee/*` و`routes/api.php` (قسم "Employee Self-Service") للـ endpoints الكاملة.
-  3. حزم مقترحة: `dio` (API client)، `flutter_secure_storage` (تخزين التوكن)، `local_auth` (بصمة/وجه الجهاز — حسب القرار D2)، `geolocator` (GPS)، `printing`/`url_launcher` (عرض/تحميل PDF)، `provider` (state management).
-  4. الشاشات المطلوبة: تسجيل دخول → لوحة رئيسية → قسائم الراتب → شهادة راتب → مستنداتي → طلبات الإجازة (قائمة/جديد/إلغاء) → استقالة → حضور/انصراف (بوابة بصمة الجهاز + GPS، تُخفى هذه الشاشة فقط في نسخة الويب من نفس كود Flutter لأن `local_auth` لا يدعم متصفح الويب).
-  5. بعد بناء الشاشات: شغّل `flutter run -d chrome` (نسخة الويب بدون الحضور) و`flutter run` على محاكي/جهاز Android (المسار الكامل شامل الحضور)، وتحقق فعليًا من كل شاشة بنفس أسلوب الاختبار end-to-end المستخدم مع الـ API والبوابة (لا تكتفِ بنجاح البناء).
+### ✅ منجز (2026-07-15) — إعداد البيئة + مشروع فارغ
+
+- [x] Flutter SDK 3.44.6 (stable) — محمول (zip)، مثبَّت في `C:\src\flutter` على جهاز التطوير المستخدم في هذه الجلسة.
+- [x] JDK 17.0.19 (Microsoft Build of OpenJDK) — محمول (zip)، `C:\src\jdk17`.
+- [x] Android SDK (`cmdline-tools`, `platform-tools`, `platforms;android-34`, `platforms;android-36`, `build-tools;28.0.3`, `build-tools;34.0.0`) — `C:\Android\sdk`، كل التراخيص مقبولة.
+- [x] إضافات VS Code: `Dart-Code.dart-code` و`Dart-Code.flutter`.
+- [x] `flutter doctor` نظيف بالكامل ما عدا Visual Studio (غير مطلوب — لسنا نبني تطبيق Windows Desktop، فقط Android + Web).
+- [x] تم إنشاء المشروع فعليًا: `flutter create --org com.trilogy.nexa --project-name employee_app mobile_app` في جذر المستودع.
+- [x] **تحقق فعلي من السلسلة كاملة**: `flutter build web` نجح فعليًا على المشروع الافتراضي الفارغ (وليس مجرد نجاح تثبيت) — ناتج البناء في `mobile_app/build/web` (مُتجاهَل في `.gitignore` الفرعي الخاص بـ `mobile_app/`، لن يُرفع على git).
+
+**⚠️ ملاحظة مهمة لأي جلسة قادمة على Windows عبر Git Bash**: استدعاء أدوات `.bat` من Android SDK (`sdkmanager.bat` خصوصًا) عبر Git Bash بمسارات Windows تحتوي `C:\...` قد يُصاب بمشكلة "path mangling" شهيرة في MSYS (لاحظنا ظهور ملف/مجلد وهمي باسم `Androidsdk` وفشل تثبيت الحزم بصمت رغم ظهور شريط تقدم "ناجح"). الحل: صدّر `MSYS_NO_PATHCONV=1` قبل استدعاء أي `.bat`/`.exe` من Android SDK، واستخدم `/` بدل `\` في مسارات الـ `--sdk_root` (مثال: `--sdk_root=C:/Android/sdk`). تحقق دائمًا من نتيجة أي أمر `sdkmanager` بعرض محتويات المجلد الفعلي بعده، لا تثق في نجاح شريط التقدم وحده.
+
+### ⏸️ غير منجز — بناء التطبيق نفسه
+
+المشروع في `mobile_app/` لا يزال هو الـ scaffold الافتراضي من `flutter create` (تطبيق العدّاد التجريبي) — لا توجد شاشة واحدة فعلية للموظف بعد. **نقطة الاستئناف بالضبط:**
+
+1. إذا كنت على جهاز جديد بدون Flutter مثبَّت: كرر خطوات "إعداد البيئة" أعلاه (كل المسارات محلية لكل جهاز، لا شيء منها في الـ repo).
+2. الـ API جاهز بالكامل ولا يحتاج أي تعديل: base URL = `/api/employee`, تسجيل الدخول `POST /login` بـ `{login_username, login_password, com_code, device_name}` يرجّع `token` (Sanctum) يُستخدم كـ `Authorization: Bearer` في كل الطلبات التالية. راجع `app/Http/Controllers/Api/Employee/*` و`routes/api.php` (قسم "Employee Self-Service") للـ endpoints الكاملة.
+3. أضف للـ `mobile_app/pubspec.yaml`: `dio` (API client)، `flutter_secure_storage` (تخزين التوكن)، `local_auth` (بصمة/وجه الجهاز — حسب القرار D2)، `geolocator` (GPS)، `printing`/`url_launcher` (عرض/تحميل PDF)، `provider` (state management).
+4. الشاشات المطلوبة: تسجيل دخول → لوحة رئيسية → قسائم الراتب → شهادة راتب → مستنداتي → طلبات الإجازة (قائمة/جديد/إلغاء) → استقالة → حضور/انصراف (بوابة بصمة الجهاز + GPS، تُخفى هذه الشاشة فقط في نسخة الويب من نفس كود Flutter لأن `local_auth` لا يدعم متصفح الويب).
+5. بعد بناء الشاشات: شغّل `flutter run -d chrome` (نسخة الويب بدون الحضور) و`flutter run` على محاكي/جهاز Android حقيقي (المسار الكامل شامل الحضور — لا يوجد محاكي (AVD) مُجهَّز بعد في هذه الجلسة، ستحتاج `avdmanager create avd` أو جهاز Android حقيقي موصول عبر USB/`adb`)، وتحقق فعليًا من كل شاشة بنفس أسلوب الاختبار end-to-end المستخدم مع الـ API والبوابة (لا تكتفِ بنجاح البناء).
 
 ## ⏸️ غير منجز — Phase 3: تحسينات مؤجَّلة عمدًا (لم تُطلب بعد)
 
