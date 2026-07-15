@@ -209,10 +209,57 @@ class EmployeePortalController extends Controller
     // =========================================================
     //  شهادة الراتب (خطاب HR)
     // =========================================================
+    private function latestCertificateRequest(int $employeeId): ?EmployeeRequest
+    {
+        return EmployeeRequest::where('employee_id', $employeeId)
+            ->where('request_type', 'salary_certificate')
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    public function salaryCertificatePage()
+    {
+        $employee = $this->guard();
+        $latest   = $this->latestCertificateRequest($employee->id);
+
+        return view('employee.salary_certificate', compact('employee', 'latest'));
+    }
+
+    public function salaryCertificateRequestAccess(Request $request)
+    {
+        $employee = $this->guard();
+
+        $request->validate(['reason' => 'required|string|max:1000'], [
+            'reason.required' => 'من فضلك اذكر سبب طلب شهادة الراتب',
+        ]);
+
+        if ($this->latestCertificateRequest($employee->id)?->status === 0) {
+            return back()->with('error', 'يوجد طلب شهادة راتب قيد الانتظار بالفعل');
+        }
+
+        EmployeeRequest::create([
+            'employee_id'  => $employee->id,
+            'request_type' => 'salary_certificate',
+            'request_date' => now()->toDateString(),
+            'start_date'   => now()->toDateString(),
+            'days_count'   => 0,
+            'reason'       => $request->reason,
+            'status'       => 0,
+            'com_code'     => $employee->com_code,
+        ]);
+
+        return back()->with('success', 'تم إرسال الطلب، بانتظار الموافقة');
+    }
+
     public function salaryCertificate()
     {
         $employee = $this->guard();
-        $company  = Admin_panel_setting::where('com_code', $employee->com_code)->first();
+
+        if ($this->latestCertificateRequest($employee->id)?->status !== 1) {
+            return back()->with('error', 'يجب طلب شهادة الراتب وذكر السبب والحصول على موافقة قبل التنزيل');
+        }
+
+        $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
 
         $pdf = Pdf::loadView('pdf.salary_certificate', compact('employee', 'company'));
 
@@ -231,10 +278,38 @@ class EmployeePortalController extends Controller
         return view('employee.documents', compact('employee', 'documents'));
     }
 
+    public function documentRequestAccess(int $id)
+    {
+        $employee = $this->guard();
+        $document = EmployeeDocument::where('employee_id', $employee->id)->findOrFail($id);
+
+        if ($document->latestAccessRequest()?->status === 0) {
+            return back()->with('error', 'يوجد طلب وصول قيد الانتظار لهذا المستند بالفعل');
+        }
+
+        EmployeeRequest::create([
+            'employee_id'  => $employee->id,
+            'document_id'  => $document->id,
+            'request_type' => 'document_download',
+            'request_date' => now()->toDateString(),
+            'start_date'   => now()->toDateString(),
+            'days_count'   => 0,
+            'reason'       => 'طلب الوصول لتنزيل مستند: ' . $document->type_label,
+            'status'       => 0,
+            'com_code'     => $employee->com_code,
+        ]);
+
+        return back()->with('success', 'تم إرسال طلب الوصول، بانتظار الموافقة');
+    }
+
     public function documentDownload(int $id)
     {
         $employee = $this->guard();
         $document = EmployeeDocument::where('employee_id', $employee->id)->findOrFail($id);
+
+        if (!$document->isApprovedForDownload()) {
+            return back()->with('error', 'يجب طلب الوصول لهذا المستند والحصول على موافقة قبل التنزيل');
+        }
 
         $path = public_path($document->doc_path);
         if (!file_exists($path)) {

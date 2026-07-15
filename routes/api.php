@@ -47,9 +47,12 @@ Route::prefix('employee')->group(function () {
         Route::get('/payslips/{id}', [PayslipController::class, 'show']);
         Route::get('/payslips/{id}/pdf', [PayslipController::class, 'pdf']);
 
+        Route::get('/letters/salary-certificate/status', [LetterController::class, 'status']);
+        Route::post('/letters/salary-certificate/request-access', [LetterController::class, 'requestAccess']);
         Route::get('/letters/salary-certificate', [LetterController::class, 'salaryCertificate']);
 
         Route::get('/documents', [EmployeeDocumentController::class, 'index']);
+        Route::post('/documents/{id}/request-access', [EmployeeDocumentController::class, 'requestAccess']);
         Route::get('/documents/{id}/download', [EmployeeDocumentController::class, 'download']);
 
         Route::get('/leave-requests/balance', [LeaveRequestController::class, 'balance']);

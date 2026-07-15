@@ -6,8 +6,19 @@ import 'package:open_filex/open_filex.dart';
 import 'api_client.dart';
 
 class FileDownloadService {
-  /// Downloads a PDF (or any file) from an authenticated employee-API path
-  /// and opens it with the device's default viewer.
+  /// Fetches raw bytes from an authenticated employee-API path, for callers
+  /// that render the file themselves (e.g. the in-app PDF viewer).
+  static Future<List<int>> fetchBytes(String path) async {
+    final response = await ApiClient.instance.dio.get(
+      path,
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return response.data;
+  }
+
+  /// Downloads a file (non-PDF documents: images, Office files, ...) from an
+  /// authenticated employee-API path and opens it with the device's default
+  /// viewer, since there's no single bundled renderer for arbitrary formats.
   static Future<String?> downloadAndOpen(String path, String fileName) async {
     try {
       final response = await ApiClient.instance.dio.get(

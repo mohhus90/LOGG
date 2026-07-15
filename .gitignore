@@ -1,6 +1,7 @@
 /.phpunit.cache
 /node_modules
 /assets/admin/uploads/
+/public/assets/admin/employee_docs/
 /branch-agent/vendor/
 /branch-agent/config.php
 /public/build

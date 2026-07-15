@@ -29,7 +29,7 @@ class LeaveRequest {
       endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
       timeFrom: json['time_from'],
       timeTo: json['time_to'],
-      daysCount: json['days_count'] ?? 1,
+      daysCount: (double.tryParse('${json['days_count']}') ?? 1).round(),
       reason: json['reason'],
       status: json['status'] ?? 0,
     );
@@ -57,10 +57,10 @@ class LeaveRequest {
 }
 
 class VacationBalance {
-  final int annualBalance;
-  final int annualRemaining;
-  final int casualBalance;
-  final int casualRemaining;
+  final double annualBalance;
+  final double annualRemaining;
+  final double casualBalance;
+  final double casualRemaining;
 
   VacationBalance({
     required this.annualBalance,
@@ -69,12 +69,17 @@ class VacationBalance {
     required this.casualRemaining,
   });
 
+  static double _num(dynamic v) => double.tryParse('$v') ?? 0;
+
   factory VacationBalance.fromJson(Map<String, dynamic> json) {
     return VacationBalance(
-      annualBalance: json['annual_balance'] ?? 0,
-      annualRemaining: json['annual_remaining'] ?? 0,
-      casualBalance: json['casual_balance'] ?? 0,
-      casualRemaining: json['casual_remaining'] ?? 0,
+      annualBalance: _num(json['annual_balance']),
+      annualRemaining: _num(json['annual_remaining']),
+      casualBalance: _num(json['casual_balance']),
+      casualRemaining: _num(json['casual_remaining']),
     );
   }
 }
+
+/// Formats a day count without a trailing ".0" for whole numbers.
+String formatDays(double v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);

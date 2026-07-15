@@ -28,4 +28,28 @@ class EmployeeDocument extends Model
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function accessRequests()
+    {
+        return $this->hasMany(EmployeeRequest::class, 'document_id')->where('request_type', 'document_download');
+    }
+
+    /**
+     * Most recent access request for this document, if any - drives both the
+     * download gate and the "طلب الوصول / قيد الانتظار / تنزيل" UI state.
+     */
+    public function latestAccessRequest(): ?EmployeeRequest
+    {
+        return $this->accessRequests()->orderByDesc('created_at')->first();
+    }
+
+    public function isApprovedForDownload(): bool
+    {
+        return $this->latestAccessRequest()?->status === 1;
+    }
+
+    public function getTypeLabelAttribute(): string
+    {
+        return self::TYPES[$this->doc_type]['ar'] ?? $this->doc_type;
+    }
 }

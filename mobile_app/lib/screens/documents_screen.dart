@@ -15,7 +15,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   List<EmployeeDocument> _documents = [];
   bool _loading = true;
   String? _error;
-  int? _downloadingId;
+  int? _busyId;
 
   @override
   void initState() {
@@ -39,13 +39,47 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
   }
 
   Future<void> _download(EmployeeDocument doc) async {
-    setState(() => _downloadingId = doc.id);
+    setState(() => _busyId = doc.id);
     final error = await FileDownloadService.downloadAndOpen('/documents/${doc.id}/download', doc.originalName);
     if (mounted) {
-      setState(() => _downloadingId = null);
+      setState(() => _busyId = null);
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
       }
+    }
+  }
+
+  Future<void> _requestAccess(EmployeeDocument doc) async {
+    setState(() => _busyId = doc.id);
+    try {
+      await ApiClient.instance.dio.post('/documents/${doc.id}/request-access');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال طلب الوصول، بانتظار الموافقة')));
+      }
+      await _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiClient.errorMessage(e))));
+    } finally {
+      if (mounted) setState(() => _busyId = null);
+    }
+  }
+
+  Widget _trailingFor(EmployeeDocument doc) {
+    if (_busyId == doc.id) {
+      return const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
+    }
+    switch (doc.accessStatus) {
+      case DocumentAccessStatus.approved:
+        return IconButton(icon: const Icon(Icons.download_outlined), onPressed: () => _download(doc));
+      case DocumentAccessStatus.pending:
+        return const Chip(
+          label: Text('بانتظار الموافقة', style: TextStyle(fontSize: 11, color: Colors.white)),
+          backgroundColor: Colors.orange,
+          padding: EdgeInsets.zero,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        );
+      case DocumentAccessStatus.none:
+        return TextButton(onPressed: () => _requestAccess(doc), child: const Text('طلب الوصول'));
     }
   }
 
@@ -87,12 +121,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                                 ),
                                 title: Text(doc.typeLabel),
                                 subtitle: Text(doc.originalName, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                trailing: _downloadingId == doc.id
-                                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                    : IconButton(
-                                        icon: const Icon(Icons.download_outlined),
-                                        onPressed: () => _download(doc),
-                                      ),
+                                trailing: _trailingFor(doc),
                               ),
                             );
                           },

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/payslip.dart';
 import '../services/api_client.dart';
 import '../services/file_download_service.dart';
+import 'pdf_viewer_screen.dart';
 
 class PayslipsScreen extends StatefulWidget {
   const PayslipsScreen({super.key});
@@ -16,7 +17,8 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
   bool _loading = true;
   String? _error;
   int? _downloadingId;
-  bool _downloadingCertificate = false;
+  bool _certificateBusy = false;
+  String _certificateStatus = 'none'; // none | pending | approved
 
   @override
   void initState() {
@@ -30,8 +32,14 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
       _error = null;
     });
     try {
-      final response = await ApiClient.instance.dio.get('/payslips');
-      setState(() => _payslips = (response.data['data'] as List).map((e) => Payslip.fromJson(e)).toList());
+      final results = await Future.wait([
+        ApiClient.instance.dio.get('/payslips'),
+        ApiClient.instance.dio.get('/letters/salary-certificate/status'),
+      ]);
+      setState(() {
+        _payslips = (results[0].data['data'] as List).map((e) => Payslip.fromJson(e)).toList();
+        _certificateStatus = results[1].data['access_status'] ?? 'none';
+      });
     } catch (e) {
       setState(() => _error = ApiClient.errorMessage(e));
     } finally {
@@ -39,25 +47,114 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
     }
   }
 
-  Future<void> _downloadPayslip(Payslip p) async {
+  Future<void> _viewPayslip(Payslip p) async {
     setState(() => _downloadingId = p.id);
-    final error = await FileDownloadService.downloadAndOpen('/payslips/${p.id}/pdf', 'payslip-${p.year}-${p.month}.pdf');
-    if (mounted) {
-      setState(() => _downloadingId = null);
-      if (error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+    try {
+      final bytes = await FileDownloadService.fetchBytes('/payslips/${p.id}/pdf');
+      if (mounted) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(title: p.monthLabel, bytes: bytes, fileName: 'payslip-${p.year}-${p.month}.pdf'),
+        ));
       }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiClient.errorMessage(e))));
+    } finally {
+      if (mounted) setState(() => _downloadingId = null);
     }
   }
 
-  Future<void> _downloadCertificate() async {
-    setState(() => _downloadingCertificate = true);
-    final error = await FileDownloadService.downloadAndOpen('/letters/salary-certificate', 'salary-certificate.pdf');
-    if (mounted) {
-      setState(() => _downloadingCertificate = false);
-      if (error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+  Future<void> _viewCertificate() async {
+    setState(() => _certificateBusy = true);
+    try {
+      final bytes = await FileDownloadService.fetchBytes('/letters/salary-certificate');
+      if (mounted) {
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => PdfViewerScreen(title: 'شهادة راتب', bytes: bytes, fileName: 'salary-certificate.pdf'),
+        ));
       }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiClient.errorMessage(e))));
+    } finally {
+      if (mounted) setState(() => _certificateBusy = false);
+    }
+  }
+
+  Future<void> _requestCertificate() async {
+    final reasonController = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('طلب شهادة راتب'),
+        content: TextField(
+          controller: reasonController,
+          maxLines: 2,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'سبب الطلب',
+            hintText: 'مثال: لتقديمها للبنك',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, reasonController.text.trim()),
+            child: const Text('إرسال'),
+          ),
+        ],
+      ),
+    );
+
+    if (reason == null || reason.isEmpty) return;
+
+    setState(() => _certificateBusy = true);
+    try {
+      await ApiClient.instance.dio.post('/letters/salary-certificate/request-access', data: {'reason': reason});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الطلب، بانتظار الموافقة')));
+      }
+      await _load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ApiClient.errorMessage(e))));
+    } finally {
+      if (mounted) setState(() => _certificateBusy = false);
+    }
+  }
+
+  Widget _certificateTile() {
+    if (_certificateBusy) {
+      return const ListTile(
+        leading: Icon(Icons.description_outlined, color: Colors.white),
+        title: Text('شهادة الراتب (HR Letter)', style: TextStyle(color: Colors.white)),
+        trailing: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+      );
+    }
+    switch (_certificateStatus) {
+      case 'approved':
+        return ListTile(
+          leading: const Icon(Icons.description_outlined, color: Colors.white),
+          title: const Text('شهادة الراتب (HR Letter)', style: TextStyle(color: Colors.white)),
+          subtitle: const Text('تمت الموافقة - اضغط للعرض', style: TextStyle(color: Colors.white70)),
+          trailing: const Icon(Icons.picture_as_pdf, color: Colors.white),
+          onTap: _viewCertificate,
+        );
+      case 'pending':
+        return const ListTile(
+          leading: Icon(Icons.description_outlined, color: Colors.white),
+          title: Text('شهادة الراتب (HR Letter)', style: TextStyle(color: Colors.white)),
+          subtitle: Text('⏳ بانتظار موافقة المسؤول', style: TextStyle(color: Colors.white70)),
+        );
+      default:
+        return ListTile(
+          leading: const Icon(Icons.description_outlined, color: Colors.white),
+          title: const Text('شهادة الراتب (HR Letter)', style: TextStyle(color: Colors.white)),
+          subtitle: const Text('تحتاج طلب وموافقة قبل التنزيل', style: TextStyle(color: Colors.white70)),
+          trailing: TextButton(
+            onPressed: _requestCertificate,
+            style: TextButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.white24),
+            child: const Text('طلب'),
+          ),
+        );
     }
   }
 
@@ -81,16 +178,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
                     ),
                   Card(
                     color: const Color(0xFF11998E),
-                    child: ListTile(
-                      leading: const Icon(Icons.description_outlined, color: Colors.white),
-                      title: const Text('شهادة الراتب (HR Letter)', style: TextStyle(color: Colors.white)),
-                      subtitle: const Text('تحميل شهادة راتب PDF جاهزة', style: TextStyle(color: Colors.white70)),
-                      trailing: _downloadingCertificate
-                          ? const SizedBox(
-                              width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.download, color: Colors.white),
-                      onTap: _downloadingCertificate ? null : _downloadCertificate,
-                    ),
+                    child: _certificateTile(),
                   ),
                   const SizedBox(height: 24),
                   Text('قسائم الراتب', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -110,7 +198,7 @@ class _PayslipsScreenState extends State<PayslipsScreen> {
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                 : IconButton(
                                     icon: const Icon(Icons.download_outlined),
-                                    onPressed: () => _downloadPayslip(p),
+                                    onPressed: () => _viewPayslip(p),
                                   ),
                             onTap: () => _showDetails(p),
                           ),

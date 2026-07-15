@@ -109,8 +109,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Expanded(
                           child: _BalanceCard(
                             label: 'رصيد إجازة اعتيادية',
-                            value: '${_balance!.annualRemaining}',
-                            sub: 'من أصل ${_balance!.annualBalance} يوم',
+                            value: formatDays(_balance!.annualRemaining),
+                            sub: 'من أصل ${formatDays(_balance!.annualBalance)} يوم',
                             color: const Color(0xFF11998E),
                           ),
                         ),
@@ -118,8 +118,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Expanded(
                           child: _BalanceCard(
                             label: 'رصيد إجازة عارضة',
-                            value: '${_balance!.casualRemaining}',
-                            sub: 'من أصل ${_balance!.casualBalance} يوم',
+                            value: formatDays(_balance!.casualRemaining),
+                            sub: 'من أصل ${formatDays(_balance!.casualBalance)} يوم',
                             color: Colors.orange,
                           ),
                         ),

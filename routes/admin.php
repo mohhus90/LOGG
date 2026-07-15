@@ -1434,9 +1434,12 @@ Route::group(['prefix' => 'employee'], function () {
 
     Route::get('payslips',            [EmployeePortalController::class, 'payslips'])->name('employee.payslips');
     Route::get('payslips/{id}/pdf',   [EmployeePortalController::class, 'payslipPdf'])->name('employee.payslips.pdf');
-    Route::get('letters/salary-certificate', [EmployeePortalController::class, 'salaryCertificate'])->name('employee.letters.salary_certificate');
+    Route::get('letters/salary-certificate', [EmployeePortalController::class, 'salaryCertificatePage'])->name('employee.letters.salary_certificate');
+    Route::post('letters/salary-certificate/request-access', [EmployeePortalController::class, 'salaryCertificateRequestAccess'])->name('employee.letters.salary_certificate.request_access');
+    Route::get('letters/salary-certificate/download', [EmployeePortalController::class, 'salaryCertificate'])->name('employee.letters.salary_certificate.download');
 
     Route::get('documents',              [EmployeePortalController::class, 'documents'])->name('employee.documents');
+    Route::post('documents/{id}/request-access', [EmployeePortalController::class, 'documentRequestAccess'])->name('employee.documents.request_access');
     Route::get('documents/{id}/download', [EmployeePortalController::class, 'documentDownload'])->name('employee.documents.download');
 
     Route::get('resignation',  [EmployeePortalController::class, 'resignationForm'])->name('employee.resignation');

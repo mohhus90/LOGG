@@ -22,6 +22,11 @@ class EmployeeRequest extends Model
         return $this->belongsTo(Employee::class, 'employee_id');
     }
 
+    public function document()
+    {
+        return $this->belongsTo(EmployeeDocument::class, 'document_id');
+    }
+
     public function reviewer()
     {
         return $this->belongsTo(Admin::class, 'reviewed_by');
@@ -47,6 +52,8 @@ class EmployeeRequest extends Model
             'early_leave'     => '🚪 إذن انصراف مبكر',
             'mission'         => '🏢 مأمورية',
             'resignation'     => '📝 طلب استقالة',
+            'document_download' => '📄 طلب تنزيل مستند',
+            'salary_certificate' => '📃 طلب شهادة راتب',
             default           => $this->request_type,
         };
     }

@@ -36,6 +36,8 @@
         <option value="early_leave"     {{ request('type')=='early_leave'?'selected':'' }}>إذن انصراف مبكر</option>
         <option value="mission"         {{ request('type')=='mission'?'selected':'' }}>مأمورية</option>
         <option value="resignation"     {{ request('type')=='resignation'?'selected':'' }}>طلب استقالة</option>
+        <option value="document_download" {{ request('type')=='document_download'?'selected':'' }}>طلب تنزيل مستند</option>
+        <option value="salary_certificate" {{ request('type')=='salary_certificate'?'selected':'' }}>طلب شهادة راتب</option>
       </select>
       <select name="status" class="form-control ml-2 mb-1">
         <option value="">-- كل الحالات --</option>
