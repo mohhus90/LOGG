@@ -254,14 +254,17 @@ class EmployeePortalController extends Controller
     public function salaryCertificate()
     {
         $employee = $this->guard();
+        $accessRequest = $this->latestCertificateRequest($employee->id);
 
-        if ($this->latestCertificateRequest($employee->id)?->status !== 1) {
+        if (!$accessRequest?->isAvailableForDownload()) {
             return back()->with('error', 'يجب طلب شهادة الراتب وذكر السبب والحصول على موافقة قبل التنزيل');
         }
 
         $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
 
         $pdf = Pdf::loadView('pdf.salary_certificate', compact('employee', 'company'));
+
+        $accessRequest->markDownloaded();
 
         return $pdf->download('salary-certificate-' . $employee->id . '.pdf');
     }
@@ -306,8 +309,9 @@ class EmployeePortalController extends Controller
     {
         $employee = $this->guard();
         $document = EmployeeDocument::where('employee_id', $employee->id)->findOrFail($id);
+        $accessRequest = $document->latestAccessRequest();
 
-        if (!$document->isApprovedForDownload()) {
+        if (!$accessRequest?->isAvailableForDownload()) {
             return back()->with('error', 'يجب طلب الوصول لهذا المستند والحصول على موافقة قبل التنزيل');
         }
 
@@ -315,6 +319,8 @@ class EmployeePortalController extends Controller
         if (!file_exists($path)) {
             return back()->with('error', 'الملف غير موجود');
         }
+
+        $accessRequest->markDownloaded();
 
         return response()->download($path, $document->doc_original_name);
     }

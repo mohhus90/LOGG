@@ -12,9 +12,10 @@ class EmployeeRequest extends Model
     protected $table   = 'employee_requests';
     protected $guarded = [];
     protected $casts   = [
-        'start_date'  => 'date',
-        'end_date'    => 'date',
-        'reviewed_at' => 'datetime',
+        'start_date'    => 'date',
+        'end_date'      => 'date',
+        'reviewed_at'   => 'datetime',
+        'downloaded_at' => 'datetime',
     ];
 
     public function employee()
@@ -25,6 +26,21 @@ class EmployeeRequest extends Model
     public function document()
     {
         return $this->belongsTo(EmployeeDocument::class, 'document_id');
+    }
+
+    /**
+     * For document_download/salary_certificate requests: true once approved
+     * and not yet consumed by a download. Each approval grants exactly one
+     * download - a fresh request+approval is required afterward.
+     */
+    public function isAvailableForDownload(): bool
+    {
+        return $this->status === 1 && $this->downloaded_at === null;
+    }
+
+    public function markDownloaded(): void
+    {
+        $this->update(['downloaded_at' => now()]);
     }
 
     public function reviewer()

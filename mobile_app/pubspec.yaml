@@ -42,7 +42,7 @@ dependencies:
   geolocator: ^14.0.3
   path_provider: ^2.1.6
   open_filex: ^4.7.0
-  printing: ^5.14.3
+  flutter_pdfview: ^1.4.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

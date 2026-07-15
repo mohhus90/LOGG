@@ -24,7 +24,7 @@
             $status = match(true) {
                 !$latestReq => 'none',
                 $latestReq->status === 0 => 'pending',
-                $latestReq->status === 1 => 'approved',
+                $latestReq->isAvailableForDownload() => 'approved',
                 default => 'none',
             };
           @endphp

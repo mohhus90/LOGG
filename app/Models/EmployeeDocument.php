@@ -45,7 +45,7 @@ class EmployeeDocument extends Model
 
     public function isApprovedForDownload(): bool
     {
-        return $this->latestAccessRequest()?->status === 1;
+        return $this->latestAccessRequest()?->isAvailableForDownload() ?? false;
     }
 
     public function getTypeLabelAttribute(): string

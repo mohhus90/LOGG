@@ -5,7 +5,7 @@
   $status = match(true) {
       !$latest => 'none',
       $latest->status === 0 => 'pending',
-      $latest->status === 1 => 'approved',
+      $latest->isAvailableForDownload() => 'approved',
       default => 'none',
   };
 @endphp

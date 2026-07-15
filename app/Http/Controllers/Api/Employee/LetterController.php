@@ -24,10 +24,10 @@ class LetterController extends Controller
         $latest = $this->latestRequest($request->user()->id);
 
         $status = match (true) {
-            !$latest           => 'none',
-            $latest->status===0 => 'pending',
-            $latest->status===1 => 'approved',
-            default             => 'none',
+            !$latest                          => 'none',
+            $latest->status === 0             => 'pending',
+            $latest->isAvailableForDownload()  => 'approved',
+            default                           => 'none',
         };
 
         return response()->json(['access_status' => $status, 'reason' => $latest?->reason]);
@@ -66,14 +66,17 @@ class LetterController extends Controller
     public function salaryCertificate(Request $request)
     {
         $employee = $request->user();
+        $accessRequest = $this->latestRequest($employee->id);
 
-        if ($this->latestRequest($employee->id)?->status !== 1) {
+        if (!$accessRequest?->isAvailableForDownload()) {
             return response()->json(['message' => 'يجب طلب شهادة الراتب وذكر السبب والحصول على موافقة قبل التنزيل'], 403);
         }
 
         $company = Admin_panel_setting::where('com_code', $employee->com_code)->first();
 
         $pdf = Pdf::loadView('pdf.salary_certificate', compact('employee', 'company'));
+
+        $accessRequest->markDownloaded();
 
         return $pdf->download('salary-certificate-' . $employee->id . '.pdf');
     }

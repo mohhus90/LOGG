@@ -18,10 +18,10 @@ class DocumentController extends Controller
         $documents->each(function (EmployeeDocument $doc) {
             $latest = $doc->latestAccessRequest();
             $doc->access_status = match (true) {
-                $latest === null    => 'none',
-                $latest->status===0 => 'pending',
-                $latest->status===1 => 'approved',
-                default             => 'none', // مرفوض/ملغي: يقدر يطلب تاني
+                $latest === null              => 'none',
+                $latest->status === 0         => 'pending',
+                $latest->isAvailableForDownload() => 'approved',
+                default                        => 'none', // مرفوض/ملغي/تم تنزيله بالفعل: يقدر يطلب تاني
             };
         });
 
@@ -55,8 +55,9 @@ class DocumentController extends Controller
     public function download(Request $request, int $id)
     {
         $document = EmployeeDocument::where('employee_id', $request->user()->id)->findOrFail($id);
+        $accessRequest = $document->latestAccessRequest();
 
-        if (!$document->isApprovedForDownload()) {
+        if (!$accessRequest?->isAvailableForDownload()) {
             return response()->json(['message' => 'يجب طلب الوصول لهذا المستند والحصول على موافقة قبل التنزيل'], 403);
         }
 
@@ -65,6 +66,8 @@ class DocumentController extends Controller
         if (!file_exists($path)) {
             return response()->json(['message' => 'الملف غير موجود'], 404);
         }
+
+        $accessRequest->markDownloaded();
 
         return response()->download($path, $document->doc_original_name);
     }
