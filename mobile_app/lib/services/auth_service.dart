@@ -61,6 +61,17 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await ApiClient.instance.dio.post('/change-password', data: {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+      'new_password_confirmation': newPassword,
+    });
+  }
+
   Future<void> logout() async {
     try {
       await ApiClient.instance.dio.post('/logout');

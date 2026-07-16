@@ -32,10 +32,12 @@ use App\Http\Controllers\Api\Employee\PayslipController;
 use App\Http\Controllers\Api\Employee\ResignationController;
 
 Route::prefix('employee')->group(function () {
+    Route::get('/companies', [EmployeeAuthController::class, 'companies']);
     Route::post('/login', [EmployeeAuthController::class, 'login']);
 
     Route::middleware(['auth:sanctum', 'employee.token'])->group(function () {
         Route::post('/logout', [EmployeeAuthController::class, 'logout']);
+        Route::post('/change-password', [EmployeeAuthController::class, 'changePassword']);
         Route::get('/me', fn (Request $request) => response()->json($request->user()));
 
         Route::get('/attendance/today', [EmployeeAttendanceController::class, 'today']);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/company.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 
@@ -14,18 +15,47 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _comCodeController = TextEditingController(text: '1');
 
   bool _loading = false;
   String? _error;
   bool _obscurePassword = true;
 
+  bool _loadingCompanies = true;
+  String? _companiesError;
+  List<Company> _companies = [];
+  int? _selectedComCode;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanies();
+  }
+
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
-    _comCodeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadCompanies() async {
+    setState(() {
+      _loadingCompanies = true;
+      _companiesError = null;
+    });
+
+    try {
+      final response = await ApiClient.instance.dio.get('/companies');
+      final companies = (response.data['data'] as List).map((e) => Company.fromJson(e)).toList();
+      setState(() {
+        _companies = companies;
+        _selectedComCode = companies.length == 1 ? companies.first.comCode : null;
+      });
+    } catch (e) {
+      setState(() => _companiesError = ApiClient.errorMessage(e));
+    } finally {
+      if (mounted) setState(() => _loadingCompanies = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -40,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await AuthService.instance.login(
         username: _usernameController.text.trim(),
         password: _passwordController.text,
-        comCode: int.parse(_comCodeController.text.trim()),
+        comCode: _selectedComCode!,
       );
     } catch (e) {
       setState(() => _error = ApiClient.errorMessage(e));
@@ -136,22 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       validator: (v) => (v == null || v.isEmpty) ? 'مطلوب' : null,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _comCodeController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'كود الشركة',
-                        prefixIcon: Icon(Icons.apartment_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _submit(),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'مطلوب';
-                        if (int.tryParse(v.trim()) == null) return 'رقم غير صحيح';
-                        return null;
-                      },
-                    ),
+                    _buildCompanyField(),
                     const SizedBox(height: 24),
                     FilledButton(
                       onPressed: _loading ? null : _submit,
@@ -174,6 +189,48 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCompanyField() {
+    if (_loadingCompanies) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_companiesError != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade200),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(_companiesError!, style: TextStyle(color: Colors.red.shade700)),
+            const SizedBox(height: 8),
+            OutlinedButton(onPressed: _loadCompanies, child: const Text('إعادة المحاولة')),
+          ],
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<int>(
+      initialValue: _selectedComCode,
+      decoration: const InputDecoration(
+        labelText: 'الشركة',
+        prefixIcon: Icon(Icons.apartment_outlined),
+        border: OutlineInputBorder(),
+      ),
+      items: _companies
+          .map((c) => DropdownMenuItem(value: c.comCode, child: Text(c.name)))
+          .toList(),
+      onChanged: (value) => setState(() => _selectedComCode = value),
+      validator: (v) => v == null ? 'اختر الشركة' : null,
     );
   }
 }
