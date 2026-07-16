@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/attendance.dart';
 import '../services/api_client.dart';
@@ -96,6 +97,46 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _openMap(double lat, double lng) async {
+    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      _showMessage('تعذر فتح خرائط جوجل');
+    }
+  }
+
+  void _showLocations(AttendanceRecord a) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (a.checkInLat != null && a.checkInLng != null)
+              ListTile(
+                leading: const Icon(Icons.login),
+                title: const Text('موقع الحضور'),
+                trailing: const Icon(Icons.map_outlined),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openMap(a.checkInLat!, a.checkInLng!);
+                },
+              ),
+            if (a.checkOutLat != null && a.checkOutLng != null)
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('موقع الانصراف'),
+                trailing: const Icon(Icons.map_outlined),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openMap(a.checkOutLat!, a.checkOutLng!);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final canCheckIn = _today == null || !_today!.hasCheckedIn;
@@ -180,18 +221,35 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       child: Center(child: Text('لا يوجد سجل حضور', style: TextStyle(color: Colors.grey))),
                     )
                   else
-                    ..._history.map((a) => Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            title: Text(
-                              '${a.attendanceDate.year}-${a.attendanceDate.month.toString().padLeft(2, '0')}-${a.attendanceDate.day.toString().padLeft(2, '0')}',
-                            ),
-                            subtitle: Text('حضور: ${a.checkInTime ?? '—'}   |   انصراف: ${a.checkOutTime ?? '—'}'),
-                            trailing: a.lateMinutes > 0
-                                ? Text('تأخير ${a.lateMinutes} د', style: const TextStyle(color: Colors.red, fontSize: 12))
-                                : null,
+                    ..._history.map((a) {
+                      final hasLocation = a.checkInLat != null || a.checkOutLat != null;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          title: Text(
+                            '${a.attendanceDate.year}-${a.attendanceDate.month.toString().padLeft(2, '0')}-${a.attendanceDate.day.toString().padLeft(2, '0')}',
                           ),
-                        )),
+                          subtitle: Text('حضور: ${a.checkInTime ?? '—'}   |   انصراف: ${a.checkOutTime ?? '—'}'),
+                          onTap: hasLocation ? () => _showLocations(a) : null,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (a.lateMinutes > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: Text('تأخير ${a.lateMinutes} د', style: const TextStyle(color: Colors.red, fontSize: 12)),
+                                ),
+                              if (hasLocation)
+                                IconButton(
+                                  icon: const Icon(Icons.location_on_outlined, color: Color(0xFF11998E)),
+                                  tooltip: 'عرض الموقع على الخريطة',
+                                  onPressed: () => _showLocations(a),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
                 ],
               ),
             ),

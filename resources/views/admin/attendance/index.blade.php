@@ -279,8 +279,24 @@
                                     @endif
                                 @else - @endif
                             </td>
-                            <td>{{ $rec->check_in_time ?? '-' }}</td>
-                            <td>{{ $rec->check_out_time ?? '-' }}</td>
+                            <td>
+                                {{ $rec->check_in_time ?? '-' }}
+                                @if($rec->check_in_lat && $rec->check_in_lng)
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ $rec->check_in_lat }},{{ $rec->check_in_lng }}"
+                                       target="_blank" rel="noopener" title="عرض موقع الحضور على الخريطة">
+                                        <i class="fas fa-map-marker-alt text-danger" style="font-size:.8rem"></i>
+                                    </a>
+                                @endif
+                            </td>
+                            <td>
+                                {{ $rec->check_out_time ?? '-' }}
+                                @if($rec->check_out_lat && $rec->check_out_lng)
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ $rec->check_out_lat }},{{ $rec->check_out_lng }}"
+                                       target="_blank" rel="noopener" title="عرض موقع الانصراف على الخريطة">
+                                        <i class="fas fa-map-marker-alt text-danger" style="font-size:.8rem"></i>
+                                    </a>
+                                @endif
+                            </td>
                             <td style="white-space:normal">
                                 {!! $rec->status_label !!}
                                 @if($rec->status == 2 && !$isBeforeHire)
