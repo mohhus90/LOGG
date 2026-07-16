@@ -13,7 +13,8 @@ class IncomeTaxBracketsController extends Controller
 
     public function index()
     {
-        $brackets = IncomeTaxBracket::where('com_code', $this->comCode())->orderBy('from_amount')->get();
+        $brackets = IncomeTaxBracket::where('com_code', $this->comCode())
+            ->orderByRaw('income_band_min IS NOT NULL, income_band_min')->orderBy('from_amount')->get();
         $setting  = Admin_panel_setting::where('com_code', $this->comCode())->first();
         return view('admin.income_tax.index', compact('brackets', 'setting'));
     }
@@ -21,17 +22,21 @@ class IncomeTaxBracketsController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'from_amount' => 'required|numeric|min:0',
-            'to_amount'   => 'nullable|numeric|gt:from_amount',
-            'rate'        => 'required|numeric|min:0|max:100',
+            'from_amount'     => 'required|numeric|min:0',
+            'to_amount'       => 'nullable|numeric|gt:from_amount',
+            'rate'            => 'required|numeric|min:0|max:100',
+            'income_band_min' => 'nullable|numeric|min:0',
+            'income_band_max' => 'nullable|numeric|gt:income_band_min',
         ]);
 
         IncomeTaxBracket::create([
-            'com_code'    => $this->comCode(),
-            'from_amount' => $request->from_amount,
-            'to_amount'   => $request->to_amount ?: null,
-            'rate'        => $request->rate,
-            'is_active'   => true,
+            'com_code'        => $this->comCode(),
+            'from_amount'     => $request->from_amount,
+            'to_amount'       => $request->to_amount ?: null,
+            'rate'            => $request->rate,
+            'is_active'       => true,
+            'income_band_min' => $request->income_band_min ?: null,
+            'income_band_max' => $request->income_band_max ?: null,
         ]);
 
         return back()->with('success', 'تمت إضافة الشريحة بنجاح');

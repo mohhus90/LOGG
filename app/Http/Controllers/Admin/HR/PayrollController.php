@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\MonthlyPayroll;
 use App\Models\Employee;
 use App\Models\Attendance;
+use App\Models\PayrollFactor;
 use App\Models\Advance;
 use App\Models\AdvanceDeductionLog;
 use App\Models\Commission;
@@ -18,10 +19,12 @@ use App\Models\Admin_panel_setting;
 use App\Models\IncomeTaxBracket;
 use App\Services\SmsService;
 use App\Services\Accounting\JournalPostingService;
+use App\Exports\PayrollDisbursementExport;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PayrollController extends Controller
 {
@@ -61,7 +64,10 @@ class PayrollController extends Controller
             ->where('month', $month)->where('year', $year)
             ->orderBy('employee_id')->paginate(20);
 
-        return view('admin.payroll.index', compact('data', 'month', 'year'));
+        $clients = \App\Models\Client::where('com_code', $this->comCode())
+            ->orderBy('client_name')->get();
+
+        return view('admin.payroll.index', compact('data', 'month', 'year', 'clients'));
     }
 
     public function create()
@@ -70,6 +76,25 @@ class PayrollController extends Controller
             ->orderBy('employee_name_A')->get();
         $default = $this->defaultPeriod();
         return view('admin.payroll.create', compact('employees', 'default'));
+    }
+
+    // ملف صرف الرواتب: شيت لكل بنك + شيت Cash + شيت الموقوفين عن الصرف
+    public function disbursement(Request $request)
+    {
+        $request->validate([
+            'month'      => 'required|integer|between:1,12',
+            'year'       => 'required|integer|min:2020',
+            'client_id'  => 'nullable|exists:clients,id',
+        ]);
+
+        $export = new PayrollDisbursementExport([
+            'month'     => (int) $request->month,
+            'year'      => (int) $request->year,
+            'client_id' => $request->client_id ?: null,
+        ]);
+
+        $fileName = "payroll_disbursement_{$request->year}_{$request->month}.xlsx";
+        return Excel::download($export, $fileName);
     }
 
     // =========================================================
@@ -192,6 +217,17 @@ class PayrollController extends Controller
     ): object {
         $admin     = Auth::guard('admin')->user();
         $settings  = Admin_panel_setting::where('com_code', (int)$admin->com_code)->first();
+
+        // ── العملاء الخارجيون (Klivvr, Opay, ...) يُحسبون من مؤثرات شهرية مُدخلة/مستوردة
+        // بدلاً من بصمة الحضور اليومية، لأن هذه بيانات غير متوفرة لديهم أصلاً ──
+        $payrollFactor = PayrollFactor::where('employee_id', $employee->id)
+            ->where('month', $month)->where('year', $year)->first();
+        if ($payrollFactor) {
+            return $this->computePayrollFromFactors(
+                $employee, $payrollFactor, $month, $year, $periodFrom, $periodTo, $admin, $settings
+            );
+        }
+
         $totalDays = $periodFrom->diffInDays($periodTo) + 1;
         $basicSal  = (float)($employee->emp_sal ?? 0);
         $dailyRate = $totalDays > 0 ? ($basicSal / $totalDays) : 0;
@@ -268,7 +304,7 @@ class PayrollController extends Controller
         if ($employee->apply_income_tax) {
             $exemption   = (float)($settings->income_tax_exemption_monthly ?? 0);
             $taxableBase = max(0, ($earnedSal + $fixedAllowances + $overtimeAmount) - $insurance - $exemption);
-            $incomeTax   = IncomeTaxBracket::calcTax($this->comCode(), $taxableBase);
+            $incomeTax   = $this->calcMonthlyIncomeTax($this->comCode(), $taxableBase);
         }
 
         // ── KPI ──
@@ -323,6 +359,8 @@ class PayrollController extends Controller
             'gross_salary'        => round($grossSalary, 2),
             'net_salary'          => $netSalary,
             'status'              => 1,
+            'is_held'             => false,
+            'hold_reason'         => null,
             'com_code'            => (int)$admin->com_code,
             'added_by'            => $admin->id,
         ];
@@ -335,6 +373,155 @@ class PayrollController extends Controller
         }
 
         return (object)$result;
+    }
+
+    // ─────────────────────────────────────────────
+    //  احتساب راتب عملاء الأوت سورسينج (Klivvr, Opay, ...) من المؤثرات الشهرية
+    //  المستوردة، بنفس منطق شيت "Payroll tax" المُعتمد لديهم: القسمة دائمًا
+    //  على 30 (أو 240 للساعات) بغض النظر عن عدد أيام الشهر الفعلي، والضريبة
+    //  تُحسب بتسنين الوعاء الشهري ×12 ثم توزيعه على الشرائح ثم القسمة على 12
+    //  (انظر calcMonthlyIncomeTax) — على عكس مسار الحضور اليومي الذي يحسب
+    //  الوعاء الشهري مباشرة.
+    // ─────────────────────────────────────────────
+    private function computePayrollFromFactors(
+        Employee $employee, PayrollFactor $f, int $month, int $year,
+        Carbon $periodFrom, Carbon $periodTo, $admin, $settings
+    ): object {
+        $fixedSalary = (float)($employee->emp_sal ?? 0);
+        $totalDays   = $periodFrom->diffInDays($periodTo) + 1;
+
+        if ($f->is_held) {
+            return (object)[
+                'employee_id' => $employee->id, 'month' => $month, 'year' => $year,
+                'period_from' => $periodFrom->toDateString(), 'period_to' => $periodTo->toDateString(),
+                'total_days' => $totalDays, 'work_days' => 0, 'absence_days' => 0,
+                'leave_days' => 0, 'weekly_off_days' => 0,
+                'basic_salary' => $fixedSalary, 'daily_rate' => 0,
+                'earned_salary' => 0, 'fixed_allowances' => 0, 'overtime_amount' => 0,
+                'commissions_amount' => 0, 'bonuses_amount' => 0, 'leave_compensation_amount' => 0,
+                'kpi_bonus_amount' => 0, 'kpi_deduction_amount' => 0,
+                'late_deductions' => 0, 'absence_deductions' => 0, 'deductions_amount' => 0,
+                'advance_installment' => 0, 'insurance_deduction' => 0, 'income_tax_deduction' => 0,
+                'sanctions_deduction' => 0, 'gross_salary' => 0, 'net_salary' => 0,
+                'status' => 1, 'is_held' => true, 'hold_reason' => $f->hold_reason,
+                'com_code' => (int)$admin->com_code, 'added_by' => $admin->id,
+            ];
+        }
+
+        // ── الاستحقاقات (القسمة دائمًا على 30، كما فى شيت العميل) ──
+        $earnedSal = round($fixedSalary / 30 * (float)$f->working_days, 2);
+
+        // ── الأوفرتايم/التسويات: يظهران فى نفس بند "Overtime (+)" لدى العميل ──
+        $overtimeAmount = round(
+            ($fixedSalary / 240 * (float)$f->settlement_hours)
+            + ($fixedSalary / 30 * (float)$f->settlement_days)
+            + (float)$f->settlement_amount, 2
+        );
+
+        $fixedAllowances = (float)($employee->emp_fixed_allowances ?? 0);
+        $bonusesAmount   = round((float)$f->bonus_amount, 2);
+        $otherAllowance  = round((float)$f->other_allowance, 2);
+
+        // ── الخصم على أساس الأيام/الساعات (٪30 أو ٪240 ثابتة، وليس أيام الفترة الفعلية) ──
+        $factorsDeduction = $this->calcFactorsDeduction($f, $fixedSalary);
+
+        // ── التأمينات الاجتماعية ──
+        $insuranceBase    = (float)($employee->emp_sal_insurance ?? 0);
+        $empInsuranceRate = (float)($settings->employee_insurance_rate ?? 11.00);
+        $comInsuranceRate = (float)($settings->company_insurance_rate  ?? 18.75);
+        $insurance        = $insuranceBase > 0 ? round($insuranceBase * $empInsuranceRate / 100, 2) : 0;
+        $companyInsurance = $insuranceBase > 0 ? round($insuranceBase * $comInsuranceRate  / 100, 2) : 0;
+        $totalInsurance   = round($insurance + $companyInsurance, 2);
+
+        // ── ضريبة كسب العمل (اختيارية لكل موظف عبر apply_income_tax) ──
+        // ملحوظة: "Penalties/other_deduction" لا تُطرح من وعاء الضريبة فى شيت العميل
+        // (تُطرح فقط من صافى الراتب النهائى أدناه)، بعكس factorsDeduction والدمغة الشهرية
+        $incomeTax = 0.0;
+        if ($employee->apply_income_tax) {
+            $exemption       = (float)($settings->income_tax_exemption_monthly ?? 0);
+            $grossAllowances = $earnedSal + $bonusesAmount + $overtimeAmount + $otherAllowance;
+            $taxableBase     = max(0, $grossAllowances - $exemption - $insurance
+                - (float)$f->monthly_stamp_tax - $factorsDeduction);
+            $incomeTax = $this->calcMonthlyIncomeTax($this->comCode(), $taxableBase);
+        }
+
+        $grossSalary = $earnedSal + $fixedAllowances + $overtimeAmount + $bonusesAmount + $otherAllowance;
+
+        // ── صندوق دعم أسر الشهداء والمصابين: 0.05% من إجمالي المستحقات (قانوني) ──
+        $martyrsFund = round($grossSalary * 0.0005, 2);
+
+        $netSalary   = max(0, round(
+            $grossSalary - $factorsDeduction - (float)$f->other_deduction
+            - (float)$f->monthly_stamp_tax - $insurance - $incomeTax - $martyrsFund, 0
+        ));
+
+        $result = [
+            'employee_id'         => $employee->id,
+            'month'               => $month,
+            'year'                => $year,
+            'period_from'         => $periodFrom->toDateString(),
+            'period_to'           => $periodTo->toDateString(),
+            'total_days'          => $totalDays,
+            'work_days'           => (int)round($f->working_days),
+            'absence_days'        => (int)round($f->absence_hours / 8),
+            'leave_days'          => (int)round($f->leave_days + $f->unpaid_leave_days + $f->sick_leave_days),
+            'weekly_off_days'     => 0,
+            'basic_salary'        => $fixedSalary,
+            'daily_rate'          => round($fixedSalary / 30, 4),
+            'earned_salary'       => $earnedSal,
+            'fixed_allowances'    => round($fixedAllowances + $otherAllowance, 2),
+            'overtime_amount'     => $overtimeAmount,
+            'commissions_amount'  => 0,
+            'bonuses_amount'      => $bonusesAmount,
+            'leave_compensation_amount' => 0,
+            'kpi_bonus_amount'    => 0,
+            'kpi_deduction_amount' => 0,
+            'late_deductions'     => 0,
+            'absence_deductions'  => $factorsDeduction,
+            'deductions_amount'   => round((float)$f->other_deduction + (float)$f->monthly_stamp_tax + $martyrsFund, 2),
+            'advance_installment' => 0,
+            'insurance_deduction' => $insurance,
+            'income_tax_deduction' => $incomeTax,
+            'sanctions_deduction' => 0,
+            'gross_salary'        => round($grossSalary, 2),
+            'net_salary'          => $netSalary,
+            'status'              => 1,
+            'is_held'             => false,
+            'hold_reason'         => null,
+            'com_code'            => (int)$admin->com_code,
+            'added_by'            => $admin->id,
+        ];
+
+        if (\Illuminate\Support\Facades\Schema::hasColumn('monthly_payrolls', 'company_insurance_contribution')) {
+            $result['company_insurance_contribution'] = $companyInsurance;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('monthly_payrolls', 'total_insurance')) {
+            $result['total_insurance'] = $totalInsurance;
+        }
+
+        return (object)$result;
+    }
+
+    // خصم الأيام/الساعات الثابت المستخدم لدى عملاء الأوت سورسينج (بدلاً من مضاعفات
+    // التكرار 1×/2×/3×/4× المستخدمة لموظفي الشركة أنفسهم عبر calcAbsenceDeductions)
+    private function calcFactorsDeduction(PayrollFactor $f, float $fixedSalary): float
+    {
+        $days = (float)$f->leave_days + (float)$f->no_show_days + (float)$f->unpaid_leave_days
+            + (float)$f->sick_leave_days + (float)$f->sick_leave_balance + (float)$f->penalty_days;
+
+        return round(($fixedSalary / 30 * $days) + ($fixedSalary / 240 * (float)$f->absence_hours), 2);
+    }
+
+    // تُسنّن الوعاء الشهري (×12، وتُقرَّب لأقرب 10 جنيه)، تحسب الضريبة على الشرائح
+    // السنوية المُعرّفة فى income_tax_brackets، ثم تُقسّم الناتج على 12
+    private function calcMonthlyIncomeTax(int $comCode, float $monthlyTaxableBase): float
+    {
+        if ($monthlyTaxableBase <= 0) return 0.0;
+
+        $annualBase = floor(($monthlyTaxableBase * 12) / 10) * 10;
+        $annualTax  = IncomeTaxBracket::calcTax($comCode, $annualBase);
+
+        return round($annualTax / 12, 0);
     }
 
     // ─────────────────────────────────────────────

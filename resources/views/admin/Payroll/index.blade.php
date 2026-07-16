@@ -15,6 +15,18 @@
                 <a href="{{ route('payroll.create') }}" class="btn btn-sm btn-success mr-2">
                     <i class="fas fa-calculator"></i> احتساب رواتب
                 </a>
+                @if($clients->count())
+                <div class="btn-group mr-2">
+                    <button type="button" class="btn btn-sm btn-secondary dropdown-toggle" data-toggle="dropdown">
+                        <i class="fas fa-file-import"></i> استيراد مؤثرات عميل
+                    </button>
+                    <div class="dropdown-menu">
+                        @foreach($clients as $client)
+                        <a class="dropdown-item" href="{{ route('payroll_factors.import.form', $client->id) }}">{{ $client->client_name }}</a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </h3>
         </div>
 
@@ -31,6 +43,21 @@
                     value="{{ request('year', $year) }}">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-search"></i> عرض
+                </button>
+            </form>
+
+            <form method="GET" action="{{ route('payroll.disbursement') }}" class="form-inline mb-3">
+                <input type="hidden" name="month" value="{{ request('month', $month) }}">
+                <input type="hidden" name="year" value="{{ request('year', $year) }}">
+                <label class="ml-2">ملف الصرف لعميل:</label>
+                <select name="client_id" class="form-control ml-2">
+                    <option value="">كل الشركة</option>
+                    @foreach($clients as $client)
+                    <option value="{{ $client->id }}">{{ $client->client_name }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-file-excel"></i> تصدير ملف الصرف (بنوك + كاش + موقوف)
                 </button>
             </form>
         </div>

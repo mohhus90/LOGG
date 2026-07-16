@@ -96,6 +96,11 @@ class Employee extends Authenticatable
         return $this->hasMany(MonthlyPayroll::class, 'employee_id');
     }
 
+    public function payrollFactors()
+    {
+        return $this->hasMany(PayrollFactor::class, 'employee_id');
+    }
+
     public static function generateLoginPassword(): string
     {
         $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

@@ -40,6 +40,7 @@ use App\Http\Controllers\Admin\MaintenanceController;
 use App\Http\Controllers\Admin\TaxController;
 use App\Http\Controllers\Admin\EtaFreeZoneController;
 use App\Http\Controllers\Admin\HR\ClientsController;
+use App\Http\Controllers\Admin\HR\PayrollFactorsController;
 use App\Http\Controllers\Admin\HR\SmsController;
 use App\Http\Controllers\Admin\HR\BranchCommissionsController;
 use App\Http\Controllers\Admin\HR\BonusesController;
@@ -510,6 +511,12 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('payroll/create',            [PayrollController::class, 'create'])->name('payroll.create');
         Route::post('payroll/calculate_single', [PayrollController::class, 'calculateSingle'])->name('payroll.calculate_single');
         Route::post('payroll/calculate_bulk',   [PayrollController::class, 'calculateBulk'])->name('payroll.calculate_bulk');
+        Route::get('payroll/disbursement',      [PayrollController::class, 'disbursement'])->name('payroll.disbursement');
+
+        // مؤثرات الرواتب الشهرية لعملاء الأوت سورسينج (Klivvr, Opay, ...)
+        Route::get('payroll/factors/{client}/import',  [PayrollFactorsController::class, 'importForm'])->name('payroll_factors.import.form');
+        Route::post('payroll/factors/{client}/preview', [PayrollFactorsController::class, 'preview'])->name('payroll_factors.import.preview');
+        Route::post('payroll/factors/{client}/store',  [PayrollFactorsController::class, 'store'])->name('payroll_factors.import.store');
     });
     Route::get('payroll/approve/{id}', [PayrollController::class, 'approve'])
         ->name('payroll.approve')->middleware(['auth:admin', 'admin.permission:payroll,can_update']);
