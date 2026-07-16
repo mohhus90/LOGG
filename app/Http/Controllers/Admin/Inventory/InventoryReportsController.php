@@ -28,6 +28,7 @@ class InventoryReportsController extends Controller
                 ->where('i.com_code', $cc)
                 ->groupBy('i.id', 'i.reorder_level')
                 ->havingRaw('COALESCE(SUM(sb.quantity), 0) <= i.reorder_level')
+                ->select('i.id')
                 ->get()->count(),
             'movements_this_month' => StockMovement::where('com_code', $cc)
                 ->whereMonth('date', now()->month)->whereYear('date', now()->year)->count(),
