@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../config.dart';
 import '../services/auth_service.dart';
 import 'change_password_screen.dart';
 import 'resignation_screen.dart';
+import 'server_settings_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -53,6 +55,14 @@ class MoreScreen extends StatelessWidget {
                   title: const Text('طلب استقالة'),
                   trailing: const Icon(Icons.chevron_left),
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ResignationScreen())),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.dns_outlined, color: Color(0xFF11998E)),
+                  title: const Text('إعدادات السيرفر'),
+                  subtitle: Text(AppConfig.serverUrl, style: const TextStyle(fontSize: 12), textDirection: TextDirection.ltr),
+                  trailing: const Icon(Icons.chevron_left),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen())),
                 ),
               ],
             ),

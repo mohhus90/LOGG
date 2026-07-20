@@ -78,6 +78,7 @@
                         <tr>
                             <th style="width:50px">#</th>
                             <th>رقم الأمر</th>
+                            <th>المصدر</th>
                             <th>التاريخ</th>
                             <th>تاريخ التسليم</th>
                             <th>العميل</th>
@@ -91,6 +92,16 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td><strong>{{ $order->order_number }}</strong></td>
+                            <td>
+                                @if($order->source === 'wuilt')
+                                    <span class="badge badge-info" title="{{ $order->external_order_id }}"><i class="fas fa-store"></i> Wuilt</span>
+                                    @if($order->needs_item_mapping)
+                                        <span class="badge badge-warning" title="بعض البنود غير مطابقة مع أصناف النظام">تحتاج مطابقة</span>
+                                    @endif
+                                @else
+                                    <span class="text-muted">يدوي</span>
+                                @endif
+                            </td>
                             <td>{{ \Carbon\Carbon::parse($order->date)->format('Y/m/d') }}</td>
                             <td>
                                 @if($order->delivery_date)
@@ -139,7 +150,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
+                            <td colspan="9" class="text-center py-4 text-muted">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 لا توجد أوامر بيع مسجلة
                             </td>

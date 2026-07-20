@@ -43,6 +43,12 @@ class ApiClient {
 
   Dio get dio => _dio;
 
+  /// Re-reads AppConfig.apiBase, used after the server URL is changed from
+  /// the in-app settings screen without restarting the app.
+  void refreshBaseUrl() {
+    _dio.options.baseUrl = AppConfig.apiBase;
+  }
+
   Future<void> saveToken(String token) => _storage.write(key: _tokenKey, value: token);
 
   Future<String?> readToken() => _storage.read(key: _tokenKey);

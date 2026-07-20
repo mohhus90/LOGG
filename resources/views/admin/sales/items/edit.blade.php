@@ -55,6 +55,12 @@
                                 <input type="text" name="name_en" class="form-control"
                                     placeholder="Item name in English" value="{{ old('name_en', $item->name_en) }}">
                             </div>
+                            <div class="col-md-6 form-group">
+                                <label>معرّف منتج Wuilt (Product ID)</label>
+                                <input type="text" name="external_sku" class="form-control"
+                                    placeholder="مثال: Product_cmb98hlns003j01r181xq7eu9 — لمطابقة هذا الصنف تلقائياً عند المزامنة"
+                                    value="{{ old('external_sku', $item->external_sku) }}">
+                            </div>
                             <div class="col-md-3 form-group">
                                 <label>النوع</label>
                                 <select name="type" class="form-control">

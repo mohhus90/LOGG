@@ -40,7 +40,7 @@ class ItemsController extends Controller
         ]);
 
         $data = $request->only(['code','barcode','name','name_en','category_id','unit_id','type',
-                                'cost_price','selling_price','min_selling_price','description']);
+                                'cost_price','selling_price','min_selling_price','description','external_sku']);
         $data['com_code']  = $this->comCode();
         $data['is_active'] = $request->boolean('is_active', true);
 
@@ -75,7 +75,7 @@ class ItemsController extends Controller
         ]);
         $item = Item::where('com_code', $this->comCode())->findOrFail($id);
         $data = $request->only(['code','barcode','name','name_en','category_id','unit_id','type',
-                                'cost_price','selling_price','min_selling_price','description']);
+                                'cost_price','selling_price','min_selling_price','description','external_sku']);
         $data['is_active'] = $request->boolean('is_active', true);
 
         if ($request->hasFile('image')) {

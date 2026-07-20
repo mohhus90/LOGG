@@ -123,6 +123,21 @@ class SalesOrdersController extends Controller
         return back()->with('success', 'تم تغيير حالة الأمر');
     }
 
+    public function updateShipping(Request $request, $id)
+    {
+        $request->validate(['cod_status' => 'nullable|in:none,pending,collected,returned']);
+        $order = SalesOrder::where('com_code', $this->comCode())->findOrFail($id);
+        $order->update([
+            'shipping_company' => $request->shipping_company,
+            'waybill_number'   => $request->waybill_number,
+            'cod_status'       => $request->cod_status ?? 'none',
+            'cod_amount'       => $request->cod_amount,
+            'cod_collected_at' => $request->cod_status === 'collected' && $order->cod_status !== 'collected'
+                ? now() : $order->cod_collected_at,
+        ]);
+        return back()->with('success', 'تم حفظ بيانات الشحن والتحصيل');
+    }
+
     public function createInvoice($id)
     {
         $order = SalesOrder::with('items')->where('com_code', $this->comCode())->findOrFail($id);

@@ -144,6 +144,15 @@
         </a>
       </li>
 
+      {{-- Ecommerce Stores --}}
+      <li class="nav-item">
+        <a href="{{ route('sales_ecommerce_stores.index') }}"
+           class="nav-link {{ request()->is('admin/dashboard/sales/ecommerce-stores*') ? 'active' : '' }}">
+          <i class="nav-icon fas fa-store"></i>
+          <p>ربط المتاجر الإلكترونية</p>
+        </a>
+      </li>
+
       {{-- Reports --}}
       @php $reportsOpen = request()->is('admin/dashboard/sales/reports*'); @endphp
       <li class="nav-item has-treeview {{ $reportsOpen ? 'menu-open' : '' }}">

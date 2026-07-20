@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\{SalesInvoice, SalesInvoiceItem, SalesPayment, Customer, Item, ItemUnit, Branche, Warehouse, StockMovement};
 use App\Services\StockService;
 use App\Services\Accounting\JournalPostingService;
+use App\Services\Sales\InvoicePostingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB};
 
@@ -140,37 +141,7 @@ class SalesInvoicesController extends Controller
     /** ترحيل قيد الإيراد/الضريبة + قيد تكلفة البضاعة المباعة لفاتورة بيع (Phase 3) */
     private function postInvoiceJournal(SalesInvoice $invoice, float $taxableAmount, float $taxAmount, float $totalCogs): void
     {
-        $comCode = $invoice->com_code;
-        if (JournalPostingService::alreadyPosted($comCode, 'sales_invoice', $invoice->id)) {
-            return;
-        }
-
-        JournalPostingService::post('sales_invoice_issued', $comCode, [
-            ['role' => 'AR_CONTROL',    'debit' => $invoice->total, 'credit' => 0, 'party_type' => 'customer', 'party_id' => $invoice->customer_id],
-            ['role' => 'SALES_REVENUE', 'debit' => 0, 'credit' => $taxableAmount],
-            ['role' => 'VAT_OUTPUT',    'debit' => 0, 'credit' => $taxAmount],
-        ], [
-            'source_module' => 'sales_invoice',
-            'source_id'     => $invoice->id,
-            'entry_date'    => $invoice->date,
-            'reference'     => $invoice->invoice_number,
-            'description'   => 'فاتورة بيع '.$invoice->invoice_number,
-            'created_by'    => Auth::guard('admin')->id(),
-        ]);
-
-        if ($totalCogs > 0) {
-            JournalPostingService::post('sales_invoice_cogs', $comCode, [
-                ['role' => 'COGS',      'debit' => $totalCogs, 'credit' => 0],
-                ['role' => 'INVENTORY', 'debit' => 0, 'credit' => $totalCogs],
-            ], [
-                'source_module' => 'sales_invoice',
-                'source_id'     => $invoice->id,
-                'entry_date'    => $invoice->date,
-                'reference'     => $invoice->invoice_number,
-                'description'   => 'تكلفة البضاعة المباعة - فاتورة '.$invoice->invoice_number,
-                'created_by'    => Auth::guard('admin')->id(),
-            ]);
-        }
+        InvoicePostingService::postInvoiceJournal($invoice, $taxableAmount, $taxAmount, $totalCogs, Auth::guard('admin')->id());
     }
 
     public function show($id)

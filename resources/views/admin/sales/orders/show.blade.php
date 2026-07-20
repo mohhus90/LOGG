@@ -7,6 +7,10 @@
 @section('content')
 <div class="col-12">
 
+    @if(session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+
     {{-- Action Bar --}}
     <div class="mb-3 d-flex justify-content-between align-items-center flex-wrap" style="gap:8px">
         <div>
@@ -17,7 +21,7 @@
                 <i class="fas fa-print ml-1"></i> طباعة
             </a>
             @if(in_array($order->status, ['confirmed', 'processing']))
-            <form action="{{ route('sales_invoices.createFromOrder', $order->id) }}" method="POST" class="d-inline"
+            <form action="{{ route('sales_orders.invoice', $order->id) }}" method="POST" class="d-inline"
                   onsubmit="return confirm('إنشاء فاتورة لهذا الأمر؟')">
                 @csrf
                 <button type="submit" class="btn btn-primary btn-sm">
@@ -86,6 +90,69 @@
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- Shipping & COD --}}
+    <div class="card card-outline card-info">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-truck ml-2"></i> الشحن والتحصيل</h3>
+            @if($order->source === 'wuilt')
+                <div class="card-tools">
+                    <span class="badge badge-info"><i class="fas fa-store ml-1"></i> مستورد من Wuilt — {{ $order->external_order_id }}</span>
+                    @if($order->needs_item_mapping)
+                        <span class="badge badge-warning">بعض البنود تحتاج مطابقة مع أصناف النظام</span>
+                    @endif
+                </div>
+            @endif
+        </div>
+        <div class="card-body">
+            @if($order->tracking_url || $order->awb_url)
+            <div class="mb-3">
+                @if($order->tracking_url)
+                    <a href="{{ $order->tracking_url }}" target="_blank" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-map-marker-alt ml-1"></i> تتبع الشحنة
+                    </a>
+                @endif
+                @if($order->awb_url)
+                    <a href="{{ $order->awb_url }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-file-pdf ml-1"></i> طباعة بوليصة الشحن
+                    </a>
+                @endif
+            </div>
+            @endif
+            <form action="{{ route('sales_orders.shipping', $order->id) }}" method="POST" class="row">
+                @csrf
+                <div class="col-md-3 form-group">
+                    <label class="small text-muted">شركة الشحن</label>
+                    <input type="text" name="shipping_company" class="form-control form-control-sm"
+                           value="{{ $order->shipping_company }}" placeholder="اسم شركة الشحن">
+                </div>
+                <div class="col-md-3 form-group">
+                    <label class="small text-muted">رقم البوليصة</label>
+                    <input type="text" name="waybill_number" class="form-control form-control-sm"
+                           value="{{ $order->waybill_number }}" placeholder="رقم بوليصة الشحن">
+                </div>
+                <div class="col-md-2 form-group">
+                    <label class="small text-muted">حالة التحصيل (COD)</label>
+                    <select name="cod_status" class="form-control form-control-sm">
+                        <option value="none"      {{ $order->cod_status == 'none'      ? 'selected' : '' }}>لا يوجد</option>
+                        <option value="pending"   {{ $order->cod_status == 'pending'   ? 'selected' : '' }}>بانتظار التحصيل</option>
+                        <option value="collected" {{ $order->cod_status == 'collected' ? 'selected' : '' }}>تم التحصيل</option>
+                        <option value="returned"  {{ $order->cod_status == 'returned'  ? 'selected' : '' }}>مرتجع</option>
+                    </select>
+                </div>
+                <div class="col-md-2 form-group">
+                    <label class="small text-muted">مبلغ COD</label>
+                    <input type="number" step="0.01" name="cod_amount" class="form-control form-control-sm"
+                           value="{{ $order->cod_amount }}" placeholder="0.00">
+                </div>
+                <div class="col-md-2 form-group d-flex align-items-end">
+                    <button type="submit" class="btn btn-info btn-sm btn-block">
+                        <i class="fas fa-save ml-1"></i> حفظ
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

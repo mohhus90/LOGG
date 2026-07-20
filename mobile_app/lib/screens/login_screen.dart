@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/company.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import 'server_settings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -79,9 +80,27 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _openServerSettings() async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const ServerSettingsScreen()),
+    );
+    if (changed == true) _loadCompanies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'إعدادات السيرفر',
+            onPressed: _openServerSettings,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

@@ -737,9 +737,27 @@ Route::group(['prefix' => 'admin/dashboard'], function () {
         Route::get('sales/orders/{id}/edit',     [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'edit'])->name('sales_orders.edit');
         Route::post('sales/orders/{id}',         [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'update'])->name('sales_orders.update');
         Route::post('sales/orders/{id}/status',  [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'updateStatus'])->name('sales_orders.status');
+        Route::post('sales/orders/{id}/shipping',[\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'updateShipping'])->name('sales_orders.shipping');
     });
     Route::middleware(['auth:admin', 'admin.permission:sales_orders,can_delete'])->group(function () {
         Route::get('sales/orders/{id}/delete',   [\App\Http\Controllers\Admin\Sales\SalesOrdersController::class, 'delete'])->name('sales_orders.delete');
+    });
+
+    // ── ربط المتاجر الإلكترونية (Wuilt) ──
+    Route::middleware(['auth:admin', 'admin.permission:sales_ecommerce_stores,can_read'])->group(function () {
+        Route::get('sales/ecommerce-stores',            [\App\Http\Controllers\Admin\Sales\EcommerceStoresController::class, 'index'])->name('sales_ecommerce_stores.index');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_ecommerce_stores,can_create'])->group(function () {
+        Route::get('sales/ecommerce-stores/create',     [\App\Http\Controllers\Admin\Sales\EcommerceStoresController::class, 'create'])->name('sales_ecommerce_stores.create');
+        Route::post('sales/ecommerce-stores/store',     [\App\Http\Controllers\Admin\Sales\EcommerceStoresController::class, 'store'])->name('sales_ecommerce_stores.store');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_ecommerce_stores,can_update'])->group(function () {
+        Route::get('sales/ecommerce-stores/{id}/edit',  [\App\Http\Controllers\Admin\Sales\EcommerceStoresController::class, 'edit'])->name('sales_ecommerce_stores.edit');
+        Route::post('sales/ecommerce-stores/{id}',      [\App\Http\Controllers\Admin\Sales\EcommerceStoresController::class, 'update'])->name('sales_ecommerce_stores.update');
+        Route::post('sales/ecommerce-stores/{id}/sync', [\App\Http\Controllers\Admin\Sales\EcommerceStoresController::class, 'syncNow'])->name('sales_ecommerce_stores.sync');
+    });
+    Route::middleware(['auth:admin', 'admin.permission:sales_ecommerce_stores,can_delete'])->group(function () {
+        Route::get('sales/ecommerce-stores/{id}/delete',[\App\Http\Controllers\Admin\Sales\EcommerceStoresController::class, 'delete'])->name('sales_ecommerce_stores.delete');
     });
 
     // ── فواتير البيع ──
